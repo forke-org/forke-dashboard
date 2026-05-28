@@ -16,7 +16,7 @@ import { getLevelFromXp } from '@/lib/utils/xp'
 import LevelUpCelebration from '@/components/shared/LevelUpCelebration'
 import PendingApproval from '@/components/auth/PendingApproval'
 import { db } from '@/lib/db'
-import { owners, tasks } from '@/lib/db/schema'
+import { owners, tasks, messages } from '@/lib/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 
 export default async function AppLayout({
@@ -45,6 +45,19 @@ export default async function AppLayout({
 
   let companyName = ''
   let pendingSubmissionsCount = 0
+  let unreadMessagesCount = 0
+
+  // Fetch received messages count for the logged-in user dynamically
+  try {
+    const messageStats = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(messages)
+      .where(eq(messages.receiverId, user.id))
+      .then((rows) => rows[0])
+    unreadMessagesCount = messageStats?.count || 0
+  } catch (e) {
+    console.error('Failed to query messages layout statistics:', e)
+  }
 
   if (user.role === 'owner') {
     try {
@@ -84,6 +97,7 @@ export default async function AppLayout({
             companyName: companyName || undefined
           }} 
           pendingSubmissionsCount={pendingSubmissionsCount}
+          unreadMessagesCount={unreadMessagesCount}
         />
         <main className="flex-grow flex flex-col min-w-0 overflow-hidden">
           {children}
