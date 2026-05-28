@@ -1,18 +1,9 @@
 'use client'
 
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import React from 'react'
 import Link from 'next/link'
-import { Clock, User, ChevronRight } from 'lucide-react'
+import { Lock, Clock, User, ChevronRight } from 'lucide-react'
+import { getRequiredLevel } from '@/lib/utils/xp'
 import { cn } from '@/lib/utils/cn'
 
 interface TaskCardProps {
@@ -22,16 +13,9 @@ interface TaskCardProps {
     budget: number
     skillTags: string[] | null
     createdAt: Date
-    status: string
-    claimantId?: string | null
-    claimedAt?: Date | null
   }
   clientName: string
-  userLevel?: number
-  isOwner?: boolean
-  claimantName?: string | null
-  claimantUsername?: string | null
-  currentUserId?: string
+  userLevel: number
 }
 
 function timeAgo(date: Date) {
@@ -50,133 +34,70 @@ function timeAgo(date: Date) {
   return Math.floor(interval) + 'm ago'
 }
 
-export default function TaskCard({
-  task,
-  clientName,
-  userLevel,
-  isOwner = false,
-  claimantName,
-  claimantUsername,
-  currentUserId,
-}: TaskCardProps) {
+export default function TaskCard({ task, clientName, userLevel }: TaskCardProps) {
+  const requiredLevel = getRequiredLevel(task.skillTags ?? [])
+  const isLocked = userLevel < requiredLevel
   const budgetInRupees = Math.floor(task.budget / 100)
-  const isProcessing = task.status === 'processing'
 
   return (
-    <div className={cn(
-      "group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 transition-colors flex flex-col h-full text-left relative overflow-hidden",
-      isProcessing
-        ? "opacity-55 pointer-events-none select-none"
-        : "hover:border-white/[0.14]"
-    )}>
+    <div className="group bg-[#0b0b0e] border border-white/[0.04] rounded-2xl p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-2xl hover:shadow-accent/[0.01] flex flex-col h-full text-left relative overflow-hidden">
+      
+      {/* Background accent glow on hover */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-accent/[0.01] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-      {/* Processing overlay badge */}
-      {isProcessing && (
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] font-mono text-amber-500">Processing</span>
-        </div>
-      )}
-
-      <div className="flex justify-between items-start gap-3 mb-3">
-        <h3 className="text-sm font-medium text-white line-clamp-2 leading-snug flex-grow group-hover:text-accent transition-colors">
+      <div className="flex justify-between items-start gap-4 mb-3 relative z-10">
+        <h3 className="font-serif text-lg text-white line-clamp-2 leading-tight flex-grow group-hover:text-accent transition-colors">
           {task.title}
         </h3>
-        {!isProcessing && (
-          <div className="text-[13px] font-medium tabular-nums text-accent px-2 py-0.5 bg-accent/10 border border-accent/20 rounded shrink-0">
-            ₹{budgetInRupees.toLocaleString()}
-          </div>
-        )}
+        <div className="font-mono text-base font-bold text-accent px-2 py-0.5 bg-accent/10 border border-accent/20 rounded">
+          ₹{budgetInRupees.toLocaleString()}
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 mb-5">
+      <div className="flex flex-wrap gap-1.5 mb-6 relative z-10">
         {task.skillTags?.map((tag) => (
-          <span
-            key={tag}
-            className="px-1.5 py-0.5 bg-white/[0.04] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] font-medium rounded"
+          <span 
+            key={tag} 
+            className="px-2 py-0.5 bg-accent/10 border border-accent/15 text-accent text-[9px] font-bold rounded uppercase tracking-wider font-mono"
           >
             {tag}
           </span>
         ))}
       </div>
 
-      <div className="mt-auto space-y-3.5">
-        {/* Claimant Info if Claimed */}
-        {task.status !== 'open' && task.status !== 'processing' && claimantName && (
-          <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
-            <div className={cn(
-              "flex items-center gap-1.5 font-medium",
-              currentUserId === task.claimantId ? "text-emerald-500" : "text-amber-500"
-            )}>
-              <span className={cn(
-                "w-1.5 h-1.5 rounded-full animate-pulse shrink-0",
-                currentUserId === task.claimantId ? "bg-emerald-500" : "bg-amber-500"
-              )} />
-              <span>
-                {currentUserId === task.claimantId ? (
-                  <span>Claimed by <span className="font-medium text-white">you</span></span>
-                ) : (
-                  <span>
-                    Claimed by{' '}
-                    <Link
-                      href={claimantUsername ? `/${claimantUsername}` : `/profile/${task.claimantId || ''}`}
-                      className="text-white hover:text-accent font-semibold transition-colors underline decoration-white/20 hover:decoration-accent/40"
-                    >
-                      {claimantName}
-                    </Link>
-                  </span>
-                )}
-              </span>
-            </div>
-            <span className="text-[var(--color-text-muted)] font-mono text-[10px]">
-              {timeAgo(task.claimedAt || task.createdAt)}
-            </span>
+      <div className="mt-auto space-y-4 relative z-10">
+        <div className="flex items-center justify-between text-[9px] text-white/40 font-black uppercase tracking-wider border-t border-white/[0.04] pt-4 font-mono">
+          <div className="flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-accent" />
+            <span>by <span className="text-white/60 font-black">{clientName}</span></span>
           </div>
-        )}
-
-        {/* Processing status row */}
-        {isProcessing && (
-          <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
-            <div className="flex items-center gap-1.5 text-amber-500 font-medium">
-              <div className="w-3 h-3 border-[1.5px] border-amber-500 border-t-transparent rounded-full animate-spin" />
-              <span>Importing & analyzing repository…</span>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{timeAgo(task.createdAt)}</span>
           </div>
-        )}
+        </div>
 
-        {/* Default Client/Created row (only if open) */}
-        {task.status === 'open' && (
-          <div className={cn(
-            "flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5",
-            isOwner && "justify-end"
-          )}>
-            {!isOwner && (
-              <div className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5" />
-                <span>by <span className="text-white/70">{clientName}</span></span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              <span>{timeAgo(task.createdAt)}</span>
-            </div>
-          </div>
-        )}
-
-        {!isProcessing && (
-          <Link
-            href={`/tasks/${task.id}`}
-            className={cn(
-              "flex items-center justify-center gap-1.5 w-full h-9 rounded-lg text-[13px] font-medium transition-colors",
-              isOwner
-                ? "ui-btn-secondary"
-                : "ui-btn-primary"
-            )}
-          >
-            View details
-            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        )}
+        <Link 
+          href={`/tasks/${task.id}`}
+          className={cn(
+            "flex items-center justify-center gap-2 w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+            isLocked 
+              ? "bg-white/[0.01] text-white/30 border border-white/5 cursor-not-allowed"
+              : "bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_15px_rgba(255,122,0,0.2)] active:translate-y-[1px]"
+          )}
+        >
+          {isLocked ? (
+            <>
+              <Lock className="w-3.5 h-3.5 text-white/20" />
+              Unlock at LVL {requiredLevel}
+            </>
+          ) : (
+            <>
+              Claim Task
+              <ChevronRight className="w-3.5 h-3.5 stroke-[3px] group-hover:translate-x-0.5 transition-transform" />
+            </>
+          )}
+        </Link>
       </div>
     </div>
   )

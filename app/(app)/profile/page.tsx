@@ -1,308 +1,202 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
-import { users, owners, tasks, submissions } from '@/lib/db/schema'
-import { eq, desc, sql, and } from 'drizzle-orm'
-import {
-  getLevelFromXp, getLevelTitle, getLevelProgress, getXpForNextLevel, calculateXpAward,
-} from '@/lib/utils/xp'
-import { redirect } from 'next/navigation'
-import { resolveAvatarUrl } from '@/lib/utils/avatar'
-import { resolveAvatar } from '@/lib/avatar/resolve'
-import { ensureProfileColumns } from '@/lib/actions/profile-actions'
-import ProfileEditor from '@/components/profile/ProfileEditor'
-import { ShippedItem, AchievementItem, ProfileData } from '@/components/profile/PublicProfileView'
-import DevProfileEditor from '@/components/profile/DevProfileEditor'
-import { parsePr, type Achievement, type DevProfile, type ShippedWork } from '@/components/profile/b/types'
-import { DEFAULT_CARD_STYLE, type CardStyle } from '@/components/idcard/style'
+import { users, owners, tasks } from '@/lib/db/schema'
+import { eq, sql } from 'drizzle-orm'
+import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
+import { Building2, Globe, Mail, Phone, User, Award, Shield, FileCheck, Calendar } from 'lucide-react'
 
-function getStreakMilestoneBonus(day: number): number {
-  if (day === 30) return 150
-  if (day === 14) return 100
-  if (day === 7) return 50
-  if (day === 5) return 30
-  if (day === 2) return 15
-  return 0
-}
-
-function toLocalDateString(date: Date) {
-  const yyyy = date.getFullYear()
-  const mm = String(date.getMonth() + 1).padStart(2, '0')
-  const dd = String(date.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
-
-function buildHeatmap(activities: { date: Date; xp: number }[], currentStreak: number): { date: string; count: number }[] {
-  const days = 371 // 53 weeks
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const counts = new Map<string, number>()
-  
-  for (const act of activities) {
-    const key = toLocalDateString(new Date(act.date))
-    counts.set(key, (counts.get(key) || 0) + act.xp + 10)
-  }
-  
-  for (let s = 0; s < currentStreak; s++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - s)
-    const key = toLocalDateString(d)
-    
-    const streakDayNum = currentStreak - s
-    const milestoneBonus = getStreakMilestoneBonus(streakDayNum)
-    
-    const existing = counts.get(key) || 0
-    if (existing > 0) {
-      counts.set(key, existing + milestoneBonus)
-    } else {
-      counts.set(key, 10 + milestoneBonus)
-    }
-  }
-
-  const out: { date: string; count: number }[] = []
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
-    const key = toLocalDateString(d)
-    out.push({ date: key, count: counts.get(key) || 0 })
-  }
-  return out
-}
-
-function buildAchievements(opts: { shipped: number; level: number; streak: number; earned: number }): AchievementItem[] {
-  const { shipped, level, streak, earned } = opts
-  return [
-    { id: 'first', label: 'First Blood', desc: 'Shipped your first task', unlocked: shipped >= 1, icon: 'first' },
-    { id: 'sprint', label: 'Sprinter', desc: 'Shipped 5+ tasks', unlocked: shipped >= 5, icon: 'sprint' },
-    { id: 'untouchable', label: 'Untouchable', desc: '20+ approved ships', unlocked: shipped >= 20, icon: 'untouchable' },
-    { id: 'streak', label: 'Streak God', desc: '30-day login streak', unlocked: streak >= 30, icon: 'streak' },
-    { id: 'loot', label: 'Loot Goblin', desc: 'Earned ₹10,000+', unlocked: earned >= 10000, icon: 'loot' },
-    { id: 'boss', label: 'Boss Mode', desc: 'Reached Level 15', unlocked: level >= 15, icon: 'boss' },
-    { id: 'legend', label: 'Forke Legend', desc: 'Reached Level 25', unlocked: level >= 25, icon: 'legend' },
-    { id: 'night', label: 'Stack Explorer', desc: 'Reached Level 5', unlocked: level >= 5, icon: 'night' },
-  ]
+function LinkedinIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" width="16" height="16">
+      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+    </svg>
+  )
 }
 
 export default async function ProfilePage() {
   const session = await auth()
   const sessionUser = session?.user as { id: string; name: string; role: 'developer' | 'owner'; email: string } | undefined
 
-  if (!sessionUser) redirect('/signin')
+  if (!sessionUser) return null
 
-  await ensureProfileColumns()
+  // Fetch full user record
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.id, sessionUser.id)
+  })
 
-  const dbUser = await db.query.users.findFirst({ where: eq(users.id, sessionUser.id) })
-  if (!dbUser) redirect('/signin')
+  let ownerDetails = null
+  let totalTasks = 0
 
-  // No username yet — send them to settings to finish setting up their handle.
-  if (!dbUser.username) {
-    redirect('/settings')
-  }
-
-  const isOwner = dbUser.role === 'owner'
-
-  // ----- XP / level -----
-  const xp = dbUser.xp || 0
-  const level = getLevelFromXp(xp)
-  const levelTitle = getLevelTitle(level)
-  const xpProgress = getLevelProgress(xp)
-  const nextLevelXp = getXpForNextLevel(level)
-  const xpRemaining = nextLevelXp ? nextLevelXp - xp : 0
-
-  // ----- shipped work + stats -----
-  let shippedWork: ShippedItem[] = []
-  let shipped = 0
-  let avgRating: number | null = null
-  let completionRate: number | null = null
-  let earned = 0
-  let shipActivities: { date: Date; xp: number }[] = []
-  let devWork: ShippedWork[] = []
-  let owners5 = 0
-  let fiveStars = 0
-  const shipActivitiesXp = (r: { budget: number | null; taskCreatedAt: Date; date: Date; deadline: Date | null; rating: number | null }) =>
-    calculateXpAward({ budgetPaise: r.budget || 0, taskCreatedAt: r.taskCreatedAt, submittedAt: r.date, deadline: r.deadline, rating: r.rating, hadRevision: false })
-
-  if (isOwner) {
-    const rows = await db
-      .select({ id: tasks.id, title: tasks.title, budget: tasks.budget, tags: tasks.skillTags, date: tasks.createdAt })
+  if (sessionUser.role === 'owner') {
+    ownerDetails = await db.query.owners.findFirst({
+      where: eq(owners.id, sessionUser.id)
+    })
+    
+    const countRes = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(tasks)
-      .where(and(eq(tasks.clientId, dbUser.id), eq(tasks.status, 'approved')))
-      .orderBy(desc(tasks.createdAt))
-      .limit(30)
-    shippedWork = rows.map((r) => ({ id: r.id, title: r.title, budget: Math.floor((r.budget || 0) / 100), tags: r.tags || [], rating: null, prUrl: null, date: r.date.toISOString() }))
-    shipped = rows.length
-    shipActivities = rows.map((r) => ({ date: r.date, xp: 100 }))
-    earned = rows.reduce((s, r) => s + Math.floor((r.budget || 0) / 100), 0)
+      .where(eq(tasks.clientId, sessionUser.id))
+    totalTasks = countRes[0]?.count || 0
   } else {
-    const [rows, totals] = await Promise.all([
-      db
-        .select({
-          id: tasks.id, title: tasks.title, budget: tasks.budget, tags: tasks.skillTags,
-          rating: submissions.rating, prUrl: submissions.githubLink, date: submissions.createdAt,
-          taskCreatedAt: tasks.createdAt, deadline: tasks.deadline,
-          sourceRepo: tasks.sourceRepo, company: owners.companyName, clientId: tasks.clientId,
-        })
-        .from(submissions)
-        .innerJoin(tasks, eq(submissions.taskId, tasks.id))
-        .leftJoin(owners, eq(owners.id, tasks.clientId))
-        .where(and(eq(submissions.developerId, dbUser.id), eq(submissions.status, 'approved')))
-        .orderBy(desc(submissions.createdAt))
-        .limit(100),
-      db
-        .select({ total: sql<number>`count(*)::int`, approved: sql<number>`count(*) filter (where ${submissions.status} = 'approved')::int` })
-        .from(submissions)
-        .where(eq(submissions.developerId, dbUser.id)),
-    ])
-    shippedWork = rows.map((r) => ({ id: r.id, title: r.title, budget: Math.floor((r.budget || 0) / 100), tags: r.tags || [], rating: r.rating ?? null, prUrl: r.prUrl ?? null, date: r.date.toISOString() }))
-    devWork = rows.map((r) => {
-      const pr = parsePr(r.prUrl)
-      return {
-        id: r.id, title: r.title, repo: pr.repo ?? r.sourceRepo ?? null, pr: pr.pr, prUrl: r.prUrl ?? null,
-        company: r.company ?? null, tags: r.tags || [], rating: r.rating ?? null, xp: shipActivitiesXp(r), date: r.date.toISOString(),
-      }
-    })
-    owners5 = new Set(rows.map((r) => r.clientId)).size
-    fiveStars = rows.filter((r) => r.rating === 5).length
-    shipped = rows.length
-    shipActivities = rows.map((r) => {
-      const xpVal = calculateXpAward({
-        budgetPaise: r.budget || 0,
-        taskCreatedAt: r.taskCreatedAt,
-        submittedAt: r.date,
-        deadline: r.deadline,
-        rating: r.rating,
-        hadRevision: false
-      })
-      return {
-        date: r.date,
-        xp: xpVal
-      }
-    })
-    earned = rows.reduce((s, r) => s + Math.floor((r.budget || 0) / 100), 0)
-
-    const ratings = rows.map((r) => r.rating).filter((r): r is number => typeof r === 'number')
-    avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null
-
-    const t = totals[0]
-    if (t) shipped = Math.max(shipped, t.approved)
-    completionRate = t && t.total > 0 ? Math.round((t.approved / t.total) * 100) : null
+    const countRes = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(tasks)
+      .where(eq(tasks.claimantId, sessionUser.id))
+    totalTasks = countRes[0]?.count || 0
   }
 
-  let ownerName: string | null = null
-  if (isOwner) {
-    const od = await db.query.owners.findFirst({ where: eq(owners.id, dbUser.id) })
-    ownerName = od?.companyName || null
-  }
-
-  const data: ProfileData = {
-    username: dbUser.username,
-    name: ownerName || dbUser.name,
-    headline: dbUser.headline ?? null,
-    bio: dbUser.bio ?? null,
-    location: dbUser.location ?? null,
-    college: dbUser.college ?? null,
-    avatarUrl: resolveAvatarUrl(dbUser.image),
-    level,
-    levelTitle,
-    xp,
-    xpProgress,
-    xpRemaining,
-    nextLevel: nextLevelXp ? level + 1 : null,
-    currentStreak: dbUser.currentStreak || 0,
-    joinedAt: dbUser.createdAt ? new Date(dbUser.createdAt).toISOString() : new Date().toISOString(),
-    githubUrl: dbUser.githubUrl ?? null,
-    linkedinUrl: dbUser.linkedinUrl ?? null,
-    websiteUrl: dbUser.websiteUrl ?? null,
-    stats: { shipped, avgRating, completionRate },
-    shippedWork,
-    achievements: buildAchievements({ shipped, level, streak: dbUser.currentStreak || 0, earned }),
-    heatmap: buildHeatmap(shipActivities, dbUser.currentStreak || 0),
-  }
-
-  if (!isOwner) {
-    const streak = dbUser.currentStreak || 0
-    const stackCount = new Map<string, number>()
-    devWork.forEach((w) => w.tags.forEach((t) => stackCount.set(t, (stackCount.get(t) || 0) + 1)))
-    const stack = [...stackCount.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t).slice(0, 10)
-    const achievements: Achievement[] = [
-      { label: 'First merge', desc: 'Ship your first task', group: 'Shipping', have: shipped, need: 1 },
-      { label: 'Ten down', desc: 'Ship 10 tasks', group: 'Shipping', have: shipped, need: 10 },
-      { label: 'Fifty club', desc: 'Ship 50 tasks', group: 'Shipping', have: shipped, need: 50 },
-      { label: 'On fire', desc: 'Keep a 7 day streak', group: 'Consistency', have: streak, need: 7 },
-      { label: 'Monthly', desc: 'Keep a 30 day streak', group: 'Consistency', have: streak, need: 30 },
-      { label: 'Five stars', desc: 'Get a 5 star rating', group: 'Quality', have: fiveStars, need: 1 },
-      { label: 'Untouchable', desc: '10 five star ratings', group: 'Quality', have: fiveStars, need: 10 },
-      { label: 'Getting there', desc: 'Reach level 5', group: 'Levels', have: level, need: 5 },
-      { label: 'Legend', desc: 'Reach level 10', group: 'Levels', have: level, need: 10 },
-      { label: 'Polyglot', desc: 'Ship across 5 stacks', group: 'Range', have: stackCount.size, need: 5 },
-      { label: 'Repo hopper', desc: 'Ship for 10 different owners', group: 'Range', have: owners5, need: 10 },
-    ]
-    const profile: DevProfile = {
-      username: dbUser.username,
-      name: dbUser.name,
-      headline: dbUser.headline ?? null,
-      bio: dbUser.bio ?? null,
-      location: dbUser.location ?? null,
-      college: dbUser.college ?? null,
-      avatarUrl: await resolveAvatar(dbUser.image, dbUser.username),
-      level,
-      levelTitle,
-      currentStreak: streak,
-      joinedAt: data.joinedAt,
-      githubUrl: dbUser.githubUrl ?? null,
-      linkedinUrl: dbUser.linkedinUrl ?? null,
-      websiteUrl: dbUser.websiteUrl ?? null,
-      shipped,
-      avgRating: avgRating ? Math.round(avgRating * 10) / 10 : null,
-      stack,
-      work: devWork,
-      achievements,
-      heatmap: data.heatmap,
-    }
-    const saved = dbUser.cardStyle
-    const cardStyle: CardStyle = {
-      color: (['black', 'white', 'orange'].includes(saved?.color ?? '') ? saved?.color : DEFAULT_CARD_STYLE.color) as CardStyle['color'],
-      filter: (['orange', 'bw', 'normal'].includes(saved?.filter ?? '') ? saved?.filter : DEFAULT_CARD_STYLE.filter) as CardStyle['filter'],
-      line: saved?.line ?? DEFAULT_CARD_STYLE.line,
-    }
-    const card = {
-      first: dbUser.name.split(/\s+/)[0],
-      full: dbUser.name,
-      username: dbUser.username,
-      level,
-      title: levelTitle,
-      shipped,
-      rating: profile.avgRating ?? 0,
-      id: `FK-${dbUser.id.replace(/-/g, '').slice(0, 4).toUpperCase()}`,
-      issued: new Date(dbUser.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      avatarUrl: profile.avatarUrl,
-    }
-    return (
-      <div className="flex h-full flex-col bg-transparent font-sans text-white">
-        <TopBar title="Profile" />
-        <div className="w-full min-h-0 flex-grow overflow-y-auto px-4 py-5 md:px-6 lg:overflow-hidden lg:px-8 lg:py-6">
-          <DevProfileEditor profile={profile} card={card} initialCard={cardStyle} />
-        </div>
-      </div>
-    )
-  }
+  const level = getLevelFromXp(dbUser?.xp || 0)
+  const isOwner = sessionUser.role === 'owner'
 
   return (
-    <div className="flex flex-col h-full bg-transparent text-white font-sans">
-      <TopBar title="Profile" />
-      {/* Mobile: page scrolls. Desktop: fixed height so the card pins and only the bento scrolls. */}
-      <div className="flex-grow min-h-0 overflow-y-auto lg:overflow-hidden w-full px-4 md:px-6 lg:px-8 py-4 lg:py-5">
-        <ProfileEditor data={data} />
+    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
+      <TopBar title={isOwner ? "Company Profile" : "Developer Profile"} />
+      
+      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-4xl mx-auto w-full">
+        
+        {/* Profile Header */}
+        <div className="p-8 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] relative overflow-hidden text-left shadow-2xl">
+          <div className="absolute right-0 top-0 w-80 h-80 bg-accent/[0.02] rounded-full blur-[80px] pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
+            {/* Avatar Circle */}
+            <div className="w-20 h-20 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center text-accent text-3xl font-serif shadow-inner shrink-0">
+              {dbUser?.image ? (
+                <img src={dbUser.image} alt={dbUser.name} className="w-full h-full object-cover rounded-full" />
+              ) : (
+                dbUser?.name?.[0]?.toUpperCase() || 'F'
+              )}
+            </div>
+
+            {/* Profile Info */}
+            <div className="flex-1 min-w-0 text-center sm:text-left space-y-2.5">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <h3 className="font-serif text-2xl md:text-3xl text-white tracking-wide">
+                  {isOwner ? (ownerDetails?.companyName || 'Acme Labs') : dbUser?.name}
+                </h3>
+                {isOwner && (
+                  <span className="px-2.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-accent text-[9px] font-black uppercase tracking-wider font-mono">
+                    Verified Employer
+                  </span>
+                )}
+              </div>
+
+              <p className="text-white/40 text-xs max-w-md font-light leading-relaxed">
+                {isOwner 
+                  ? `Managed by ${ownerDetails?.firstName || ''} ${ownerDetails?.lastName || ''} (${ownerDetails?.designation || 'Founder'})`
+                  : (dbUser?.bio || "Elite developer building next-gen web products on the Forke network.")}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-2 pt-2 text-[9.5px] font-black uppercase tracking-wider text-white/50 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-accent" />
+                  <span>{isOwner ? ownerDetails?.contactEmail : dbUser?.email}</span>
+                </div>
+                {ownerDetails?.contactNumber && (
+                  <div className="flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-accent" />
+                    <span>{ownerDetails.contactNumber}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-accent" />
+                  <span>Joined {new Date(dbUser?.createdAt || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          
+          {/* Left Block: Node Specifications */}
+          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6">
+            <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3">
+              Node Details
+            </h4>
+            <div className="space-y-4">
+              {isOwner ? (
+                <>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/40 font-medium">Designation</span>
+                    <span className="text-white font-bold">{ownerDetails?.designation}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/40 font-medium">Company Website</span>
+                    {ownerDetails?.companyWebsite ? (
+                      <a href={ownerDetails.companyWebsite} target="_blank" rel="noreferrer" className="text-accent hover:underline flex items-center gap-1">
+                        <Globe className="w-3.5 h-3.5" /> Visit site
+                      </a>
+                    ) : (
+                      <span className="text-white/20">—</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/40 font-medium">LinkedIn Profile</span>
+                    {ownerDetails?.personalLinkedIn ? (
+                      <a href={ownerDetails.personalLinkedIn} target="_blank" rel="noreferrer" className="text-accent hover:underline flex items-center gap-1">
+                        <LinkedinIcon className="w-3.5 h-3.5" /> View LinkedIn
+                      </a>
+                    ) : (
+                      <span className="text-white/20">—</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/40 font-medium">Developer Level</span>
+                    <span className="text-white font-bold">Lvl {level} ({getLevelTitle(level)})</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/40 font-medium">Total Experience (XP)</span>
+                    <span className="text-white font-bold">{dbUser?.xp} XP</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/40 font-medium">GitHub Node</span>
+                    {dbUser?.githubUrl ? (
+                      <a href={dbUser.githubUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline truncate max-w-[200px]">
+                        {dbUser.githubUrl.replace('https://github.com/', '')}
+                      </a>
+                    ) : (
+                      <span className="text-white/20">Not Linked</span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right Block: Stats & Security Status */}
+          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6">
+            <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3">
+              Subscription & Telemetry
+            </h4>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-white/40 font-medium">Current Tier</span>
+                <span className="px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-black uppercase tracking-wider text-[9px] font-mono">
+                  {isOwner ? 'Starter Plan' : 'Standard Developer'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-white/40 font-medium">Security Status</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/10" /> Secure Node
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-white/40 font-medium">Total Platform Missions</span>
+                <span className="text-white font-bold font-mono">{totalTasks}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   )
