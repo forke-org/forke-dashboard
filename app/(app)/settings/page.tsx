@@ -4,12 +4,19 @@ import { db } from '@/lib/db'
 import { users, owners } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import SettingsForm from '@/components/settings/SettingsForm'
+import { ensureTelemetrySettingsColumns, getSystemSpecs } from '@/app/(app)/settings/actions'
 
 export default async function SettingsPage() {
   const session = await auth()
   const sessionUser = session?.user
 
   if (!sessionUser) return null
+
+  // Ensure telemetry database columns are present
+  await ensureTelemetrySettingsColumns()
+  
+  // Fetch live system specs
+  const systemSpecs = await getSystemSpecs()
 
   // Fetch full user record
   const dbUser = await db.query.users.findFirst({
@@ -52,6 +59,9 @@ export default async function SettingsPage() {
           initialContactNumber={ownerDetails?.contactNumber}
           initialContactEmail={ownerDetails?.contactEmail}
           initialPersonalLinkedIn={ownerDetails?.personalLinkedIn}
+          initialEmailAlerts={dbUser.emailAlerts ?? true}
+          initialSlackWebhooks={dbUser.slackWebhooks ?? false}
+          systemSpecs={systemSpecs}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { updateProfileSettings } from '@/app/(app)/settings/actions'
+import React, { useState, useEffect } from 'react'
+import { updateProfileSettings, updateTelemetrySettings } from '@/app/(app)/settings/actions'
 import { Save, Sliders, Bell, Laptop, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
@@ -17,6 +17,13 @@ interface SettingsFormProps {
   initialContactNumber?: string | null
   initialContactEmail?: string | null
   initialPersonalLinkedIn?: string | null
+  initialEmailAlerts: boolean
+  initialSlackWebhooks: boolean
+  systemSpecs: {
+    databaseState: string
+    dbLatencyMs: number
+    runtimeVersion: string
+  }
 }
 
 export default function SettingsForm({
@@ -30,12 +37,45 @@ export default function SettingsForm({
   initialDesignation,
   initialContactNumber,
   initialContactEmail,
-  initialPersonalLinkedIn
+  initialPersonalLinkedIn,
+  initialEmailAlerts,
+  initialSlackWebhooks,
+  systemSpecs
 }: SettingsFormProps) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [emailAlerts, setEmailAlerts] = useState(initialEmailAlerts)
+  const [slackWebhooks, setSlackWebhooks] = useState(initialSlackWebhooks)
+  const [sslActive, setSslActive] = useState(false)
   const isOwner = role === 'owner'
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSslActive(window.location.protocol === 'https:')
+    }
+  }, [])
+
+  const handleToggle = async (type: 'emailAlerts' | 'slackWebhooks') => {
+    const targetState = type === 'emailAlerts' ? !emailAlerts : !slackWebhooks
+    if (type === 'emailAlerts') {
+      setEmailAlerts(targetState)
+    } else {
+      setSlackWebhooks(targetState)
+    }
+
+    const res = await updateTelemetrySettings(userId, type, targetState)
+    if (!res.success) {
+      setError(res.error || 'Failed to update telemetry settings')
+      // Rollback UI state
+      if (type === 'emailAlerts') {
+        setEmailAlerts(!targetState)
+      } else {
+        setSlackWebhooks(!targetState)
+      }
+    }
+  }
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -201,9 +241,19 @@ export default function SettingsForm({
                 <h5 className="text-xs font-bold text-white">Email dispatch alerts</h5>
                 <p className="text-[9px] text-white/30 font-light mt-0.5">Receive emails for waitlist updates & contract signoffs</p>
               </div>
-              <span className="w-9 h-5 rounded-full bg-accent/20 border border-accent/40 flex items-center px-0.5 cursor-pointer">
-                <span className="w-4 h-4 rounded-full bg-accent translate-x-4 transition-transform" />
-              </span>
+              <button 
+                type="button"
+                onClick={() => handleToggle('emailAlerts')}
+                className={cn(
+                  "w-9 h-5 rounded-full flex items-center px-0.5 cursor-pointer transition-colors border",
+                  emailAlerts ? "bg-accent/20 border-accent/40" : "bg-white/5 border-white/10"
+                )}
+              >
+                <span className={cn(
+                  "w-4 h-4 rounded-full transition-transform",
+                  emailAlerts ? "bg-accent translate-x-4" : "bg-white/30 translate-x-0"
+                )} />
+              </button>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.005] border border-white/[0.03]">
@@ -211,9 +261,19 @@ export default function SettingsForm({
                 <h5 className="text-xs font-bold text-white">Slack Webhook integrations</h5>
                 <p className="text-[9px] text-white/30 font-light mt-0.5">Push log alerts directly into your organization workspace</p>
               </div>
-              <span className="w-9 h-5 rounded-full bg-white/5 border border-white/10 flex items-center px-0.5 cursor-pointer">
-                <span className="w-4 h-4 rounded-full bg-white/30 translate-x-0 transition-transform" />
-              </span>
+              <button 
+                type="button"
+                onClick={() => handleToggle('slackWebhooks')}
+                className={cn(
+                  "w-9 h-5 rounded-full flex items-center px-0.5 cursor-pointer transition-colors border",
+                  slackWebhooks ? "bg-accent/20 border-accent/40" : "bg-white/5 border-white/10"
+                )}
+              >
+                <span className={cn(
+                  "w-4 h-4 rounded-full transition-transform",
+                  slackWebhooks ? "bg-accent translate-x-4" : "bg-white/30 translate-x-0"
+                )} />
+              </button>
             </div>
           </div>
         </div>
@@ -229,15 +289,19 @@ export default function SettingsForm({
           <div className="space-y-3 font-mono text-[9px] text-white/50">
             <div className="flex justify-between items-center py-1">
               <span>Runtime Host:</span>
-              <span className="text-accent uppercase">nextjs v15</span>
+              <span className="text-accent uppercase font-bold">{systemSpecs.runtimeVersion}</span>
             </div>
             <div className="flex justify-between items-center py-1">
               <span>Database State:</span>
-              <span className="text-emerald-400 uppercase">connected</span>
+              <span className={cn("uppercase font-bold transition-colors", systemSpecs.databaseState === 'connected' ? "text-emerald-400" : "text-rose-500")}>
+                {systemSpecs.databaseState} {systemSpecs.dbLatencyMs > 0 && `(${systemSpecs.dbLatencyMs}ms)`}
+              </span>
             </div>
             <div className="flex justify-between items-center py-1">
               <span>Telemetry SSL:</span>
-              <span className="text-emerald-400 uppercase">active</span>
+              <span className={cn("uppercase font-bold transition-colors", sslActive ? "text-emerald-400" : "text-amber-500")}>
+                {sslActive ? 'active' : 'inactive'}
+              </span>
             </div>
           </div>
         </div>

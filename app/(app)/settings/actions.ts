@@ -2,8 +2,58 @@
 
 import { db } from '@/lib/db'
 import { users, owners } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+
+export async function ensureTelemetrySettingsColumns() {
+  try {
+    await db.execute(sql`
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email_alerts" boolean DEFAULT true;
+    `)
+    await db.execute(sql`
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "slack_webhooks" boolean DEFAULT false;
+    `)
+  } catch (error) {
+    console.error('Failed to add telemetry columns to users table:', error)
+  }
+}
+
+export async function updateTelemetrySettings(userId: string, type: 'emailAlerts' | 'slackWebhooks', enabled: boolean) {
+  await ensureTelemetrySettingsColumns()
+  try {
+    if (type === 'emailAlerts') {
+      await db.update(users).set({ emailAlerts: enabled }).where(eq(users.id, userId))
+    } else {
+      await db.update(users).set({ slackWebhooks: enabled }).where(eq(users.id, userId))
+    }
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to update telemetry setting:', error)
+    return { success: false, error: 'Database update failed.' }
+  }
+}
+
+export async function getSystemSpecs() {
+  try {
+    const start = Date.now()
+    await db.execute(sql`SELECT 1`)
+    const latency = Date.now() - start
+    return {
+      databaseState: 'connected',
+      dbLatencyMs: latency,
+      runtimeVersion: `nextjs v15.5.15`
+    }
+  } catch (error) {
+    console.error('Database connection test failed:', error)
+    return {
+      databaseState: 'disconnected',
+      dbLatencyMs: 0,
+      runtimeVersion: `nextjs v15.5.15`
+    }
+  }
+}
+
 
 export async function updateProfileSettings(userId: string, role: 'developer' | 'owner', formData: FormData) {
   const name = formData.get('name') as string
