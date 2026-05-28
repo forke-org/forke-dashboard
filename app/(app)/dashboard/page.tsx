@@ -19,6 +19,7 @@ import {
   Plus
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { db } from '@/lib/db'
 import { tasks, submissions } from '@/lib/db/schema'
 import { eq, and, ne, sql } from 'drizzle-orm'
@@ -200,24 +201,34 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            {/* Right Column: Abstract Visualization Graphic */}
+            {/* Right Column: Abstract Mascot Hologram Graphic */}
             <div className="lg:col-span-5 h-44 lg:h-56 relative flex items-center justify-center pointer-events-none w-full">
               {/* Spinning technical orbital layout */}
-              <div className="absolute w-44 h-44 rounded-full border border-white/[0.02] flex items-center justify-center animate-spin [animation-duration:20s]">
-                <div className="w-32 h-32 rounded-full border border-dashed border-accent/15" />
+              <div className="absolute w-48 h-48 rounded-full border border-white/[0.02] flex items-center justify-center animate-spin [animation-duration:20s]">
+                <div className="w-36 h-36 rounded-full border border-dashed border-accent/15" />
                 <div className="absolute top-0 w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_12px_var(--color-accent)] animate-pulse" />
               </div>
-              <div className="absolute w-32 h-32 rounded-full border border-white/[0.02] flex items-center justify-center animate-reverse-spin [animation-duration:12s]">
+              <div className="absolute w-36 h-36 rounded-full border border-white/[0.02] flex items-center justify-center animate-reverse-spin [animation-duration:12s]">
                 <div className="absolute bottom-0 w-2 h-2 rounded-full bg-white/30" />
               </div>
-              <div className="w-20 h-20 rounded-2xl bg-white/[0.01] border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center relative backdrop-blur-md">
-                <Zap className="w-8 h-8 text-accent fill-accent/10 drop-shadow-[0_0_8px_rgba(255,122,0,0.3)] animate-pulse" />
-                <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-tr from-accent/30 via-transparent to-transparent -z-10" />
+              
+              {/* Mascot Hologram Display Case */}
+              <div className="w-24 h-24 rounded-3xl bg-white/[0.01] border border-white/[0.05] shadow-[0_12px_40px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center relative backdrop-blur-md overflow-hidden group">
+                <Image 
+                  src={isOwner ? "/forke-assets/forky-reactions/boss_mode_forky.png" : "/forke-assets/forky-reactions/grind_mode_forky.png"} 
+                  alt="Forky Task Owner Mascot"
+                  width={80}
+                  height={80}
+                  className="object-contain drop-shadow-[0_4px_12px_rgba(255,122,0,0.3)] hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute -inset-[2px] rounded-3xl bg-gradient-to-tr from-accent/30 via-transparent to-transparent -z-10" />
               </div>
 
               {/* Micro specs labels */}
-              <div className="absolute bottom-4 left-4 font-mono text-[7px] text-white/10 tracking-[0.3em] uppercase">SYSTEM telemetry v0.8</div>
-              <div className="absolute top-4 right-4 font-mono text-[7px] text-accent/20 tracking-[0.3em] uppercase animate-pulse">sync complete</div>
+              <div className="absolute bottom-4 left-4 font-mono text-[7px] text-white/10 tracking-[0.3em] uppercase">Mascot Hologram v1.0</div>
+              <div className="absolute top-4 right-4 font-mono text-[7px] text-accent/20 tracking-[0.3em] uppercase animate-pulse">
+                {isOwner ? 'boss mode active' : 'grind mode active'}
+              </div>
             </div>
           </div>
         </div>
