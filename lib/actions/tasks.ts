@@ -1,16 +1,6 @@
 'use server'
 
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-import { tasks, users, submissions, revisionRequests, escrow, developers } from '@/lib/db/schema'
+import { tasks, users, submissions, revisionRequests } from '@/lib/db/schema'
 import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
@@ -25,8 +15,6 @@ import {
 } from '@/lib/utils/xp'
 import { XP_CLAIM_TASK } from '@/constants'
 import { z } from 'zod'
-import { createNotification } from '@/lib/notifications'
-import { logAudit } from './audit-actions'
 
 export type CreateTaskState = {
   errors?: {
@@ -49,46 +37,6 @@ export type SubmitWorkState = {
   githubLink?: string
   error?: string
   success?: boolean
-}
-
-export async function deleteTask(taskId: string) {
-  const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
-
-  if (!user || user.role !== 'owner') {
-    return { success: false, error: 'Unauthorized. Only clients can delete tasks.' }
-  }
-
-  try {
-    const taskResult = await getTaskById(taskId)
-    if (!taskResult) {
-      return { success: false, error: 'Task not found.' }
-    }
-
-    if (taskResult.task.clientId !== user.id) {
-      return { success: false, error: 'Unauthorized. You do not own this task.' }
-    }
-
-    if (taskResult.task.status !== 'open') {
-      return { success: false, error: 'The task cannot be deleted as it is already accepted by a developer.' }
-    }
-
-    await db.transaction(async (tx) => {
-      // Delete any associated child tables safely
-      await tx.delete(escrow).where(eq(escrow.taskId, taskId))
-      await tx.delete(revisionRequests).where(eq(revisionRequests.taskId, taskId))
-      await tx.delete(submissions).where(eq(submissions.taskId, taskId))
-      // Delete task itself
-      await tx.delete(tasks).where(eq(tasks.id, taskId))
-    })
-
-    revalidatePath('/tasks')
-    revalidatePath('/dashboard')
-    return { success: true }
-  } catch (error) {
-    console.error('Delete Task Error:', error)
-    return { success: false, error: 'Failed to delete task due to database error.' }
-  }
 }
 
 export async function createTask(prevState: CreateTaskState, formData: FormData): Promise<CreateTaskState> {
@@ -136,24 +84,6 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
       clientId: user.id,
       status: 'open',
     })
-
-    // Notify owner: task successfully posted
-    await createNotification({
-      userId: user.id,
-      type: 'task_posted',
-      title: '✅ Task posted',
-      body: `Your task "${title}" is now live and visible to developers.`,
-      link: '/tasks',
-    })
-
-    // Log the event explicitly for the activity feed
-    await logAudit({
-      category: 'task',
-      action: 'task.posted',
-      target: title,
-      actorId: user.id,
-      actorName: session?.user?.name
-    })
   } catch (error) {
     console.error('Database Error:', error)
     return { message: 'Something went wrong while posting the task. Please try again.' }
@@ -161,7 +91,7 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
 
   revalidatePath('/tasks')
   revalidatePath('/dashboard')
-  redirect('/tasks?toast=created')
+  redirect('/tasks')
 }
 
 export async function claimTask(taskId: string) {
@@ -172,24 +102,20 @@ export async function claimTask(taskId: string) {
     throw new Error('Unauthorized: Only developers can claim tasks.')
   }
 
-  // These three reads are all independent of each other (none depend on
-  // another's result) — fetch concurrently instead of one at a time.
-  const [devProfile, taskResult, developer] = await Promise.all([
-    db.query.developers.findFirst({ where: eq(developers.userId, user.id) }),
-    getTaskById(taskId),
-    db.query.users.findFirst({ where: eq(users.id, user.id) }),
-  ])
-
-  // Enforce GitHub account connection
-  if (!devProfile || !devProfile.isGithubConnected) {
-    throw new Error('GitHubConnectionRequired')
-  }
-
   // Get task to check level requirements
+  const taskResult = await getTaskById(taskId)
   if (!taskResult) throw new Error('Task not found.')
-
+  
   if (taskResult.task.status !== 'open') {
     throw new Error('This task has already been claimed.')
+  }
+
+  const developer = await db.query.users.findFirst({ where: eq(users.id, user.id) })
+  const developerLevel = getLevelFromXp(developer?.xp ?? 0)
+  const requiredLevel = getRequiredLevel(taskResult.task.skillTags ?? [])
+
+  if (developerLevel < requiredLevel) {
+    throw new Error(`This task requires LVL ${requiredLevel}. You are LVL ${developerLevel}.`)
   }
 
   // Perform atomic update to handle race conditions
@@ -198,7 +124,6 @@ export async function claimTask(taskId: string) {
     .set({
       status: 'claimed',
       claimantId: user.id,
-      claimedAt: new Date(),
     })
     .where(and(eq(tasks.id, taskId), eq(tasks.status, 'open')))
     .returning()
@@ -213,28 +138,9 @@ export async function claimTask(taskId: string) {
     .set({ xp: newXp, level: getLevelFromXp(newXp) })
     .where(eq(users.id, user.id))
 
-  // Notify the task owner that their task was claimed
-  const claimedTask = updated[0]
-  await createNotification({
-    userId: claimedTask.clientId,
-    type: 'task_claimed',
-    title: '🎯 Task claimed',
-    body: `"${claimedTask.title}" was just claimed by ${developer?.name ?? 'a developer'}. Check their profile.`,
-    link: `/tasks/${taskId}`,
-  })
-
-  // Notify the developer that they claimed successfully
-  await createNotification({
-    userId: user.id,
-    type: 'task_claimed_self',
-    title: '🚀 You claimed a task',
-    body: `You've claimed "${claimedTask.title}". Complete it before the deadline and submit your work.`,
-    link: `/tasks/${taskId}`,
-  })
-
   revalidatePath('/tasks')
   revalidatePath(`/tasks/${taskId}`)
-  redirect(`/ide/${taskId}`)
+  redirect(`/tasks/${taskId}`)
 }
 
 export async function submitWork(prevState: SubmitWorkState | null, formData: FormData): Promise<SubmitWorkState> {
@@ -255,17 +161,10 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
     return { error: 'Invalid URL. Must start with https://' }
   }
 
-  // Independent of each other — fetch concurrently.
-  const [taskResult, devUsers] = await Promise.all([
-    getTaskById(taskId),
-    db.select({ name: users.name }).from(users).where(eq(users.id, user.id)).limit(1),
-  ])
+  const taskResult = await getTaskById(taskId)
   if (!taskResult) return { error: 'Task not found.' }
   if (taskResult.task.status !== 'claimed') return { error: 'Task is not in claimed state.' }
   if (taskResult.task.claimantId !== user.id) return { error: 'You are not the claimant.' }
-
-  // Look up developer name for notification
-  const [devUser] = devUsers
 
   try {
     await db.transaction(async (tx) => {
@@ -281,33 +180,6 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
         .update(tasks)
         .set({ status: 'submitted' })
         .where(eq(tasks.id, taskId))
-    })
-
-    // Notify owner: submission received
-    await createNotification({
-      userId: taskResult.task.clientId,
-      type: 'submission_received',
-      title: '📦 Submission received',
-      body: `${devUser?.name ?? 'A developer'} submitted work for "${taskResult.task.title}". Review and approve or request changes.`,
-      link: `/tasks/${taskId}`,
-    })
-
-    // Notify developer: submission sent
-    await createNotification({
-      userId: user.id,
-      type: 'submission_sent',
-      title: '📤 Submission sent',
-      body: `Your submission for "${taskResult.task.title}" is under review. You'll be notified once the client responds.`,
-      link: `/tasks/${taskId}`,
-    })
-
-    // Log the event explicitly for the activity feed
-    await logAudit({
-      category: 'task',
-      action: 'submission.created',
-      target: `submission for task ${taskId.slice(0, 8)}`,
-      actorId: user.id,
-      actorName: devUser?.name
     })
   } catch (error) {
     console.error('Submission Error:', error)
@@ -392,15 +264,6 @@ export async function approveSubmission(taskId: string, rating: number) {
       return { leveledUp: false, newLevel: 1 }
     })
 
-    // Notify developer: work approved
-    await createNotification({
-      userId: developerId,
-      type: 'submission_approved',
-      title: '🎉 Submission approved!',
-      body: `Your work on "${taskResult.task.title}" was approved with a ${rating}/5 rating. Escrow payment is being processed.`,
-      link: `/tasks/${taskId}`,
-    })
-
     revalidatePath('/dashboard')
     revalidatePath(`/tasks/${taskId}`)
     return result
@@ -447,18 +310,6 @@ export async function requestRevision(taskId: string, revisionNote: string) {
     const message = error instanceof Error ? error.message : 'Failed to request revision.'
     console.error('Revision Error:', error)
     throw new Error(message)
-  }
-
-  // Notify developer: revision requested
-  const claimantId = taskResult.task.claimantId
-  if (claimantId) {
-    await createNotification({
-      userId: claimantId,
-      type: 'revision_requested',
-      title: '🔁 Revision requested',
-      body: `The client requested changes on "${taskResult.task.title}": "${revisionNote.slice(0, 80)}${revisionNote.length > 80 ? '…' : ''}".`,
-      link: `/tasks/${taskId}`,
-    })
   }
 
   revalidatePath('/dashboard')

@@ -269,7 +269,7 @@ export default function PostTaskForm() {
                 type="number"
                 required
                 min={100}
-                max={5000}
+                max={100000}
                 placeholder="500"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
@@ -279,7 +279,7 @@ export default function PostTaskForm() {
                 )}
               />
             </div>
-            <p className="text-[9px] font-mono text-white/20 font-black uppercase tracking-wide">Minimum ₹100 · Maximum ₹5,000</p>
+            <p className="text-[9px] font-mono text-white/20 font-black uppercase tracking-wide">Minimum ₹100 · Maximum ₹1,00,000</p>
             {state.errors?.budget && (
               <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3.5 h-3.5" /> {state.errors.budget[0]}

@@ -446,23 +446,29 @@ export default async function DashboardPage() {
 
               <div className="space-y-3.5 font-mono text-[9px] text-white/50 leading-relaxed">
                 <div className="p-2 rounded-xl bg-white/[0.01] border border-white/[0.03]">
-                  <span className="text-accent">[05:14:24]</span> Admin session authenticated. Telemetry node initialized.
+                  <span className="text-emerald-400 font-bold">[OK]</span> Session authenticated. Dashboard telemetry active.
                 </div>
                 <div className="p-2 rounded-xl bg-white/[0.01] border border-white/[0.03]">
-                  <span className="text-accent">[05:14:15]</span> Database URL sync successfully established on port 5433.
+                  <span className="text-accent">[STAT]</span> {isOwner ? `${stats.activeCount} active missions` : `${stats.activeCount} tasks in progress`} · {isOwner ? `${stats.completedCount} completed` : `${stats.completedCount} shipped`}.
                 </div>
                 {isOwner && pendingReviews.length > 0 && (
                   <div className="p-2 rounded-xl bg-accent/[0.02] border border-accent/15 text-accent">
-                    <span className="text-accent font-bold">[WARN]</span> {pendingReviews.length} task submissions awaiting your review code verification.
+                    <span className="text-accent font-bold">[WARN]</span> {pendingReviews.length} developer submission{pendingReviews.length !== 1 ? 's' : ''} awaiting your review.
                   </div>
                 )}
-                {activeTasks.length > 0 && !isOwner && (
+                {isOwner && pendingReviews.length === 0 && (
+                  <div className="p-2 rounded-xl bg-emerald-500/[0.02] border border-emerald-500/10 text-emerald-400">
+                    <span className="font-bold">[OK]</span> All submissions reviewed. No pending actions.
+                  </div>
+                )}
+                {!isOwner && activeTasks.length > 0 && (
                   <div className="p-2 rounded-xl bg-accent/[0.02] border border-accent/15 text-accent">
-                    <span className="text-accent font-bold">[INFO]</span> You have {activeTasks.length} missions in progress. Review deadlines.
+                    <span className="text-accent font-bold">[INFO]</span> You have {activeTasks.length} active mission{activeTasks.length !== 1 ? 's' : ''}. Check deadlines.
                   </div>
                 )}
               </div>
             </div>
+
 
           </div>
 
