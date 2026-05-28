@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { updateProfileSettings, updateTelemetrySettings } from '@/app/(app)/settings/actions'
 import { Save, Sliders, Bell, Laptop, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { toast } from '@/components/shared/Toast'
 
 interface SettingsFormProps {
   userId: string
@@ -67,12 +68,15 @@ export default function SettingsForm({
     const res = await updateTelemetrySettings(userId, type, targetState)
     if (!res.success) {
       setError(res.error || 'Failed to update telemetry settings')
+      toast(res.error || 'Failed to update telemetry settings', 'error')
       // Rollback UI state
       if (type === 'emailAlerts') {
         setEmailAlerts(!targetState)
       } else {
         setSlackWebhooks(!targetState)
       }
+    } else {
+      toast(`${type === 'emailAlerts' ? 'Email alert' : 'Slack integration'} updated!`, 'success')
     }
   }
 
@@ -89,8 +93,10 @@ export default function SettingsForm({
     setLoading(false)
     if (res.success) {
       setSuccess(true)
+      toast('Profile credentials updated successfully!', 'success')
     } else {
       setError(res.error || 'Failed to save settings')
+      toast(res.error || 'Failed to save settings', 'error')
     }
   }
 

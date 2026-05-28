@@ -19,6 +19,7 @@ import { db } from '@/lib/db'
 import { owners, tasks, messages } from '@/lib/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { ensureMessagesTable } from '@/app/(app)/messages/actions'
+import ToastContainer from '@/components/shared/Toast'
 
 export default async function AppLayout({
   children,
@@ -106,6 +107,7 @@ export default async function AppLayout({
         </main>
       </div>
       <LevelUpCelebration />
+      <ToastContainer />
     </DashboardProvider>
   )
 }

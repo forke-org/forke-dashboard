@@ -1,6 +1,6 @@
 'use server'
 
-import { tasks, users, submissions, revisionRequests } from '@/lib/db/schema'
+import { tasks, users, submissions, revisionRequests, escrow } from '@/lib/db/schema'
 import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
@@ -37,6 +37,46 @@ export type SubmitWorkState = {
   githubLink?: string
   error?: string
   success?: boolean
+}
+
+export async function deleteTask(taskId: string) {
+  const session = await auth()
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
+
+  if (!user || user.role !== 'owner') {
+    return { success: false, error: 'Unauthorized. Only clients can delete tasks.' }
+  }
+
+  try {
+    const taskResult = await getTaskById(taskId)
+    if (!taskResult) {
+      return { success: false, error: 'Task not found.' }
+    }
+
+    if (taskResult.task.clientId !== user.id) {
+      return { success: false, error: 'Unauthorized. You do not own this task.' }
+    }
+
+    if (taskResult.task.status !== 'open') {
+      return { success: false, error: 'The task cannot be deleted as it is already accepted by a developer.' }
+    }
+
+    await db.transaction(async (tx) => {
+      // Delete any associated child tables safely
+      await tx.delete(escrow).where(eq(escrow.taskId, taskId))
+      await tx.delete(revisionRequests).where(eq(revisionRequests.taskId, taskId))
+      await tx.delete(submissions).where(eq(submissions.taskId, taskId))
+      // Delete task itself
+      await tx.delete(tasks).where(eq(tasks.id, taskId))
+    })
+
+    revalidatePath('/tasks')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (error) {
+    console.error('Delete Task Error:', error)
+    return { success: false, error: 'Failed to delete task due to database error.' }
+  }
 }
 
 export async function createTask(prevState: CreateTaskState, formData: FormData): Promise<CreateTaskState> {
@@ -91,7 +131,7 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
 
   revalidatePath('/tasks')
   revalidatePath('/dashboard')
-  redirect('/tasks')
+  redirect('/tasks?toast=created')
 }
 
 export async function claimTask(taskId: string) {
@@ -140,7 +180,7 @@ export async function claimTask(taskId: string) {
 
   revalidatePath('/tasks')
   revalidatePath(`/tasks/${taskId}`)
-  redirect(`/tasks/${taskId}`)
+  redirect(`/tasks/${taskId}?toast=claimed`)
 }
 
 export async function submitWork(prevState: SubmitWorkState | null, formData: FormData): Promise<SubmitWorkState> {

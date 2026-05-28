@@ -9,6 +9,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ClaimButton from '@/components/tasks/ClaimButton'
 import SubmitWorkForm from '@/components/tasks/SubmitWorkForm'
+import DeleteTaskButton from '@/components/tasks/DeleteTaskButton'
 import TopBar from '@/components/shared/TopBar'
 import { Calendar, User, Clock, ArrowLeft, AlertCircle, CheckCircle2, Coins } from 'lucide-react'
 
@@ -213,6 +214,15 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                         taskId={task.id} 
                         isLocked={isLevelLocked} 
                         requiredLevel={requiredLevel} 
+                      />
+                    </div>
+                  )}
+
+                  {task.clientId === currentUser?.id && (
+                    <div className="pt-6 border-t border-white/[0.04]">
+                      <DeleteTaskButton 
+                        taskId={task.id} 
+                        isClaimed={task.status !== 'open'} 
                       />
                     </div>
                   )}

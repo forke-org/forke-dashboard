@@ -1,15 +1,5 @@
 'use client'
 
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2 } from 'lucide-react'
@@ -35,7 +25,7 @@ export default function DeleteTaskButton({ taskId, isClaimed }: DeleteTaskButton
 
     if (!confirming) {
       setConfirming(true)
-      toast('Click again to confirm deleting this task.', 'info')
+      toast('Click again to confirm deleting this mission.', 'info')
       return
     }
 
@@ -62,14 +52,14 @@ export default function DeleteTaskButton({ taskId, isClaimed }: DeleteTaskButton
       onClick={handleDelete}
       disabled={loading}
       className={cn(
-        "w-full h-10 border rounded-lg text-[13px] font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50",
-        confirming
-          ? "border-rose-500 bg-rose-500 text-black hover:bg-rose-600"
-          : "border-rose-500/20 bg-rose-500/[0.07] hover:bg-rose-500/10 text-rose-400"
+        "w-full h-11 border rounded-xl font-mono text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50",
+        confirming 
+          ? "border-rose-500 bg-rose-500 text-black hover:bg-rose-600" 
+          : "border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-450 hover:text-rose-400"
       )}
     >
       <Trash2 className="w-3.5 h-3.5" />
-      {loading ? 'Deleting...' : confirming ? 'Confirm delete' : 'Delete task'}
+      {loading ? 'Deleting...' : confirming ? 'Confirm Delete' : 'Delete Mission'}
     </button>
   )
 }

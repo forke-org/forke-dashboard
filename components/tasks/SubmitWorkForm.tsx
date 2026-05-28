@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { CheckCircle2, XCircle, GitPullRequest, Link as LinkIcon, Send, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
+import { toast } from '@/components/shared/Toast'
 
 interface SubmitWorkFormProps {
   taskId: string
@@ -30,6 +31,7 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
 
   useEffect(() => {
     if (state?.success) {
+      toast('Work submitted successfully under review!', 'success')
       router.refresh()
     }
   }, [state, router])
