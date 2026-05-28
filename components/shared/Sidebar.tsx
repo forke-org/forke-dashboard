@@ -1,56 +1,36 @@
 'use client'
 
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  ArrowUpRight,
-  BadgeCheck,
-  BarChart3,
-  Building2,
-  ClipboardList,
-  FileCheck,
-  Flame,
-  Headphones,
-  LayoutDashboard,
+import Image from 'next/image'
+import { 
+  LayoutDashboard, 
+  PlusCircle,
+  Search, 
+  FileCheck, 
+  Wallet, 
+  User, 
+  ChevronLeft, 
+  ChevronRight, 
   LogOut,
-  Mail,
-  Settings,
-  ShieldCheck,
-  User,
-  Users,
-  Wallet,
   X,
+  ShieldCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { signOut } from 'next-auth/react'
 import { useDashboard } from '@/components/dashboard/DashboardContext'
-import { getLevelProgress, getLevelTitle } from '@/lib/utils/xp'
+import { XpBar } from '@/components/ui/XpBar'
+import { getLevelTitle } from '@/lib/utils/xp'
 
-interface SidebarProps {
-  user: {
-    name?: string | null
-    email?: string | null
-    username?: string | null
-    image?: string | null
-    level?: number
-    xp?: number
-    currentStreak?: number
-    role?: 'developer' | 'owner'
-    companyName?: string
-  }
-  pendingSubmissionsCount?: number
-  unreadMessagesCount?: number
-}
+const NAV_LINKS = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Post a Task', href: '/post-task', icon: PlusCircle },
+  { label: 'Browse Tasks', href: '/tasks', icon: Search },
+  { label: 'My Submissions', href: '/submissions', icon: FileCheck },
+  { label: 'Earnings', href: '/earnings', icon: Wallet },
+  { label: 'Profile', href: '/profile', icon: User },
+]
 
 const OWNER_LEVEL_TITLES: Record<number, string> = {
   1: 'Initiator',
@@ -64,195 +44,197 @@ const OWNER_LEVEL_TITLES: Record<number, string> = {
   9: 'Titan',
   10: 'Syndicate',
   11: 'Sovereign',
+  12: 'Sovereign',
+  13: 'Sovereign',
+  14: 'Sovereign',
+  15: 'Sovereign'
 }
 
-type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: number }
+interface SidebarProps {
+  user: {
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    level?: number
+    xp?: number
+    currentStreak?: number
+    role?: 'developer' | 'owner'
+  }
+}
 
-export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessagesCount = 0 }: SidebarProps) {
+export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
-  const { isMobileOpen, setIsMobileOpen } = useDashboard()
-  const isCollapsed = false // the collapse toggle was removed; the sidebar always shows labels
+  const { isMobileOpen, setIsMobileOpen, isCollapsed, setIsCollapsed } = useDashboard()
 
+  const toggleSidebar = () => setIsCollapsed(!isCollapsed)
   const isOwner = user.role === 'owner'
-  const levelTitle = isOwner ? (OWNER_LEVEL_TITLES[user.level || 1] ?? 'Owner') : getLevelTitle(user.level || 1)
-  const progress = Math.round(getLevelProgress(user.xp ?? 0))
-
-  const groups: { title: string; items: NavItem[] }[] = isOwner
-    ? [
-        {
-          title: 'Work',
-          items: [
-            { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-            { label: 'Tasks', href: '/tasks', icon: ClipboardList },
-            { label: 'Submissions', href: '/submissions', icon: FileCheck, badge: pendingSubmissionsCount },
-            { label: 'Developers', href: '/developers', icon: Users },
-            { label: 'Messages', href: '/messages', icon: Mail, badge: unreadMessagesCount },
-          ],
-        },
-        {
-          title: 'Company',
-          items: [
-            { label: 'Escrow', href: '/escrow', icon: ShieldCheck },
-            { label: 'Analytics', href: '/analytics', icon: BarChart3 },
-            { label: 'Company profile', href: '/profile', icon: Building2 },
-            { label: 'Settings', href: '/settings', icon: Settings },
-          ],
-        },
-      ]
-    : [
-        {
-          title: 'Work',
-          items: [
-            { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-            { label: 'Tasks', href: '/tasks', icon: ClipboardList },
-            { label: 'Submissions', href: '/submissions', icon: FileCheck },
-            { label: 'Messages', href: '/messages', icon: Mail, badge: unreadMessagesCount },
-          ],
-        },
-        {
-          title: 'You',
-          items: [
-            { label: 'Profile', href: '/profile', icon: User },
-            { label: 'Earnings', href: '/earnings', icon: Wallet },
-            { label: 'Settings', href: '/settings', icon: Settings },
-          ],
-        },
-      ]
-
-  const isActive = (href: string) =>
-    href === '/dashboard' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`) || (href === '/tasks' && pathname === '/post-task')
+  const levelTitle = isOwner 
+    ? (OWNER_LEVEL_TITLES[user.level || 1] ?? 'Owner') 
+    : getLevelTitle(user.level || 1)
 
   return (
     <>
-      {/* phone backdrop */}
-      {isMobileOpen && <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setIsMobileOpen(false)} />}
+      {/* Backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
 
-      <aside
+      {/* Sidebar Container */}
+      <aside 
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen select-none flex-col border-r border-[var(--color-border)] bg-[#121111] transition-all duration-300 md:sticky',
-          isCollapsed ? 'w-[72px]' : 'w-[248px]',
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+          "fixed md:sticky top-0 left-0 z-50 h-screen bg-[#070709] border-r border-white/[0.05] transition-all duration-350 flex flex-col shadow-2xl md:shadow-none select-none",
+          isCollapsed ? "w-20" : "w-64",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        {/* brand */}
-        <div className="flex h-14 shrink-0 items-center justify-between px-5">
-          <Link href="/dashboard" className="whitespace-nowrap text-[19px] font-semibold tracking-[-0.04em] text-white">
-            {isCollapsed ? 'f' : 'forke'}
-            <span className="text-accent">*</span>
-          </Link>
-          {!isCollapsed && (
-            <span className="hidden rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-white/40 md:inline">
-              {isOwner ? 'Owner' : 'Dev'}
+        {/* Top: Logo & Mobile Close */}
+        <div className="h-20 flex items-center justify-between px-6 border-b border-white/[0.04] relative">
+          <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
+            <span className="font-serif text-2xl text-white tracking-wide">
+              F<span className={cn("transition-all duration-300", isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]")}>ork<span className="text-accent italic">e</span></span>
             </span>
-          )}
-          <button className="p-1.5 text-white/50 hover:text-white md:hidden" aria-label="Close menu" onClick={() => setIsMobileOpen(false)}>
-            <X className="h-5 w-5" />
+          </Link>
+          <button 
+            className="md:hidden p-1.5 text-white/40 hover:text-white transition-colors"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="w-5 h-5" />
           </button>
+
+          {/* Premium top subtle accent line */}
+          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
         </div>
 
-        {/* who */}
-        <div className={cn('px-4', isCollapsed && 'px-3')}>
-          <div className={cn('rounded-xl border border-[var(--color-border)] bg-white/[0.02]', isCollapsed ? 'flex justify-center p-2' : 'p-3')}>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-accent/25 bg-accent/10">
-                {user.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.image} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="font-mono text-xs font-semibold text-accent">{user.name?.[0]?.toUpperCase()}</span>
+        {/* Middle: Navigation */}
+        <nav className="flex-grow py-8 px-4 space-y-2 overflow-y-auto">
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href
+            const Icon = link.icon
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setIsMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden text-xs font-bold uppercase tracking-wider",
+                  isActive 
+                    ? "bg-gradient-to-r from-accent/15 to-accent/[0.01] text-accent border border-accent/15 shadow-[0_4px_20px_rgba(255,122,0,0.03)] pl-4 before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:bg-accent before:rounded-r-full" 
+                    : "text-white/40 hover:bg-white/[0.02] hover:text-white pl-4",
+                  isCollapsed ? "md:justify-center" : "justify-start"
                 )}
-              </div>
-              {!isCollapsed && (
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1 truncate text-[13.5px] text-white">
-                    <span className="truncate">{isOwner ? user.companyName || user.name : user.name}</span>
-                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-accent" />
-                  </p>
-                  <p className="truncate font-mono text-[11px] text-white/40">{user.username ? `@${user.username}` : levelTitle}</p>
-                </div>
-              )}
-            </div>
-            {!isCollapsed && (
-              <>
-                <div className="mt-3 flex justify-between font-mono text-[10.5px] text-white/40">
-                  <span>
-                    Lvl {user.level ?? 1} · {levelTitle}
-                  </span>
-                  {!isOwner && <span>{progress}%</span>}
-                </div>
-                {!isOwner && (
-                  <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.08]">
-                    <div className="h-full rounded-full bg-[linear-gradient(90deg,#a03a02,#FF7A00,#FFA347)]" style={{ width: `${progress}%` }} />
+              >
+                <Icon className={cn("w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:scale-105", isActive ? "text-accent" : "text-white/30 group-hover:text-accent")} />
+                <span className={cn(
+                  "transition-all duration-300",
+                  isCollapsed ? "md:opacity-0 md:w-0" : "opacity-100"
+                )}>
+                  {link.label}
+                </span>
+                
+                {/* Desktop Tooltip when collapsed */}
+                {isCollapsed && (
+                  <div className="hidden md:block absolute left-16 bg-[#0c0c0e] border border-white/10 text-white text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 pointer-events-none z-50 shadow-xl">
+                    {link.label}
                   </div>
                 )}
-                {(user.currentStreak ?? 0) > 1 && (
-                  <p className="mt-2.5 flex items-center gap-1 font-mono text-[10.5px] text-accent-text">
-                    <Flame className="h-3 w-3" /> {user.currentStreak} day streak
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* nav */}
-        <nav className="mt-5 flex-1 space-y-6 overflow-y-auto px-4 pb-4">
-          {groups.map((g) => (
-            <div key={g.title}>
-              {!isCollapsed && <p className="px-3 font-mono text-[10.5px] uppercase tracking-[0.14em] text-white/30">{g.title}</p>}
-              <ul className={cn('space-y-0.5', !isCollapsed && 'mt-2')}>
-                {g.items.map((it) => {
-                  const active = isActive(it.href)
-                  const Icon = it.icon
-                  return (
-                    <li key={it.href}>
-                      <Link
-                        href={it.href}
-                        onClick={() => setIsMobileOpen(false)}
-                        className={cn(
-                          'group relative flex h-9 items-center gap-3 rounded-lg px-3 text-[14px] transition-colors',
-                          active ? 'bg-white/[0.06] text-white' : 'text-white/55 hover:bg-white/[0.03] hover:text-white',
-                          isCollapsed && 'md:justify-center md:px-0',
-                        )}
-                      >
-                        {active && <span className="absolute -left-4 top-2 h-5 w-[3px] rounded-r bg-accent" />}
-                        <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-accent' : 'text-white/40 group-hover:text-white/70')} />
-                        <span className={cn(isCollapsed && 'md:hidden')}>{it.label}</span>
-                        {it.badge ? (
-                          <span className={cn('ml-auto rounded-full bg-accent/15 px-1.5 font-mono text-[11px] text-accent-text', isCollapsed && 'md:absolute md:right-1 md:top-1 md:ml-0')}>{it.badge}</span>
-                        ) : null}
-                        {isCollapsed && (
-                          <span className="pointer-events-none absolute left-14 z-50 hidden whitespace-nowrap rounded-lg border border-white/10 bg-[#1A1919] px-2.5 py-1.5 text-xs text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100 md:block">
-                            {it.label}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          ))}
+              </Link>
+            )
+          })}
         </nav>
 
-        {/* footer */}
-        <div className="shrink-0 space-y-0.5 border-t border-dashed border-[var(--color-border)] px-4 py-3">
-          <Link href="/support" className={cn('flex h-9 items-center gap-3 rounded-lg px-3 text-[13.5px] text-white/45 hover:text-white', isCollapsed && 'md:justify-center md:px-0')}>
-            <Headphones className="h-4 w-4" /> <span className={cn(isCollapsed && 'md:hidden')}>Support</span>
-          </Link>
-          <a href="https://www.forke.space" className={cn('flex h-9 items-center gap-3 rounded-lg px-3 text-[13.5px] text-white/45 hover:text-white', isCollapsed && 'md:justify-center md:px-0')}>
-            <ArrowUpRight className="h-4 w-4" /> <span className={cn(isCollapsed && 'md:hidden')}>forke.space</span>
-          </a>
-          <a
-            href="/api/auth/logout"
-            onClick={(e) => {
-              e.preventDefault()
-              window.location.href = '/api/auth/logout'
-            }}
-            className="flex h-9 items-center gap-3 rounded-lg px-3 text-[13.5px] text-white/45 hover:text-red-300"
-          >
-            <LogOut className="h-4 w-4" /> <span>Sign out</span>
-          </a>
+        {/* Bottom: User Card & Toggle */}
+        <div className="p-4 border-t border-white/[0.04] bg-white/[0.005] relative">
+          <div className="flex items-center gap-3.5 mb-3 min-h-[40px] p-2 rounded-2xl bg-white/[0.01] border border-white/[0.03]">
+            {/* Avatar */}
+            <div className={cn(
+              "w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-accent/10 flex items-center justify-center border border-accent/20 relative shadow-[0_0_12px_rgba(255,122,0,0.08)]",
+              isOwner ? "ring-2 ring-accent/30 ring-offset-2 ring-offset-[#070709]" : ""
+            )}>
+              {user.image ? (
+                <Image src={user.image} alt={user.name || ''} fill className="object-cover" />
+              ) : (
+                <span className="text-xs font-mono text-accent font-bold">
+                  {user.name?.[0]?.toUpperCase()}
+                </span>
+              )}
+            </div>
+          
+            {/* Name + level (only show when expanded) */}
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300 text-left">
+                {isOwner && (
+                  <span className="text-[7.5px] font-black uppercase tracking-[0.2em] px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono w-fit block mb-1">
+                    Founder
+                  </span>
+                )}
+                <p className="text-xs font-black text-white truncate leading-none mb-1.5">
+                  {user.name?.split(' ')[0]}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] font-mono font-black px-1.5 py-0.5 rounded bg-accent text-[#050505] leading-none uppercase">
+                    Lvl {user.level}
+                  </span>
+                  <span className="text-[8.5px] text-white/40 truncate font-black uppercase tracking-wider">
+                    {levelTitle}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* XP bar — only show in expanded sidebar */}
+          {!isCollapsed && (
+            <div className="mb-4 px-2 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
+              <XpBar totalXp={user.xp ?? 0} compact />
+            </div>
+          )}
+          
+          {/* Streak badge — show if streak > 1 */}
+          {!isCollapsed && (user.currentStreak ?? 0) > 1 && (
+            <div className="flex items-center justify-between mb-4 px-2 py-1.5 rounded-xl bg-accent/[0.02] border border-accent/10 animate-in fade-in duration-700 delay-300">
+              <span className="text-[8.5px] text-white/50 font-black uppercase tracking-wider">
+                {user.currentStreak} Day Streak
+              </span>
+              {/* Flame dots — one per milestone hit */}
+              <div className="flex gap-1">
+                {[2, 5, 7, 14, 30].map((m) => (
+                  <div
+                    key={m}
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full ring-1 ring-offset-0',
+                      (user.currentStreak ?? 0) >= m
+                        ? 'bg-accent ring-accent/30 shadow-[0_0_6px_var(--color-accent)]'
+                        : 'bg-white/10 ring-transparent'
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.04]">
+            <button 
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className={cn(
+                "flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-widest text-white/30 hover:text-red-400 transition-colors cursor-pointer",
+                isCollapsed ? "justify-center w-full" : "justify-start"
+              )}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              {!isCollapsed && <span>Sign Out</span>}
+            </button>
+
+            {/* Collapse Toggle (Desktop only) */}
+            <button 
+              onClick={toggleSidebar}
+              className="hidden md:flex items-center justify-center p-2 text-white/30 hover:text-white hover:bg-white/[0.02] rounded-xl transition-colors cursor-pointer"
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </aside>
     </>
