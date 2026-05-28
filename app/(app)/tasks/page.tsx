@@ -44,7 +44,7 @@ export default async function TasksPage({
         </div>
 
         <div className="space-y-8 pt-2">
-          <TaskFilters />
+          <TaskFilters isOwner={isOwner} />
 
           <Suspense fallback={<TaskFeedSkeleton />}>
             <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} />

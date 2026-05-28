@@ -14,18 +14,18 @@ const BUDGET_OPTIONS = [
   { label: 'Under ₹2,500', value: '250000' },
 ]
 
-export default function TaskFilters() {
+export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const currentTags = searchParams.getAll('tag')
-  const currentMaxBudget = searchParams.get('maxBudget') || ''
+  const currentMaxBudget = isOwner ? '' : (searchParams.get('maxBudget') || '')
 
   const updateFilters = (newTags: string[], newMaxBudget: string) => {
     const params = new URLSearchParams()
     newTags.forEach(tag => params.append('tag', tag))
-    if (newMaxBudget) params.set('maxBudget', newMaxBudget)
+    if (newMaxBudget && !isOwner) params.set('maxBudget', newMaxBudget)
     
     // Using simple router push to trigger server-side re-fetch
     router.push(`${pathname}?${params.toString()}`)
@@ -43,6 +43,50 @@ export default function TaskFilters() {
   }
 
   const hasFilters = currentTags.length > 0 || currentMaxBudget !== ''
+
+  if (isOwner) {
+    const currentTag = currentTags[0] || ''
+    const hasOwnerFilters = currentTag !== ''
+
+    return (
+      <div className="bg-[#0b0b0e] p-6 rounded-2xl border border-white/[0.04] shadow-xl text-left select-none max-w-sm">
+        <div className="flex items-end gap-3">
+          <div className="flex-grow space-y-3">
+            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Filter by Skill</h4>
+            <div className="relative">
+              <select
+                value={currentTag}
+                onChange={(e) => updateFilters(e.target.value ? [e.target.value] : [], '')}
+                className="w-full h-11 pl-4 pr-10 bg-white/[0.01] border border-white/5 rounded-xl text-[10px] font-black tracking-wider uppercase text-white/60 outline-none focus:border-accent transition-all appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-[#0b0b0e] text-white">All Skills</option>
+                {SKILL_TAGS.map((tag) => (
+                  <option key={tag} value={tag} className="bg-[#0b0b0e] text-white">
+                    {tag}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {hasOwnerFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center justify-center gap-1.5 text-[9px] font-black text-accent hover:text-white transition-colors h-11 px-4 border border-accent/20 rounded-xl bg-accent/5 hover:bg-accent/10 cursor-pointer tracking-widest uppercase font-mono shrink-0 animate-in fade-in zoom-in-95 duration-250"
+            >
+              <X className="w-3.5 h-3.5 stroke-[3px]" />
+              CLEAR
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 bg-[#0b0b0e] p-6 rounded-2xl border border-white/[0.04] shadow-xl text-left select-none">

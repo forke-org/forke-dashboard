@@ -18,6 +18,7 @@ import PendingApproval from '@/components/auth/PendingApproval'
 import { db } from '@/lib/db'
 import { owners, tasks, messages } from '@/lib/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
+import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 
 export default async function AppLayout({
   children,
@@ -49,6 +50,7 @@ export default async function AppLayout({
 
   // Fetch received messages count for the logged-in user dynamically
   try {
+    await ensureMessagesTable()
     const messageStats = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(messages)
