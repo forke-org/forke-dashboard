@@ -1,13 +1,3 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
@@ -83,73 +73,96 @@ export default async function EarningsPage() {
   const isDev = user.role === 'developer'
   const totalInRs = (n: number) => Math.floor(n / 100).toLocaleString()
 
-  const statCards = [
-    { label: isDev ? 'Total earned' : 'Total disbursed', value: `₹${totalInRs(totalEarned)}`, hint: isDev ? 'Lifetime payouts' : 'Completed project spend', icon: Wallet },
-    { label: isDev ? 'Pending payout' : 'Active escrow', value: `₹${totalInRs(totalPending)}`, hint: isDev ? 'Awaiting client approval' : 'Locked in escrow', icon: Clock },
-    { label: 'Tasks settled', value: `${completedTasks.length}`, hint: 'Verified completions', icon: CheckCircle2 },
-  ]
-
   return (
-    <div className="flex flex-col h-full bg-transparent text-white font-sans">
-      <TopBar title={isDev ? 'Earnings' : 'Finances'} />
-
-      <div className="flex-grow overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
+      <TopBar title={isDev ? 'Earnings Ledger' : 'Financial Overview'} />
+      
+      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="space-y-1 text-left">
-          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
-            {isDev ? 'My earnings' : 'Financial overview'}
+        <div className="space-y-3 text-left">
+          <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
+            {isDev ? 'My ' : 'Capital '}<span className="text-accent italic">{isDev ? 'Earnings' : 'Overview'}</span>
           </h2>
-          <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
+          <p className="text-white/50 text-xs md:text-sm font-light max-w-xl leading-relaxed">
             {isDev
-              ? 'Track payouts from completed tasks and monitor pending earnings awaiting client sign-off.'
-              : 'Review disbursed funds and active escrow across all your posted tasks.'}
+              ? 'Track your accumulated yield from completed missions and monitor pending payouts awaiting client sign-off.'
+              : 'Review disbursed funds and active escrow locks across all your posted missions.'}
           </p>
         </div>
 
         {/* 3-Card Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {statCards.map((card) => {
-            const Icon = card.icon
-            return (
-              <div key={card.label} className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--color-text-muted)]">{card.label}</span>
-                  <Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-                </div>
-                <div className="mt-3">
-                  <h3 className="ui-kpi">{card.value}</h3>
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{card.hint}</p>
-                </div>
-              </div>
-            )
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
+                {isDev ? 'Total Earned' : 'Total Disbursed'}
+              </span>
+              <Wallet className="w-4 h-4 text-accent/50" />
+            </div>
+            <div className="mt-4 leading-none">
+              <h3 className="text-2xl font-mono font-bold text-white">₹{totalInRs(totalEarned)}</h3>
+              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
+                {isDev ? 'Lifetime mission payouts' : 'Completed project spend'}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
+                {isDev ? 'Pending Payout' : 'Active Escrow'}
+              </span>
+              <Clock className="w-4 h-4 text-amber-400/50" />
+            </div>
+            <div className="mt-4 leading-none">
+              <h3 className="text-2xl font-mono font-bold text-white">₹{totalInRs(totalPending)}</h3>
+              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
+                {isDev ? 'Awaiting client approval' : 'Locked in secure vault'}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">Missions Settled</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-400/50" />
+            </div>
+            <div className="mt-4 leading-none">
+              <h3 className="text-2xl font-mono font-bold text-white">{completedTasks.length}</h3>
+              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">Verified completions</p>
+            </div>
+          </div>
         </div>
 
-        {/* Pending Block */}
+        {/* Pending Missions Block */}
         {pendingTasks.length > 0 && (
-          <div className="space-y-3 text-left">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+          <div className="space-y-4 text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-amber-400" />
               </div>
-              <h4 className="text-sm font-medium text-white">Pending confirmation</h4>
+              <div>
+                <h4 className="text-sm font-serif text-white">Pending Confirmation</h4>
+                <p className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
+                  {isDev ? 'Awaiting client approval' : 'Active mission escrow'}
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {pendingTasks.map(task => (
                 <Link
                   key={task.id}
                   href={`/tasks/${task.id}`}
-                  className="flex items-center justify-between p-3.5 rounded-xl border border-[var(--color-border)] bg-white/[0.018] hover:border-white/[0.14] transition-colors group"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-[#0b0b0e] border border-amber-500/10 hover:border-amber-500/25 transition-all group"
                 >
                   <div className="min-w-0">
-                    <h5 className="text-sm font-medium text-white truncate group-hover:text-accent transition-colors">{task.title}</h5>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Under review</p>
+                    <h5 className="text-xs font-bold text-white truncate group-hover:text-amber-300 transition-colors">{task.title}</h5>
+                    <p className="text-[8px] font-mono text-white/30 mt-0.5 uppercase tracking-wider">Under review</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[13px] font-medium tabular-nums text-amber-400">₹{totalInRs(task.budget)}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] group-hover:text-white transition-colors" />
+                    <span className="text-sm font-mono font-bold text-amber-400">₹{totalInRs(task.budget)}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white transition-colors" />
                   </div>
                 </Link>
               ))}
@@ -158,38 +171,43 @@ export default async function EarningsPage() {
         )}
 
         {/* Settled Payouts */}
-        <div className="space-y-3 text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+        <div className="space-y-4 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
               <Coins className="w-4 h-4 text-emerald-400" />
             </div>
-            <h4 className="text-sm font-medium text-white">Settled {isDev ? 'payouts' : 'disbursements'}</h4>
+            <div>
+              <h4 className="text-sm font-serif text-white">Settled {isDev ? 'Payouts' : 'Disbursements'}</h4>
+              <p className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
+                Confirmed & released
+              </p>
+            </div>
           </div>
 
           {completedTasks.length > 0 ? (
-            <div className="border border-[var(--color-border)] rounded-xl overflow-hidden bg-white/[0.018]">
+            <div className="border border-white/[0.04] rounded-2xl overflow-hidden bg-[#0b0b0e] shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[var(--color-border)] text-[11px] text-[var(--color-text-muted)]">
-                      <th className="py-2.5 px-4 font-medium">Task</th>
-                      <th className="py-2.5 px-4 font-medium">Settled date</th>
-                      <th className="py-2.5 px-4 text-right font-medium">Amount (₹)</th>
+                    <tr className="border-b border-white/[0.04] text-[9px] font-black uppercase tracking-widest text-white/30 font-mono bg-white/[0.005]">
+                      <th className="py-3 px-5">Mission Title</th>
+                      <th className="py-3 px-5">Settled Date</th>
+                      <th className="py-3 px-5 text-right">Amount (₹)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--color-border)]">
+                  <tbody className="divide-y divide-white/[0.03]">
                     {completedTasks.map(task => (
-                      <tr key={task.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="py-3 px-4">
-                          <Link href={`/tasks/${task.id}`} className="text-[13px] text-white/85 hover:text-accent transition-colors flex items-center gap-1.5">
+                      <tr key={task.id} className="hover:bg-white/[0.005] transition-colors group">
+                        <td className="py-3.5 px-5">
+                          <Link href={`/tasks/${task.id}`} className="text-xs text-white/80 hover:text-accent transition-colors font-medium flex items-center gap-1.5 group-hover:gap-2.5">
                             {task.title}
-                            <ArrowUpRight className="w-3 h-3 text-[var(--color-text-muted)] group-hover:text-accent" />
+                            <ArrowUpRight className="w-3 h-3 text-white/20 group-hover:text-accent" />
                           </Link>
                         </td>
-                        <td className="py-3 px-4 text-[13px] text-[var(--color-text-muted)] tabular-nums">
+                        <td className="py-3.5 px-5 text-[10px] font-mono text-white/40">
                           {new Date(task.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
-                        <td className="py-3 px-4 text-right font-medium tabular-nums text-emerald-400">
+                        <td className="py-3.5 px-5 text-right font-mono font-bold text-emerald-400">
                           ₹{totalInRs(task.budget)}
                         </td>
                       </tr>
@@ -199,27 +217,26 @@ export default async function EarningsPage() {
               </div>
             </div>
           ) : (
-            <div className="p-10 border border-dashed border-[var(--color-border)] rounded-xl flex flex-col items-center justify-center text-center gap-3 bg-white/[0.01]">
-              <Inbox className="w-6 h-6 text-[var(--color-text-muted)]" />
+            <div className="p-12 border border-white/[0.04] rounded-[2rem] flex flex-col items-center justify-center text-center gap-4 bg-[#0b0b0e] shadow-xl">
+              <Inbox className="w-7 h-7 text-white/20" />
               <div className="space-y-1">
-                <p className="text-white font-medium text-sm">No settled tasks yet</p>
-                <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed max-w-xs">
+                <p className="text-white font-serif text-base">No Settled Missions Yet</p>
+                <p className="text-white/40 text-xs leading-relaxed max-w-xs">
                   {isDev
-                    ? 'Claim and complete tasks to start earning. Approved payouts appear here.'
-                    : 'Post tasks and approve developer work to see disbursements here.'}
+                    ? 'Claim and complete tasks to start earning. Your payouts will appear here once approved by clients.'
+                    : 'Post missions and approve developer work to see your disbursement history here.'}
                 </p>
               </div>
               <Link
                 href={isDev ? '/tasks' : '/post-task'}
-                className="inline-flex items-center h-8 px-3.5 rounded-lg ui-btn-secondary text-[13px] font-medium transition-colors"
+                className="px-5 py-2.5 bg-white/[0.02] border border-white/5 hover:border-accent/40 rounded-xl text-white/60 hover:text-white font-black text-[9px] uppercase tracking-widest transition-all"
               >
-                {isDev ? 'Browse tasks' : 'Post a task'}
+                {isDev ? 'Browse Missions' : 'Post a Mission'}
               </Link>
             </div>
           )}
         </div>
 
-        </div>
       </div>
     </div>
   )
