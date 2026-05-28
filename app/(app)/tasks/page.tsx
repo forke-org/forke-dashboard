@@ -18,7 +18,8 @@ export default async function TasksPage({
   searchParams: Promise<{ tag?: string | string[]; maxBudget?: string }>
 }) {
   const session = await auth()
-  const user = session?.user as { id: string; xp: number } | undefined
+  const user = session?.user as { id: string; xp: number; role?: 'developer' | 'owner' } | undefined
+  const isOwner = user?.role === 'owner'
   const userLevel = getLevelFromXp(user?.xp || 0)
   const params = await searchParams
 
@@ -29,14 +30,16 @@ export default async function TasksPage({
 
   return (
     <div className="flex flex-col h-full bg-[#060608] text-white">
-      <TopBar title="Browse Tasks" />
+      <TopBar title={isOwner ? 'Mission Feed' : 'Browse Tasks'} />
       <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-7xl mx-auto w-full">
         <div className="flex flex-col gap-3 text-left">
           <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-            Browse <span className="text-accent italic">Missions</span>
+            {isOwner ? 'Active ' : 'Browse '}<span className="text-accent italic">{isOwner ? 'Mission Feed' : 'Missions'}</span>
           </h2>
           <p className="text-white/50 text-xs md:text-sm max-w-2xl font-light leading-relaxed">
-            Find work that matches your skills. Claim it. Ship it. Get paid.
+            {isOwner
+              ? 'Browse all active tasks on the platform. Post a new mission to attract top-tier developers.'
+              : 'Find work that matches your skills. Claim it. Ship it. Get paid.'}
           </p>
         </div>
 
@@ -44,7 +47,7 @@ export default async function TasksPage({
           <TaskFilters />
 
           <Suspense fallback={<TaskFeedSkeleton />}>
-            <TaskFeed tasks={tasks} userLevel={userLevel} />
+            <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} />
           </Suspense>
         </div>
       </div>

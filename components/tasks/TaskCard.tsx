@@ -16,6 +16,7 @@ interface TaskCardProps {
   }
   clientName: string
   userLevel: number
+  isOwner?: boolean
 }
 
 function timeAgo(date: Date) {
@@ -34,9 +35,9 @@ function timeAgo(date: Date) {
   return Math.floor(interval) + 'm ago'
 }
 
-export default function TaskCard({ task, clientName, userLevel }: TaskCardProps) {
+export default function TaskCard({ task, clientName, userLevel, isOwner = false }: TaskCardProps) {
   const requiredLevel = getRequiredLevel(task.skillTags ?? [])
-  const isLocked = userLevel < requiredLevel
+  const isLocked = !isOwner && userLevel < requiredLevel
   const budgetInRupees = Math.floor(task.budget / 100)
 
   return (
@@ -81,12 +82,19 @@ export default function TaskCard({ task, clientName, userLevel }: TaskCardProps)
           href={`/tasks/${task.id}`}
           className={cn(
             "flex items-center justify-center gap-2 w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-            isLocked 
-              ? "bg-white/[0.01] text-white/30 border border-white/5 cursor-not-allowed"
-              : "bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_15px_rgba(255,122,0,0.2)] active:translate-y-[1px]"
+            isOwner
+              ? "bg-white/[0.02] border border-white/5 text-white/60 hover:border-accent/40 hover:text-white"
+              : isLocked 
+                ? "bg-white/[0.01] text-white/30 border border-white/5 cursor-not-allowed"
+                : "bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_15px_rgba(255,122,0,0.2)] active:translate-y-[1px]"
           )}
         >
-          {isLocked ? (
+          {isOwner ? (
+            <>
+              View Details
+              <ChevronRight className="w-3.5 h-3.5 stroke-[3px]" />
+            </>
+          ) : isLocked ? (
             <>
               <Lock className="w-3.5 h-3.5 text-white/20" />
               Unlock at LVL {requiredLevel}
