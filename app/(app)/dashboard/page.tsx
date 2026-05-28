@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { tasks } from '@/lib/db/schema'
+import { tasks, submissions } from '@/lib/db/schema'
 import { eq, and, ne, sql } from 'drizzle-orm'
 
 import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
@@ -54,6 +54,7 @@ export default async function DashboardPage() {
   // Dynamic live statistics queries (Founder-grade dashboard stats)
   let ownerStats = { activeCount: 0, completedCount: 0, totalEscrow: 0, totalSpent: 0 }
   let devStats = { activeCount: 0, completedCount: 0, totalEscrow: 0, totalEarned: 0 }
+  let avgTurnaroundHours: number | null = null
 
   try {
     if (user?.role === 'owner') {
@@ -76,6 +77,15 @@ export default async function DashboardPage() {
           ownerStats.totalEscrow += row.sumBudget ? Math.floor(row.sumBudget / 100) : 0
         }
       }
+
+      const ownerTurnaround = await db
+        .select({
+          avgHours: sql<number>`avg(extract(epoch from (${submissions.createdAt} - ${tasks.createdAt})) / 3600)::float`,
+        })
+        .from(tasks)
+        .innerJoin(submissions, eq(submissions.taskId, tasks.id))
+        .where(eq(tasks.clientId, user.id))
+      avgTurnaroundHours = ownerTurnaround[0]?.avgHours ?? null
     } else if (user?.role === 'developer') {
       const statsResult = await db
         .select({
@@ -96,6 +106,15 @@ export default async function DashboardPage() {
           devStats.totalEscrow += row.sumBudget ? Math.floor(row.sumBudget / 100) : 0
         }
       }
+
+      const devTurnaround = await db
+        .select({
+          avgHours: sql<number>`avg(extract(epoch from (${submissions.createdAt} - ${tasks.createdAt})) / 3600)::float`,
+        })
+        .from(tasks)
+        .innerJoin(submissions, eq(submissions.taskId, tasks.id))
+        .where(eq(submissions.developerId, user.id))
+      avgTurnaroundHours = devTurnaround[0]?.avgHours ?? null
     }
   } catch (e) {
     console.error('Failed to load dashboard dynamic stats:', e)
@@ -110,13 +129,13 @@ export default async function DashboardPage() {
     : getLevelTitle(userLevel)
 
   return (
-    <div className="flex flex-col h-full font-sans bg-[#060608] text-white">
+    <div className="flex flex-col h-full font-sans bg-[var(--color-bg)] text-[var(--color-text-primary)]">
       <TopBar title="Dashboard" />
       
       <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none">
         
         {/* Asymmetric Command Hero Section */}
-        <div className="w-full rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] p-8 md:p-10 relative overflow-hidden group shadow-[0_24px_50px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="w-full rounded-[2.5rem] ui-surface p-8 md:p-10 relative overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-1000">
           {/* Subtle design gradients & grid lines */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.005)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.005)_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
@@ -127,9 +146,9 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             {/* Left Column: Contextual Copy */}
             <div className="lg:col-span-7 text-left space-y-4 md:space-y-6">
-              <div className="flex items-center gap-2 bg-accent/[0.03] border border-accent/15 rounded-full px-3 py-1 w-fit">
+              <div className="flex items-center gap-2 ui-surface-soft rounded-full px-3 py-1 w-fit">
                 <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                <span className="text-[8px] text-accent font-black uppercase tracking-[0.2em] font-mono">
+                <span className="text-[9px] text-accent font-semibold uppercase tracking-[0.14em]">
                   {isOwner ? 'Patron Node Active' : 'Builder Session Secure'}
                 </span>
               </div>
@@ -138,7 +157,7 @@ export default async function DashboardPage() {
                 <h2 className="font-serif text-3xl md:text-5xl text-white leading-tight tracking-tight">
                   Welcome back, <span className="text-accent italic font-normal">{firstName}</span>
                 </h2>
-                <p className="text-white/50 text-xs md:text-sm max-w-lg leading-relaxed font-light font-sans">
+                <p className="text-[var(--color-text-muted)] text-xs md:text-sm max-w-lg leading-relaxed font-light font-sans">
                   {isOwner 
                     ? "Launch missions, track code submissions, and accelerate execution with our vetted network of elite developers."
                     : "Claim micro-tasks, ship production code, build reputation, and unlock premium reward pools on the developer board."}
@@ -151,13 +170,13 @@ export default async function DashboardPage() {
                   <>
                     <Link 
                       href="/post-task"
-                      className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-accent text-[#050505] shadow-[0_4px_15px_rgba(255,122,0,0.25)] hover:translate-y-[1px] hover:shadow-[0_4px_25px_rgba(255,122,0,0.35)] transition-all flex items-center gap-2 font-bold"
+                      className="px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-primary transition-all flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4 stroke-[3px]" /> Post a New Mission
                     </Link>
                     <Link 
                       href="/tasks"
-                      className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white hover:bg-white/[0.06] hover:border-white/10 transition-all font-bold"
+                      className="px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-secondary transition-all"
                     >
                       Browse Mission Feed
                     </Link>
@@ -166,13 +185,13 @@ export default async function DashboardPage() {
                   <>
                     <Link 
                       href="/tasks"
-                      className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-accent text-[#050505] shadow-[0_4px_15px_rgba(255,122,0,0.25)] hover:translate-y-[1px] hover:shadow-[0_4px_25px_rgba(255,122,0,0.35)] transition-all flex items-center gap-2 font-bold"
+                      className="px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-primary transition-all flex items-center gap-2"
                     >
                       Browse Open Tasks
                     </Link>
                     <Link 
                       href="/earnings"
-                      className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white hover:bg-white/[0.06] hover:border-white/10 transition-all font-bold"
+                      className="px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-secondary transition-all"
                     >
                       View Financial Ledger
                     </Link>
@@ -206,58 +225,58 @@ export default async function DashboardPage() {
         {/* 4-Card Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-200">
           {/* Card 1: Active Count */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] hover:border-accent/30 transition-all duration-300 flex flex-col justify-between min-h-[140px] group shadow-lg hover:shadow-accent/[0.02]">
+          <div className="p-6 rounded-[2rem] ui-surface hover:border-accent/35 transition-all duration-300 flex flex-col justify-between min-h-[140px] group">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">Active Missions</span>
+              <span className="ui-label">Active Missions</span>
               <Activity className="w-4 h-4 text-accent/50 group-hover:text-accent transition-colors" />
             </div>
             <div className="text-left mt-4">
-              <h3 className="text-3xl font-serif text-white tracking-tight">{stats.activeCount}</h3>
-              <p className="text-[8.5px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">In-progress Telemetry</p>
+              <h3 className="ui-kpi font-serif">{stats.activeCount}</h3>
+              <p className="text-[9px] text-[var(--color-text-muted)]/85 font-medium uppercase tracking-[0.1em] mt-1.5">In-progress telemetry</p>
             </div>
           </div>
 
           {/* Card 2: Completed Count */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] hover:border-accent/30 transition-all duration-300 flex flex-col justify-between min-h-[140px] group shadow-lg hover:shadow-accent/[0.02]">
+          <div className="p-6 rounded-[2rem] ui-surface hover:border-accent/35 transition-all duration-300 flex flex-col justify-between min-h-[140px] group">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">Completed Projects</span>
+              <span className="ui-label">Completed Projects</span>
               <CheckCircle2 className="w-4 h-4 text-accent/50 group-hover:text-accent transition-colors" />
             </div>
             <div className="text-left mt-4">
-              <h3 className="text-3xl font-serif text-white tracking-tight">{stats.completedCount}</h3>
-              <p className="text-[8.5px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">Successfully Shipped</p>
+              <h3 className="ui-kpi font-serif">{stats.completedCount}</h3>
+              <p className="text-[9px] text-[var(--color-text-muted)]/85 font-medium uppercase tracking-[0.1em] mt-1.5">Successfully shipped</p>
             </div>
           </div>
 
           {/* Card 3: Escrow / Claimed */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] hover:border-accent/30 transition-all duration-300 flex flex-col justify-between min-h-[140px] group shadow-lg hover:shadow-accent/[0.02]">
+          <div className="p-6 rounded-[2rem] ui-surface hover:border-accent/35 transition-all duration-300 flex flex-col justify-between min-h-[140px] group">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
+              <span className="ui-label">
                 {isOwner ? 'Escrowed Funds' : 'Active Claims'}
               </span>
               <Coins className="w-4 h-4 text-accent/50 group-hover:text-accent transition-colors" />
             </div>
             <div className="text-left mt-4">
-              <h3 className="text-3xl font-mono text-white tracking-tight font-bold">₹{stats.totalEscrow.toLocaleString()}</h3>
-              <p className="text-[8.5px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
+              <h3 className="ui-kpi">₹{stats.totalEscrow.toLocaleString()}</h3>
+              <p className="text-[9px] text-[var(--color-text-muted)]/85 font-medium uppercase tracking-[0.1em] mt-1.5">
                 {isOwner ? 'Secured active capital' : 'Value of active claims'}
               </p>
             </div>
           </div>
 
           {/* Card 4: Total Spent / Earned */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] hover:border-accent/30 transition-all duration-300 flex flex-col justify-between min-h-[140px] group shadow-lg hover:shadow-accent/[0.02]">
+          <div className="p-6 rounded-[2rem] ui-surface hover:border-accent/35 transition-all duration-300 flex flex-col justify-between min-h-[140px] group">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
+              <span className="ui-label">
                 {isOwner ? 'Disbursed Capital' : 'Accumulated Yield'}
               </span>
               <BarChart3 className="w-4 h-4 text-accent/50 group-hover:text-accent transition-colors" />
             </div>
             <div className="text-left mt-4">
-              <h3 className="text-3xl font-mono text-white tracking-tight font-bold">
+              <h3 className="ui-kpi">
                 ₹{financialTotal.toLocaleString()}
               </h3>
-              <p className="text-[8.5px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
+              <p className="text-[9px] text-[var(--color-text-muted)]/85 font-medium uppercase tracking-[0.1em] mt-1.5">
                 {isOwner ? 'Disbursed payouts' : 'Lifetime payouts earned'}
               </p>
             </div>
@@ -302,13 +321,13 @@ export default async function DashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-16 border border-white/[0.04] rounded-[2rem] flex flex-col items-center text-center gap-4 bg-[#0b0b0e] relative overflow-hidden group shadow-lg">
+                  <div className="p-10 md:p-14 ui-surface rounded-[2rem] flex flex-col items-center text-center gap-5 relative overflow-hidden">
                     {/* Background noise and glows */}
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:20px_20px] opacity-40" />
-                    <div className="absolute -bottom-10 w-44 h-44 bg-accent/[0.015] rounded-full blur-[80px]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:20px_20px] opacity-40 pointer-events-none" />
+                    <div className="absolute -bottom-10 w-44 h-44 bg-accent/[0.015] rounded-full blur-[80px] pointer-events-none" />
 
-                    <div className="w-16 h-16 rounded-full bg-white/[0.01] border border-white/[0.05] flex items-center justify-center text-white/30 relative group overflow-hidden shadow-inner">
-                      <CheckCircle2 className="w-7 h-7 relative z-10 text-white/30 group-hover:text-accent transition-colors duration-300" />
+                    <div className="w-16 h-16 rounded-full bg-white/[0.01] border border-white/[0.05] flex items-center justify-center text-white/30 relative overflow-hidden shadow-inner">
+                      <CheckCircle2 className="w-7 h-7 relative z-10 text-white/30" />
                     </div>
                     <div className="space-y-1 relative z-10 max-w-sm">
                       <p className="text-white text-base font-serif tracking-wide">All Caught Up!</p>
@@ -318,7 +337,7 @@ export default async function DashboardPage() {
                     </div>
                     <Link 
                       href="/post-task" 
-                      className="mt-2 px-5 py-2.5 bg-white/[0.02] border border-white/5 hover:border-accent/40 rounded-xl text-white/60 hover:text-white font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer"
+                      className="mt-2 px-5 py-2.5 rounded-xl ui-btn-primary text-[10px] font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer relative z-10"
                     >
                       Post Another Task
                     </Link>
@@ -357,11 +376,11 @@ export default async function DashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-16 border border-white/[0.04] rounded-[2rem] flex flex-col items-center text-center gap-4 bg-[#0b0b0e] relative overflow-hidden group shadow-lg">
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:20px_20px] opacity-40" />
-                    <div className="absolute -bottom-10 w-44 h-44 bg-accent/[0.015] rounded-full blur-[80px]" />
+                  <div className="p-10 md:p-14 ui-surface rounded-[2rem] flex flex-col items-center text-center gap-5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:20px_20px] opacity-40 pointer-events-none" />
+                    <div className="absolute -bottom-10 w-44 h-44 bg-accent/[0.015] rounded-full blur-[80px] pointer-events-none" />
 
-                    <div className="w-16 h-16 rounded-full bg-white/[0.01] border border-white/[0.05] flex items-center justify-center text-white/30 relative group overflow-hidden shadow-inner">
+                    <div className="w-16 h-16 rounded-full bg-white/[0.01] border border-white/[0.05] flex items-center justify-center text-white/30 relative overflow-hidden shadow-inner">
                       <AlertCircle className="w-7 h-7 relative z-10 text-white/30" />
                     </div>
                     <div className="space-y-1 relative z-10 max-w-sm">
@@ -372,7 +391,7 @@ export default async function DashboardPage() {
                     </div>
                     <Link 
                       href="/tasks" 
-                      className="mt-2 px-5 py-2.5 bg-white/[0.02] border border-white/5 hover:border-accent/40 rounded-xl text-white/60 hover:text-white font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer"
+                      className="mt-2 px-5 py-2.5 rounded-xl ui-btn-secondary text-[10px] font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer relative z-10"
                     >
                       Browse Mission Feed
                     </Link>
@@ -386,12 +405,12 @@ export default async function DashboardPage() {
           <div className="lg:col-span-4 space-y-6">
             
             {/* Gamified Streak & Milestones Widget */}
-            <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] shadow-lg text-left relative overflow-hidden group">
+            <div className="p-6 rounded-[2.5rem] ui-surface text-left relative overflow-hidden group">
               {/* Subtle top edge glow border */}
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent pointer-events-none" />
 
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono">Performance Node</h4>
+                <h4 className="ui-label">Performance Node</h4>
                 <Award className="w-4 h-4 text-accent/70" />
               </div>
 
@@ -406,7 +425,9 @@ export default async function DashboardPage() {
                       {isOwner ? 'Review Streak' : 'Commit Streak'}
                     </h5>
                     <p className="text-[10px] text-white/40 font-bold mt-1 font-sans">
-                      {isOwner ? 'Fast Review streak: 7 days' : `${user?.currentStreak || 0} consecutive activity days`}
+                      {(user?.currentStreak || 0) > 0
+                        ? `${user?.currentStreak || 0} consecutive activity days`
+                        : 'No streak yet'}
                     </p>
                   </div>
                 </div>
@@ -424,7 +445,9 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-white/40">
                     <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-accent" /> Review Speed</span>
-                    <span className="text-emerald-400 font-mono">Avg &lt; 4 hrs</span>
+                    <span className="text-emerald-400 font-mono">
+                      {avgTurnaroundHours ? `Avg ${Math.max(1, Math.round(avgTurnaroundHours))} hrs` : 'No data yet'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-white/40">
                     <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-accent" /> Active Projects</span>
@@ -435,9 +458,9 @@ export default async function DashboardPage() {
             </div>
 
             {/* Live Operations Telemetry Log */}
-            <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] shadow-lg text-left relative overflow-hidden group">
+            <div className="p-6 rounded-[2.5rem] ui-surface text-left relative overflow-hidden group">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono">Operational Logs</h4>
+                <h4 className="ui-label">Operational Logs</h4>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
                   <span className="text-[7.5px] font-black uppercase text-emerald-400 tracking-wider font-mono">Live</span>

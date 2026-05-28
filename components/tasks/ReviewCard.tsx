@@ -66,7 +66,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
   }
 
   return (
-    <div className="bg-[#0b0b0e] border border-white/[0.04] rounded-3xl p-8 space-y-8 hover:border-accent/40 transition-all duration-300 group shadow-xl relative overflow-hidden text-left select-none">
+    <div className="ui-surface rounded-3xl p-8 space-y-8 hover:border-accent/40 transition-all duration-300 group relative overflow-hidden text-left select-none">
       <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
@@ -79,14 +79,14 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                <h3 className="text-xl font-serif text-white leading-none tracking-tight">
                  {task.title}
                </h3>
-               <div className="flex items-center gap-2 mt-2.5 text-[9px] font-black text-white/40 uppercase tracking-widest leading-none font-mono">
+               <div className="flex items-center gap-2 mt-2.5 text-[9px] font-semibold text-white/40 uppercase tracking-[0.12em] leading-none">
                  <User className="w-3.5 h-3.5 text-accent" />
                  Submitted by <span className="text-white font-bold">{claimantName}</span>
                </div>
              </div>
           </div>
           
-          <div className="flex items-center gap-4 text-[10px] font-mono font-black uppercase tracking-wider text-white/40">
+          <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               {new Date(submission.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -103,8 +103,8 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
           className="flex items-center gap-4 px-5 py-3 bg-white/[0.01] border border-white/5 hover:border-accent/40 rounded-2xl transition-all group/link shrink-0 cursor-pointer"
         >
           <div className="flex flex-col text-left">
-            <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] leading-none mb-1.5 font-mono">Source Code</span>
-            <span className="text-xs font-mono text-white/80 group-hover/link:text-accent transition-colors truncate max-w-[200px]">
+            <span className="text-[8px] font-semibold text-white/35 uppercase tracking-[0.12em] leading-none mb-1.5">Source Code</span>
+            <span className="text-xs text-white/80 group-hover/link:text-accent transition-colors truncate max-w-[200px]">
               {submission.githubLink.replace('https://', '')}
             </span>
           </div>
@@ -124,7 +124,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
       {showRevisionInput ? (
         <div className="space-y-4 animate-in slide-in-from-top-2 duration-300 relative z-10">
            <div className="space-y-2 text-left">
-             <label className="text-[9px] font-black text-white/40 uppercase tracking-widest pl-1 font-mono">What needs to be fixed?</label>
+             <label className="text-[9px] font-semibold text-white/40 uppercase tracking-[0.12em] pl-1">What needs to be fixed?</label>
              <textarea 
                autoFocus
                value={revisionNote}
@@ -137,14 +137,14 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
              <Button 
                onClick={handleRevision} 
                disabled={isPending || !revisionNote}
-               className="flex-1 h-12 text-[10px] font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_12px_rgba(255,122,0,0.2)] transition-all font-bold cursor-pointer"
+               className="flex-1 h-12 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-primary transition-all cursor-pointer"
              >
                SEND REVISION REQUEST
              </Button>
              <Button 
                variant="outline" 
                onClick={() => setShowRevisionInput(false)}
-               className="px-6 h-12 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.01] text-white/60 hover:text-white hover:border-white/20 transition-all cursor-pointer"
+               className="px-6 h-12 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-secondary transition-all cursor-pointer"
              >
                CANCEL
              </Button>
@@ -154,9 +154,9 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
         <div className="space-y-8 relative z-10">
           <div className="p-6 bg-white/[0.005] rounded-[2rem] border border-white/[0.03] space-y-4 text-center">
             <div className="flex items-center justify-between">
-              <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Quality Rating</label>
+              <label className="text-[9px] font-semibold text-white/35 uppercase tracking-[0.12em]">Quality Rating</label>
               {rating && (
-                <span className="text-[9px] font-black text-accent uppercase tracking-widest animate-in fade-in slide-in-from-right-1 font-mono">
+                <span className="text-[9px] font-semibold text-accent uppercase tracking-[0.12em] animate-in fade-in slide-in-from-right-1">
                   {['', 'Needs work', 'Below average', 'Good', 'Great', 'Outstanding'][rating]}
                 </span>
               )}
@@ -193,9 +193,9 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
               onClick={() => handleApprove(rating!)} 
               disabled={isPending || !rating}
               className={cn(
-                "h-13 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5",
+                "h-13 rounded-xl text-[10px] font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer flex items-center justify-center gap-1.5",
                 rating 
-                  ? "bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_12px_rgba(255,122,0,0.2)]" 
+                  ? "ui-btn-primary" 
                   : "bg-white/[0.01] text-white/20 border border-white/5 cursor-not-allowed shadow-none"
               )}
             >
@@ -206,7 +206,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
               variant="outline" 
               onClick={() => setShowRevisionInput(true)}
               disabled={isPending}
-              className="h-13 rounded-xl border border-white/5 bg-white/[0.01] text-white/60 hover:text-white hover:border-accent/40 transition-all font-black text-[10px] uppercase tracking-widest cursor-pointer flex items-center justify-center gap-1.5"
+              className="h-13 rounded-xl ui-btn-secondary transition-all font-semibold text-[10px] uppercase tracking-[0.12em] cursor-pointer flex items-center justify-center gap-1.5"
             >
               <GitPullRequest className="w-4 h-4" />
               REQUEST REVISION

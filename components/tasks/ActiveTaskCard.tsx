@@ -26,7 +26,7 @@ export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
   return (
     <Link 
       href={`/tasks/${task.id}`}
-      className="block bg-[#0b0b0e] border border-white/[0.04] rounded-2xl p-6 hover:border-accent/30 hover:shadow-2xl hover:shadow-accent/[0.005] transition-all group relative overflow-hidden select-none text-left"
+      className="block ui-surface rounded-2xl p-6 hover:border-accent/35 hover:shadow-2xl hover:shadow-accent/[0.06] transition-all group relative overflow-hidden select-none text-left"
     >
       <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -34,7 +34,7 @@ export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
         <div className="flex-1 min-w-0 space-y-3">
           <div className="flex items-center gap-3">
             <span className={cn(
-              "px-2 py-0.5 rounded text-[8.5px] font-black border font-mono tracking-widest leading-none",
+              "px-2 py-0.5 rounded text-[8.5px] font-semibold border tracking-[0.12em] leading-none",
               config.color
             )}>
               {config.label}
@@ -45,8 +45,8 @@ export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
             {task.title}
           </h4>
 
-          <div className="flex items-center gap-4 text-[10px] font-mono font-black uppercase tracking-wider text-white/40">
-            <div className="flex items-center gap-1.5 text-accent font-bold">
+          <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
+            <div className="flex items-center gap-1.5 text-accent font-semibold">
                ₹ {Math.floor(task.budget / 100).toLocaleString()}
             </div>
           </div>

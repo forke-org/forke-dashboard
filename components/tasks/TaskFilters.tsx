@@ -49,15 +49,15 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
     const hasOwnerFilters = currentTag !== ''
 
     return (
-      <div className="bg-[#0b0b0e] p-6 rounded-2xl border border-white/[0.04] shadow-xl text-left select-none max-w-sm">
+      <div className="ui-surface p-6 rounded-2xl text-left select-none max-w-sm">
         <div className="flex items-end gap-3">
           <div className="flex-grow space-y-3">
-            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Filter by Skill</h4>
+            <h4 className="ui-label">Filter by Skill</h4>
             <div className="relative">
               <select
                 value={currentTag}
                 onChange={(e) => updateFilters(e.target.value ? [e.target.value] : [], '')}
-                className="w-full h-11 pl-4 pr-10 bg-white/[0.01] border border-white/5 rounded-xl text-[10px] font-black tracking-wider uppercase text-white/60 outline-none focus:border-accent transition-all appearance-none cursor-pointer"
+                className="w-full h-11 pl-4 pr-10 bg-white/[0.01] border border-white/5 rounded-xl text-[10px] font-semibold tracking-[0.1em] uppercase text-white/70 outline-none focus:border-accent transition-all appearance-none cursor-pointer"
               >
                 <option value="" className="bg-[#0b0b0e] text-white">All Skills</option>
                 {SKILL_TAGS.map((tag) => (
@@ -77,7 +77,7 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
           {hasOwnerFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center justify-center gap-1.5 text-[9px] font-black text-accent hover:text-white transition-colors h-11 px-4 border border-accent/20 rounded-xl bg-accent/5 hover:bg-accent/10 cursor-pointer tracking-widest uppercase font-mono shrink-0 animate-in fade-in zoom-in-95 duration-250"
+              className="flex items-center justify-center gap-1.5 text-[9px] font-semibold text-accent hover:text-[#ffe3c5] transition-colors h-11 px-4 border border-accent/25 rounded-xl bg-accent/10 hover:bg-accent/15 cursor-pointer tracking-[0.12em] uppercase shrink-0 animate-in fade-in zoom-in-95 duration-250"
             >
               <X className="w-3.5 h-3.5 stroke-[3px]" />
               CLEAR
@@ -89,12 +89,12 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
   }
 
   return (
-    <div className="space-y-6 bg-[#0b0b0e] p-6 rounded-2xl border border-white/[0.04] shadow-xl text-left select-none">
+    <div className="space-y-6 ui-surface p-6 rounded-2xl text-left select-none">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Skill Tags */}
         <div className="flex-grow space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Filter by Skill</h4>
+            <h4 className="ui-label">Filter by Skill</h4>
             {hasFilters && (
               <button
                 onClick={clearFilters}
@@ -112,10 +112,10 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all duration-200 cursor-pointer font-mono",
+                    "px-3.5 py-1.5 rounded-xl text-[10px] font-semibold uppercase tracking-[0.1em] border transition-all duration-200 cursor-pointer",
                     isActive
                       ? "bg-accent border-accent text-[#050505] shadow-[0_0_12px_rgba(255,122,0,0.2)]"
-                      : "bg-white/[0.01] border-white/5 text-white/40 hover:border-accent/40 hover:text-white"
+                      : "bg-white/[0.01] border-white/5 text-white/40 hover:border-accent/45 hover:text-white"
                   )}
                 >
                   {tag}
@@ -128,12 +128,12 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
         {/* Budget & Clear */}
         <div className="flex items-end gap-3 shrink-0">
           <div className="space-y-3 w-full sm:w-48">
-            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Max Budget</h4>
+            <h4 className="ui-label">Max Budget</h4>
             <div className="relative">
               <select
                 value={currentMaxBudget}
                 onChange={(e) => updateFilters(currentTags, e.target.value)}
-                className="w-full h-11 pl-3 pr-8 bg-white/[0.01] border border-white/5 rounded-xl text-[10px] font-black tracking-wider uppercase text-white/60 outline-none focus:border-accent transition-all appearance-none cursor-pointer"
+                className="w-full h-11 pl-3 pr-8 bg-white/[0.01] border border-white/5 rounded-xl text-[10px] font-semibold tracking-[0.1em] uppercase text-white/70 outline-none focus:border-accent transition-all appearance-none cursor-pointer"
               >
                 {BUDGET_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value} className="bg-[#0b0b0e] text-white">
@@ -152,7 +152,7 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="hidden lg:flex items-center gap-1.5 text-[9px] font-black text-accent hover:text-white transition-colors h-11 px-3 border border-accent/20 rounded-xl bg-accent/5 hover:bg-accent/10 cursor-pointer tracking-widest uppercase font-mono"
+              className="hidden lg:flex items-center gap-1.5 text-[9px] font-semibold text-accent hover:text-[#ffe3c5] transition-colors h-11 px-3 border border-accent/25 rounded-xl bg-accent/10 hover:bg-accent/15 cursor-pointer tracking-[0.12em] uppercase"
             >
               <X className="w-3.5 h-3.5 stroke-[3px]" />
               CLEAR
