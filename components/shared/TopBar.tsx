@@ -1,5 +1,4 @@
 import { auth } from '@/auth'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Bell, Wallet, Zap } from 'lucide-react'
 import MobileMenuTrigger from '../dashboard/MobileMenuTrigger'
@@ -26,17 +25,9 @@ function formatRelativeTime(value: Date | null | undefined) {
 
 export default async function TopBar({ title }: TopBarProps) {
   const session = await auth()
-  const user = session?.user as { id: string; name: string; role: 'developer' | 'owner'; image?: string } | undefined
+  const user = session?.user as { id: string; name: string; role: 'developer' | 'owner' } | undefined
 
   if (!user) return null
-
-  const initials = user.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join('')
-    : '?'
 
   const isOwner = user.role === 'owner'
 
@@ -229,21 +220,6 @@ export default async function TopBar({ title }: TopBarProps) {
             </div>
           </div>
         </details>
-        
-        {/* User Avatar */}
-        <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/[0.06] bg-accent/10 flex items-center justify-center shadow-inner shrink-0">
-          {user.image ? (
-            <Image 
-              src={user.image} 
-              alt={user.name || 'User'} 
-              fill 
-              className="object-cover select-none pointer-events-none"
-              draggable={false}
-            />
-          ) : (
-            <span className="text-accent font-semibold text-sm uppercase">{initials}</span>
-          )}
-        </div>
       </div>
     </header>
   )

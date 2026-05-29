@@ -35,22 +35,26 @@ export async function updateTelemetrySettings(userId: string, type: 'emailAlerts
 }
 
 export async function getSystemSpecs() {
+  const start = Date.now()
+  let databaseState = 'disconnected'
+  
   try {
-    const start = Date.now()
-    await db.execute(sql`SELECT 1`)
-    const latency = Date.now() - start
-    return {
-      databaseState: 'connected',
-      dbLatencyMs: latency,
-      runtimeVersion: `nextjs v15.5.15`
-    }
+    await Promise.race([
+      db.execute(sql`SELECT 1`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+    ])
+    databaseState = 'connected'
   } catch (error) {
     console.error('Database connection test failed:', error)
-    return {
-      databaseState: 'disconnected',
-      dbLatencyMs: 0,
-      runtimeVersion: `nextjs v15.5.15`
-    }
+    databaseState = 'disconnected'
+  }
+  
+  const latency = Date.now() - start
+  
+  return {
+    databaseState,
+    dbLatencyMs: latency,
+    runtimeVersion: `nextjs v15.5.15`
   }
 }
 

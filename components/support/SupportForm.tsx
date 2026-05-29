@@ -1,21 +1,44 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { submitSupportEnquiry } from '@/app/(app)/support/actions'
 import { Headphones, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 export default function SupportForm() {
+  const { data: session } = useSession()
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    contactEmail: '',
+    contactNumber: '',
+    errorType: 'General',
+    relevantLinks: '',
+    message: ''
+  })
+
+  useEffect(() => {
+    if (session?.user) {
+      const nameParts = (session.user.name || '').split(' ')
+      setFormData(prev => ({
+        ...prev,
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        contactEmail: session.user.email || ''
+      }))
+    }
+  }, [session])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
     
-    const formData = new FormData(e.currentTarget)
-    const res = await submitSupportEnquiry(formData)
+    const form = new FormData(e.currentTarget)
+    const res = await submitSupportEnquiry(form)
     
     setLoading(false)
     if (res.success) {
@@ -23,6 +46,11 @@ export default function SupportForm() {
     } else {
       setError(res.error || 'Something went wrong')
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   return (
@@ -36,6 +64,9 @@ export default function SupportForm() {
             <h3 className="font-serif text-2xl text-white">Ticket Submitted</h3>
             <p className="text-white/40 text-xs leading-relaxed">
               Your support request has been logged in our secure telemetry table. An agent will respond shortly.
+            </p>
+            <p className="text-white/60 text-xs leading-relaxed pt-2">
+              For further queries contact: <span className="text-accent font-semibold">support@forke.space</span>
             </p>
           </div>
           <button 
@@ -77,6 +108,8 @@ export default function SupportForm() {
                   name="firstName"
                   type="text" 
                   required
+                  value={formData.firstName}
+                  onChange={handleInputChange}
                   className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
                 />
               </div>
@@ -86,6 +119,8 @@ export default function SupportForm() {
                   name="lastName"
                   type="text" 
                   required
+                  value={formData.lastName}
+                  onChange={handleInputChange}
                   className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
                 />
               </div>
@@ -98,6 +133,8 @@ export default function SupportForm() {
                   name="contactEmail"
                   type="email" 
                   required
+                  value={formData.contactEmail}
+                  onChange={handleInputChange}
                   className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
                 />
               </div>
@@ -106,6 +143,7 @@ export default function SupportForm() {
                 <input 
                   name="contactNumber"
                   type="text" 
+                  onChange={handleInputChange}
                   className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
                 />
               </div>

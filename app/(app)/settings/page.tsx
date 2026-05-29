@@ -6,6 +6,8 @@ import { eq } from 'drizzle-orm'
 import SettingsForm from '@/components/settings/SettingsForm'
 import { ensureTelemetrySettingsColumns, getSystemSpecs } from '@/app/(app)/settings/actions'
 
+export const maxDuration = 10;
+
 export default async function SettingsPage() {
   const session = await auth()
   const sessionUser = session?.user
@@ -15,21 +17,41 @@ export default async function SettingsPage() {
   // Ensure telemetry database columns are present
   await ensureTelemetrySettingsColumns()
   
-  // Fetch live system specs
-  const systemSpecs = await getSystemSpecs()
+  // Fetch live system specs with timeout protection
+  let systemSpecs = {
+    databaseState: 'disconnected',
+    dbLatencyMs: 0,
+    runtimeVersion: `nextjs v15.5.15`
+  }
+  
+  try {
+    systemSpecs = await getSystemSpecs()
+  } catch (e) {
+    console.error('Failed to get system specs:', e)
+  }
 
   // Fetch full user record
-  const dbUser = await db.query.users.findFirst({
-    where: eq(users.id, sessionUser.id)
-  })
+  let dbUser = null
+  try {
+    dbUser = await db.query.users.findFirst({
+      where: eq(users.id, sessionUser.id)
+    })
+  } catch (e) {
+    console.error('Failed to fetch user:', e)
+    return <div className="text-white p-4">Failed to load user data</div>
+  }
 
   if (!dbUser) return null
 
   let ownerDetails = null
   if (sessionUser.role === 'owner') {
-    ownerDetails = await db.query.owners.findFirst({
-      where: eq(owners.id, sessionUser.id)
-    })
+    try {
+      ownerDetails = await db.query.owners.findFirst({
+        where: eq(owners.id, sessionUser.id)
+      })
+    } catch (e) {
+      console.error('Failed to fetch owner details:', e)
+    }
   }
 
   return (
