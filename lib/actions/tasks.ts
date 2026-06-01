@@ -158,6 +158,7 @@ export async function claimTask(taskId: string) {
     .set({
       status: 'claimed',
       claimantId: user.id,
+      claimedAt: new Date(),
     })
     .where(and(eq(tasks.id, taskId), eq(tasks.status, 'open')))
     .returning()

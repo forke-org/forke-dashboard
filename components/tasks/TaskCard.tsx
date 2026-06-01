@@ -12,10 +12,15 @@ interface TaskCardProps {
     budget: number
     skillTags: string[] | null
     createdAt: Date
+    status: string
+    claimantId?: string | null
+    claimedAt?: Date | null
   }
   clientName: string
   userLevel?: number
   isOwner?: boolean
+  claimantName?: string | null
+  claimantUsername?: string | null
 }
 
 function timeAgo(date: Date) {
@@ -34,7 +39,14 @@ function timeAgo(date: Date) {
   return Math.floor(interval) + 'm ago'
 }
 
-export default function TaskCard({ task, clientName, userLevel, isOwner = false }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  clientName,
+  userLevel,
+  isOwner = false,
+  claimantName,
+  claimantUsername,
+}: TaskCardProps) {
   const budgetInRupees = Math.floor(task.budget / 100)
 
   return (
@@ -61,21 +73,45 @@ export default function TaskCard({ task, clientName, userLevel, isOwner = false 
       </div>
 
       <div className="mt-auto space-y-3.5">
-        <div className={cn(
-          "flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5",
-          isOwner && "justify-end"
-        )}>
-          {!isOwner && (
-            <div className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" />
-              <span>by <span className="text-white/70">{clientName}</span></span>
+        {/* Claimant Info if Claimed and viewed by Owner */}
+        {isOwner && task.status !== 'open' && claimantName && (
+          <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
+            <div className="flex items-center gap-1.5 text-amber-500 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <span>
+                Claimed by{' '}
+                <Link
+                  href={claimantUsername ? `/${claimantUsername}` : `/profile/${task.claimantId || ''}`}
+                  className="text-white hover:text-accent font-semibold transition-colors underline decoration-white/20 hover:decoration-accent/40"
+                >
+                  {claimantName}
+                </Link>
+              </span>
             </div>
-          )}
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{timeAgo(task.createdAt)}</span>
+            <span className="text-[var(--color-text-muted)] font-mono text-[10px]">
+              {timeAgo(task.claimedAt || task.createdAt)}
+            </span>
           </div>
-        </div>
+        )}
+
+        {/* Default Client/Created row (only if not claimed or developer is viewing) */}
+        {(!isOwner || task.status === 'open') && (
+          <div className={cn(
+            "flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5",
+            isOwner && "justify-end"
+          )}>
+            {!isOwner && (
+              <div className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5" />
+                <span>by <span className="text-white/70">{clientName}</span></span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{timeAgo(task.createdAt)}</span>
+            </div>
+          </div>
+        )}
 
         <Link
           href={`/tasks/${task.id}`}

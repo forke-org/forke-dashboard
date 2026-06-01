@@ -29,7 +29,7 @@ export default async function TasksPage({
   const maxBudget = params.maxBudget ? parseInt(params.maxBudget) : undefined
   const q = params.q || ''
 
-  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q })
+  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: isOwner })
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-[var(--color-text-primary)]">
