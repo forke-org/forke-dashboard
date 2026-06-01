@@ -115,7 +115,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50" ref={modalRef}>
+    <div className="fixed top-4 right-4 z-50" ref={modalRef}>
       {/* Floating Bell Button */}
       <button
         onClick={handleOpen}
@@ -136,7 +136,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
 
       {/* Modal */}
       {open && (
-        <div className="absolute bottom-14 right-0 w-80 rounded-xl border border-[var(--color-border)] bg-[#0f0f11] shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+        <div className="absolute top-14 right-0 w-80 rounded-xl border border-[var(--color-border)] bg-[#0f0f11] shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
             <div className="flex items-center gap-2">
