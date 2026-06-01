@@ -4,7 +4,8 @@ import { db } from '@/lib/db'
 import { users, owners, tasks } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
-import { Building2, Globe, Mail, Phone, User, Award, Shield, FileCheck, Calendar } from 'lucide-react'
+import { Globe, Mail, Phone, Shield, Calendar } from 'lucide-react'
+import CopyProfileButton from '@/components/shared/CopyProfileButton'
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -50,19 +51,17 @@ export default async function ProfilePage() {
   const isOwner = sessionUser.role === 'owner'
 
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title={isOwner ? "Company Profile" : "Developer Profile"} />
-      
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-4xl mx-auto w-full">
-        
-        {/* Profile Header */}
-        <div className="p-8 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] relative overflow-hidden text-left shadow-2xl">
-          <div className="absolute right-0 top-0 w-80 h-80 bg-accent/[0.02] rounded-full blur-[80px] pointer-events-none" />
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <TopBar title="Profile" />
 
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
+      <div className="flex-grow overflow-y-auto">
+       <div className="mx-auto max-w-4xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+
+        {/* Profile Header */}
+        <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] text-left">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
             {/* Avatar Circle */}
-            <div className="w-20 h-20 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center text-accent text-3xl font-serif shadow-inner shrink-0">
+            <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center text-accent text-2xl font-medium shrink-0 overflow-hidden">
               {dbUser?.image ? (
                 <img src={dbUser.image} alt={dbUser.name} className="w-full h-full object-cover rounded-full" />
               ) : (
@@ -71,25 +70,29 @@ export default async function ProfilePage() {
             </div>
 
             {/* Profile Info */}
-            <div className="flex-1 min-w-0 text-center sm:text-left space-y-2.5">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-                <h3 className="font-serif text-2xl md:text-3xl text-white tracking-wide">
+            <div className="flex-1 min-w-0 text-center sm:text-left space-y-2">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+                <h3 className="text-lg md:text-xl font-semibold text-white tracking-tight">
                   {isOwner ? (ownerDetails?.companyName || 'Acme Labs') : dbUser?.name}
                 </h3>
-                {isOwner && (
-                  <span className="px-2.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-accent text-[9px] font-black uppercase tracking-wider font-mono">
-                    Verified Employer
+                {isOwner ? (
+                  <span className="px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent text-[11px] font-medium">
+                    Verified employer
                   </span>
+                ) : (
+                  dbUser?.username && (
+                    <CopyProfileButton username={dbUser.username} />
+                  )
                 )}
               </div>
 
-              <p className="text-white/40 text-xs max-w-md font-light leading-relaxed">
-                {isOwner 
+              <p className="text-[13px] text-white/50 max-w-md leading-relaxed">
+                {isOwner
                   ? `Managed by ${ownerDetails?.firstName || ''} ${ownerDetails?.lastName || ''} (${ownerDetails?.designation || 'Founder'})`
-                  : (dbUser?.bio || "Elite developer building next-gen web products on the Forke network.")}
+                  : (dbUser?.bio || "Developer building products on the Forke network.")}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-2 pt-2 text-[9.5px] font-black uppercase tracking-wider text-white/50 font-mono">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 pt-1 text-[11px] text-[var(--color-text-muted)]">
                 <div className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-accent" />
                   <span>{isOwner ? ownerDetails?.contactEmail : dbUser?.email}</span>
@@ -110,59 +113,59 @@ export default async function ProfilePage() {
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-          
-          {/* Left Block: Node Specifications */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6">
-            <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3">
-              Node Details
-            </h4>
-            <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+
+          {/* Left Block: Details */}
+          <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
+            <div className="px-4 py-3 border-b border-[var(--color-border)]">
+              <h4 className="text-sm font-semibold text-white">Details</h4>
+            </div>
+            <div className="divide-y divide-[var(--color-border)] text-[13px]">
               {isOwner ? (
                 <>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/40 font-medium">Designation</span>
-                    <span className="text-white font-bold">{ownerDetails?.designation}</span>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[var(--color-text-muted)]">Designation</span>
+                    <span className="text-white font-medium">{ownerDetails?.designation}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/40 font-medium">Company Website</span>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[var(--color-text-muted)]">Company website</span>
                     {ownerDetails?.companyWebsite ? (
                       <a href={ownerDetails.companyWebsite} target="_blank" rel="noreferrer" className="text-accent hover:underline flex items-center gap-1">
                         <Globe className="w-3.5 h-3.5" /> Visit site
                       </a>
                     ) : (
-                      <span className="text-white/20">—</span>
+                      <span className="text-white/25">—</span>
                     )}
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/40 font-medium">LinkedIn Profile</span>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[var(--color-text-muted)]">LinkedIn</span>
                     {ownerDetails?.personalLinkedIn ? (
                       <a href={ownerDetails.personalLinkedIn} target="_blank" rel="noreferrer" className="text-accent hover:underline flex items-center gap-1">
-                        <LinkedinIcon className="w-3.5 h-3.5" /> View LinkedIn
+                        <LinkedinIcon className="w-3.5 h-3.5" /> View
                       </a>
                     ) : (
-                      <span className="text-white/20">—</span>
+                      <span className="text-white/25">—</span>
                     )}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/40 font-medium">Developer Level</span>
-                    <span className="text-white font-bold">Lvl {level} ({getLevelTitle(level)})</span>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[var(--color-text-muted)]">Developer level</span>
+                    <span className="text-white font-medium">Lvl {level} ({getLevelTitle(level)})</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/40 font-medium">Total Experience (XP)</span>
-                    <span className="text-white font-bold">{dbUser?.xp} XP</span>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[var(--color-text-muted)]">Experience</span>
+                    <span className="text-white font-medium tabular-nums">{dbUser?.xp} XP</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/40 font-medium">GitHub Node</span>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[var(--color-text-muted)]">GitHub</span>
                     {dbUser?.githubUrl ? (
                       <a href={dbUser.githubUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline truncate max-w-[200px]">
                         {dbUser.githubUrl.replace('https://github.com/', '')}
                       </a>
                     ) : (
-                      <span className="text-white/20">Not Linked</span>
+                      <span className="text-white/25">Not linked</span>
                     )}
                   </div>
                 </>
@@ -170,33 +173,34 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          {/* Right Block: Stats & Security Status */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6">
-            <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3">
-              Subscription & Telemetry
-            </h4>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-white/40 font-medium">Current Tier</span>
-                <span className="px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-black uppercase tracking-wider text-[9px] font-mono">
-                  {isOwner ? 'Starter Plan' : 'Standard Developer'}
+          {/* Right Block: Account */}
+          <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
+            <div className="px-4 py-3 border-b border-[var(--color-border)]">
+              <h4 className="text-sm font-semibold text-white">Account</h4>
+            </div>
+            <div className="divide-y divide-[var(--color-border)] text-[13px]">
+              <div className="flex justify-between items-center px-4 py-3">
+                <span className="text-[var(--color-text-muted)]">Current plan</span>
+                <span className="px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-medium text-[11px]">
+                  {isOwner ? 'Starter' : 'Standard'}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-white/40 font-medium">Security Status</span>
-                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/10" /> Secure Node
+              <div className="flex justify-between items-center px-4 py-3">
+                <span className="text-[var(--color-text-muted)]">Security</span>
+                <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5" /> Secure
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-white/40 font-medium">Total Platform Missions</span>
-                <span className="text-white font-bold font-mono">{totalTasks}</span>
+              <div className="flex justify-between items-center px-4 py-3">
+                <span className="text-[var(--color-text-muted)]">Total tasks</span>
+                <span className="text-white font-medium tabular-nums">{totalTasks}</span>
               </div>
             </div>
           </div>
 
         </div>
 
+       </div>
       </div>
     </div>
   )
