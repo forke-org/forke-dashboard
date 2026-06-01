@@ -28,10 +28,11 @@ interface ChatConsoleProps {
   contacts: Contact[]
   currentUserId: string
   initialMessages: Message[]
+  defaultContactId?: string
 }
 
-export default function ChatConsole({ contacts, currentUserId, initialMessages }: ChatConsoleProps) {
-  const [activeContactId, setActiveContactId] = useState<string>(contacts[0]?.id || '')
+export default function ChatConsole({ contacts, currentUserId, initialMessages, defaultContactId }: ChatConsoleProps) {
+  const [activeContactId, setActiveContactId] = useState<string>(defaultContactId || contacts[0]?.id || '')
   const [messagesList, setMessagesList] = useState<Message[]>(initialMessages)
   const [inputText, setInputText] = useState('')
   const [activeContactOnline, setActiveContactOnline] = useState(false)
