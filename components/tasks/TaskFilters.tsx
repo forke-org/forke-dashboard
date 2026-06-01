@@ -39,8 +39,8 @@ function CustomSelect({ label, value, options, onChange }: CustomSelectProps) {
   const selectedOption = options.find((opt) => opt.value === value) || options[0]
 
   return (
-    <div ref={containerRef} className="space-y-2 flex-1 relative select-none text-left">
-      <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/40 font-mono">
+    <div ref={containerRef} className="flex-1 relative select-none text-left">
+      <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/40 font-mono mb-2">
         {label}
       </h4>
 

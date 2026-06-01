@@ -151,12 +151,6 @@ export async function claimTask(taskId: string) {
   }
 
   const developer = await db.query.users.findFirst({ where: eq(users.id, user.id) })
-  const developerLevel = getLevelFromXp(developer?.xp ?? 0)
-  const requiredLevel = getRequiredLevel(taskResult.task.skillTags ?? [])
-
-  if (developerLevel < requiredLevel) {
-    throw new Error(`This task requires LVL ${requiredLevel}. You are LVL ${developerLevel}.`)
-  }
 
   // Perform atomic update to handle race conditions
   const updated = await db

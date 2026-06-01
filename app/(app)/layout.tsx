@@ -21,6 +21,8 @@ import { eq, and, sql } from 'drizzle-orm'
 import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 import ToastContainer from '@/components/shared/Toast'
 
+import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
+
 export default async function AppLayout({
   children,
 }: {
@@ -102,7 +104,11 @@ export default async function AppLayout({
           pendingSubmissionsCount={pendingSubmissionsCount}
           unreadMessagesCount={unreadMessagesCount}
         />
-        <main className="flex-grow flex flex-col min-w-0 overflow-hidden">
+        <main className="flex-grow flex flex-col min-w-0 overflow-hidden relative">
+          {/* Floating Mobile Trigger */}
+          <div className="absolute top-3 left-4 z-40 md:hidden bg-[#0c0c0f]/80 backdrop-blur border border-white/[0.06] p-1 rounded-lg">
+            <MobileMenuTrigger />
+          </div>
           {children}
         </main>
       </div>
