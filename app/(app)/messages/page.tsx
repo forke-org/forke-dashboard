@@ -26,6 +26,7 @@ export default async function MessagesPage({
       name: users.name,
       image: users.image,
       role: users.role,
+      githubUrl: users.githubUrl,
     })
     .from(users)
     .where(ne(users.id, sessionUser.id))
@@ -40,6 +41,7 @@ export default async function MessagesPage({
         name: users.name,
         image: users.image,
         role: users.role,
+        githubUrl: users.githubUrl,
       })
       .from(users)
       .where(eq(users.id, queryUserId))

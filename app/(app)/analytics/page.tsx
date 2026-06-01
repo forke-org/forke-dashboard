@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { tasks, submissions } from '@/lib/db/schema'
 import { eq, sql, and, gte } from 'drizzle-orm'
 import { BarChart3, TrendingUp, Clock, CheckCircle2, Zap, Target, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function AnalyticsPage() {
   const session = await auth()
@@ -86,103 +87,92 @@ export default async function AnalyticsPage() {
 
   const pendingReviewCount = dbStats.submittedCount
 
+  const statCards = [
+    {
+      label: isOwner ? 'Completion rate' : 'Tasks completed',
+      value: isOwner ? `${completionRate}%` : `${dbStats.completedCount}`,
+      hint: isOwner ? 'Of all posted tasks' : 'Verified shipments',
+      icon: Target,
+      href: '/submissions',
+    },
+    {
+      label: isOwner ? 'Pending reviews' : 'Active tasks',
+      value: `${isOwner ? pendingReviewCount : dbStats.claimedCount}`,
+      hint: isOwner ? 'Awaiting your action' : 'In progress',
+      icon: Clock,
+      href: '/submissions',
+    },
+    {
+      label: isOwner ? 'Total tasks' : 'Total claimed',
+      value: `${dbStats.totalCount}`,
+      hint: isOwner ? 'All-time posted' : 'Lifetime tasks taken',
+      icon: Zap,
+      href: '/tasks',
+    },
+    {
+      label: isOwner ? 'Open tasks' : 'Submissions pending',
+      value: `${isOwner ? dbStats.openCount : dbStats.submittedCount}`,
+      hint: isOwner ? 'Awaiting developers' : 'Awaiting review',
+      icon: BarChart3,
+      href: isOwner ? '/tasks?filter=unclaimed' : '/tasks',
+    },
+  ]
+
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title="Analytics Node" />
-      
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-5xl mx-auto w-full">
-        {/* Header Banner */}
-        <div className="space-y-3 text-left">
-          <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-            Performance <span className="text-accent italic">Telemetry</span>
+    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <TopBar title="Analytics" />
+
+      <div className="flex-grow overflow-y-auto">
+       <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        {/* Header */}
+        <div className="space-y-1 text-left">
+          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+            Analytics
           </h2>
-          <p className="text-white/50 text-xs md:text-sm font-light max-w-xl leading-relaxed">
+          <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
             {isOwner
-              ? 'Real-time insights on your mission throughput, escrow capital flow, and developer response metrics.'
-              : 'Track your task activity, earnings throughput, and approval velocity across all claimed missions.'}
+              ? 'Insights on your task throughput, escrow flow, and developer response.'
+              : 'Track your task activity and approval velocity across claimed tasks.'}
           </p>
         </div>
 
-        {/* 4-Card Stats Grid — all dynamic */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
-                {isOwner ? 'Completion Rate' : 'Tasks Completed'}
-              </span>
-              <Target className="w-4 h-4 text-accent/50" />
-            </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-2xl font-mono font-bold text-white">
-                {isOwner ? `${completionRate}%` : dbStats.completedCount}
-              </h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
-                {isOwner ? 'Of all posted missions' : 'Verified shipments'}
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
-                {isOwner ? 'Pending Reviews' : 'Active Missions'}
-              </span>
-              <Clock className="w-4 h-4 text-amber-400/50" />
-            </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-2xl font-mono font-bold text-white">
-                {isOwner ? pendingReviewCount : dbStats.claimedCount}
-              </h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
-                {isOwner ? 'Awaiting your action' : 'Currently in progress'}
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
-                {isOwner ? 'Total Missions' : 'Total Claimed'}
-              </span>
-              <Zap className="w-4 h-4 text-emerald-400/50" />
-            </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-2xl font-mono font-bold text-white">{dbStats.totalCount}</h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
-                {isOwner ? 'All-time posted' : 'Lifetime missions taken'}
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">
-                {isOwner ? 'Open Missions' : 'Submissions Pending'}
-              </span>
-              <BarChart3 className="w-4 h-4 text-accent/50" />
-            </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-2xl font-mono font-bold text-white">
-                {isOwner ? dbStats.openCount : dbStats.submittedCount}
-              </h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">
-                {isOwner ? 'Awaiting developers' : 'Awaiting client review'}
-              </p>
-            </div>
-          </div>
+        {/* 4-Card Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {statCards.map((card) => {
+            const Icon = card.icon
+            return (
+              <Link
+                key={card.label}
+                href={card.href}
+                className="group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left hover:border-accent/40 hover:bg-accent/[0.03] transition-all duration-200 block cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--color-text-muted)] group-hover:text-white/70 transition-colors">{card.label}</span>
+                  <Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)] group-hover:text-accent transition-colors" />
+                </div>
+                <div className="mt-3">
+                  <h3 className="ui-kpi group-hover:text-accent transition-colors">{card.value}</h3>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-[11px] text-[var(--color-text-muted)]">{card.hint}</p>
+                    <span className="text-[10px] text-accent/0 group-hover:text-accent/70 transition-colors font-medium flex items-center gap-0.5">
+                      View →
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
         </div>
 
-        {/* Visual Charts Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 text-left">
-          {/* Real monthly bar chart */}
-          <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] md:col-span-8 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[350px]">
+        {/* Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-left">
+          {/* Monthly bar chart */}
+          <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 md:col-span-8 relative overflow-hidden flex flex-col justify-between min-h-[320px]">
             <div>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-5">
                 <div>
-                  <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono">
-                    {isOwner ? 'Mission Activity' : 'Task Activity'}
-                  </h4>
-                  <p className="text-[9.5px] text-white/40 mt-1 font-light">
+                  <h4 className="text-sm font-semibold text-white">Task activity</h4>
+                  <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
                     {isOwner ? 'Tasks posted per month (last 6 months)' : 'Tasks claimed per month (last 6 months)'}
                   </p>
                 </div>
@@ -190,27 +180,25 @@ export default async function AnalyticsPage() {
               </div>
 
               {/* Chart Bars */}
-              <div className="flex items-end justify-between gap-4 h-44 pt-6">
+              <div className="flex items-end justify-between gap-3 h-44 pt-6">
                 {last6Months.map((d) => {
                   const pct = Math.max((d.count / maxCount) * 100, d.count > 0 ? 10 : 2)
                   return (
-                    <div key={d.month} className="flex-1 flex flex-col items-center gap-3 group/bar">
-                      {/* Count label on hover */}
-                      <div className="relative w-full h-36 bg-white/[0.01] border border-white/[0.03] rounded-t-xl flex items-end overflow-hidden">
+                    <div key={d.month} className="flex-1 flex flex-col items-center gap-2.5 group/bar">
+                      <div className="relative w-full h-36 bg-white/[0.02] border border-[var(--color-border)] rounded-t-lg flex items-end overflow-hidden">
                         <div
-                          className="w-full bg-gradient-to-t from-accent to-[#d97706] rounded-t-lg transition-all duration-1000 origin-bottom group-hover/bar:brightness-110 shadow-[0_0_15px_rgba(255,122,0,0.15)]"
+                          className="w-full bg-accent/80 rounded-t-md transition-all duration-700 origin-bottom group-hover/bar:bg-accent"
                           style={{ height: `${pct}%` }}
                         />
-                        {/* Count badge on hover */}
                         {d.count > 0 && (
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/bar:opacity-100 transition-opacity">
-                            <span className="text-[9px] font-black font-mono text-white bg-black/60 rounded px-1.5 py-0.5">
+                            <span className="text-[11px] font-medium text-white bg-black/70 rounded px-1.5 py-0.5 tabular-nums">
                               {d.count}
                             </span>
                           </div>
                         )}
                       </div>
-                      <span className="text-[8.5px] font-black font-mono text-white/30 uppercase group-hover/bar:text-white transition-colors">{d.month}</span>
+                      <span className="text-[11px] text-[var(--color-text-muted)] group-hover/bar:text-white transition-colors">{d.month}</span>
                     </div>
                   )
                 })}
@@ -219,41 +207,42 @@ export default async function AnalyticsPage() {
 
             {/* No data indicator */}
             {dbStats.totalCount === 0 && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0b0b0e]/80">
-                <AlertTriangle className="w-6 h-6 text-white/20" />
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/20 font-mono">
-                  No data yet — {isOwner ? 'post your first mission' : 'claim your first task'}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-[var(--color-bg)]/80">
+                <AlertTriangle className="w-5 h-5 text-[var(--color-text-muted)]" />
+                <p className="text-[13px] text-[var(--color-text-muted)]">
+                  No data yet — {isOwner ? 'post your first task' : 'claim your first task'}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Real dynamic stats sidebar */}
-          <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] md:col-span-4 shadow-xl space-y-6">
-            <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3">
-              {isOwner ? 'Mission Breakdown' : 'Task Breakdown'}
-            </h4>
-            <div className="space-y-4 font-mono text-[9px] text-white/50 leading-relaxed">
-              <div className="p-3 rounded-xl bg-white/[0.01] border border-white/[0.03] flex items-center justify-between">
-                <span className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Completed</span>
-                <span className="text-emerald-400 font-bold">{dbStats.completedCount}</span>
+          {/* Breakdown sidebar */}
+          <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] md:col-span-4">
+            <div className="px-4 py-3 border-b border-[var(--color-border)]">
+              <h4 className="text-sm font-semibold text-white">Breakdown</h4>
+            </div>
+            <div className="divide-y divide-[var(--color-border)] text-[13px]">
+              <div className="px-4 py-3 flex items-center justify-between">
+                <span className="flex items-center gap-2 text-[var(--color-text-muted)]"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Completed</span>
+                <span className="text-white font-medium tabular-nums">{dbStats.completedCount}</span>
               </div>
-              <div className="p-3 rounded-xl bg-white/[0.01] border border-white/[0.03] flex items-center justify-between">
-                <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-amber-400" /> {isOwner ? 'Under Review' : 'In Progress'}</span>
-                <span className="text-amber-400 font-bold">{isOwner ? dbStats.submittedCount : dbStats.claimedCount}</span>
+              <div className="px-4 py-3 flex items-center justify-between">
+                <span className="flex items-center gap-2 text-[var(--color-text-muted)]"><Clock className="w-4 h-4 text-amber-400" /> {isOwner ? 'Under review' : 'In progress'}</span>
+                <span className="text-white font-medium tabular-nums">{isOwner ? dbStats.submittedCount : dbStats.claimedCount}</span>
               </div>
-              <div className="p-3 rounded-xl bg-white/[0.01] border border-white/[0.03] flex items-center justify-between">
-                <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-accent" /> {isOwner ? 'Open' : 'Submitted'}</span>
-                <span className="text-accent font-bold">{isOwner ? dbStats.openCount : dbStats.submittedCount}</span>
+              <div className="px-4 py-3 flex items-center justify-between">
+                <span className="flex items-center gap-2 text-[var(--color-text-muted)]"><Zap className="w-4 h-4 text-accent" /> {isOwner ? 'Open' : 'Submitted'}</span>
+                <span className="text-white font-medium tabular-nums">{isOwner ? dbStats.openCount : dbStats.submittedCount}</span>
               </div>
-              <div className="p-3 rounded-xl bg-accent/[0.02] border border-accent/10 flex items-center justify-between">
-                <span className="flex items-center gap-2 text-accent"><BarChart3 className="w-3.5 h-3.5" /> Total</span>
-                <span className="text-white font-bold">{dbStats.totalCount}</span>
+              <div className="px-4 py-3 flex items-center justify-between">
+                <span className="flex items-center gap-2 text-accent"><BarChart3 className="w-4 h-4" /> Total</span>
+                <span className="text-white font-medium tabular-nums">{dbStats.totalCount}</span>
               </div>
             </div>
           </div>
         </div>
 
+       </div>
       </div>
     </div>
   )

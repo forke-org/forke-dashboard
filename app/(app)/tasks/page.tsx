@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string | string[]; maxBudget?: string; q?: string }>
+  searchParams: Promise<{ tag?: string | string[]; maxBudget?: string; q?: string; filter?: string }>
 }) {
   const session = await auth()
   const user = session?.user as { id: string; xp: number; role?: 'developer' | 'owner' } | undefined
@@ -28,6 +28,7 @@ export default async function TasksPage({
   const tags = typeof params.tag === 'string' ? [params.tag] : params.tag
   const maxBudget = params.maxBudget ? parseInt(params.maxBudget) : undefined
   const q = params.q || ''
+  const filterParam = params.filter
 
   const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: isOwner })
 
@@ -63,7 +64,7 @@ export default async function TasksPage({
             <TaskFilters isOwner={isOwner} />
 
             <Suspense fallback={<TaskFeedSkeleton />}>
-              <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} />
+              <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} initialFilter={filterParam} />
             </Suspense>
           </div>
         </div>

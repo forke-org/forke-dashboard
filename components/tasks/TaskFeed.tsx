@@ -24,13 +24,18 @@ interface TaskFeedProps {
   }[]
   userLevel: number
   isOwner?: boolean
+  initialFilter?: string
 }
 
-export default function TaskFeed({ tasks, userLevel, isOwner = false }: TaskFeedProps) {
+export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFilter }: TaskFeedProps) {
   const router = useRouter()
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
-  const [filterStatus, setFilterStatus] = useState<'all' | 'unclaimed' | 'claimed'>('all')
+  const validFilters = ['all', 'unclaimed', 'claimed'] as const
+  const defaultFilter = validFilters.includes(initialFilter as typeof validFilters[number])
+    ? (initialFilter as typeof validFilters[number])
+    : 'all'
+  const [filterStatus, setFilterStatus] = useState<'all' | 'unclaimed' | 'claimed'>(defaultFilter)
 
   // Reset page when tasks array changes or status filter changes
   useEffect(() => {
