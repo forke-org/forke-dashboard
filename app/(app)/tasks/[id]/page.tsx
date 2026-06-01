@@ -206,26 +206,28 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   </div>
 
                   <div className="space-y-2 text-[13px]">
-                    <Link
-                      href={`/profile/${task.clientId}`}
-                      className="group flex items-center justify-between px-2.5 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
-                          <User className="w-4 h-4 text-accent" />
+                    {task.clientId !== currentUser?.id && (
+                      <Link
+                        href={`/profile/${task.clientId}`}
+                        className="group flex items-center justify-between px-2.5 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                            <User className="w-4 h-4 text-accent" />
+                          </div>
+                          <div className="flex flex-col text-left leading-tight">
+                            <span className="text-[11px] text-[var(--color-text-muted)]">Client</span>
+                            <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors">
+                              {clientName}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-col text-left leading-tight">
-                          <span className="text-[11px] text-[var(--color-text-muted)]">Client</span>
-                          <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors">
-                            {clientName}
-                          </span>
+                        <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
+                          <span>Profile</span>
+                          <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
-                        <span>Profile</span>
-                        <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
-                      </div>
-                    </Link>
+                      </Link>
+                    )}
 
                     {task.deadline && (
                       <div className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)]">

@@ -61,11 +61,16 @@ export default function TaskCard({ task, clientName, userLevel, isOwner = false 
       </div>
 
       <div className="mt-auto space-y-3.5">
-        <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5">
-          <div className="flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5" />
-            <span>by <span className="text-white/70">{clientName}</span></span>
-          </div>
+        <div className={cn(
+          "flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5",
+          isOwner && "justify-end"
+        )}>
+          {!isOwner && (
+            <div className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" />
+              <span>by <span className="text-white/70">{clientName}</span></span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" />
             <span>{timeAgo(task.createdAt)}</span>
