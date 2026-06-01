@@ -1,16 +1,5 @@
 'use server'
 
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-import { requireSelf } from '@/lib/session-guard'
 import { db } from '@/lib/db'
 import { notifications } from '@/lib/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
@@ -41,7 +30,6 @@ export async function ensureNotificationsTable() {
 
 /** Fetch all notifications for a user, newest first */
 export async function getNotifications(userId: string) {
-  userId = await requireSelf(userId)
   await ensureNotificationsTable()
   try {
     const list = await db
@@ -59,7 +47,6 @@ export async function getNotifications(userId: string) {
 
 /** Count unread notifications */
 export async function getUnreadCount(userId: string) {
-  userId = await requireSelf(userId)
   await ensureNotificationsTable()
   try {
     const [row] = await db
@@ -74,7 +61,6 @@ export async function getUnreadCount(userId: string) {
 
 /** Mark a single notification as read */
 export async function markNotificationRead(notificationId: string, userId: string) {
-  userId = await requireSelf(userId)
   try {
     await db
       .update(notifications)
@@ -90,7 +76,6 @@ export async function markNotificationRead(notificationId: string, userId: strin
 
 /** Mark ALL notifications as read for a user */
 export async function markAllNotificationsRead(userId: string) {
-  userId = await requireSelf(userId)
   try {
     await db
       .update(notifications)
@@ -106,7 +91,6 @@ export async function markAllNotificationsRead(userId: string) {
 
 /** Delete a single notification */
 export async function deleteNotification(notificationId: string, userId: string) {
-  userId = await requireSelf(userId)
   try {
     await db
       .delete(notifications)
@@ -121,7 +105,6 @@ export async function deleteNotification(notificationId: string, userId: string)
 
 /** Delete ALL notifications for a user */
 export async function deleteAllNotifications(userId: string) {
-  userId = await requireSelf(userId)
   try {
     await db
       .delete(notifications)
@@ -130,6 +113,30 @@ export async function deleteAllNotifications(userId: string) {
     return { success: true }
   } catch (e) {
     console.error('Failed to delete all notifications:', e)
+    return { success: false }
+  }
+}
+
+/** Create a notification (called from other server actions) */
+export async function createNotification({
+  userId,
+  type,
+  title,
+  body,
+  link,
+}: {
+  userId: string
+  type: string
+  title: string
+  body: string
+  link?: string
+}) {
+  await ensureNotificationsTable()
+  try {
+    await db.insert(notifications).values({ userId, type, title, body, link: link ?? null })
+    return { success: true }
+  } catch (e) {
+    console.error('Failed to create notification:', e)
     return { success: false }
   }
 }
