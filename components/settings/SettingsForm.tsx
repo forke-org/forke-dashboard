@@ -101,101 +101,101 @@ export default function SettingsForm({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-8 text-left pb-16">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-left pb-16">
       {/* Left Block: settings forms */}
-      <form onSubmit={handleSubmit} className="md:col-span-8 space-y-6">
+      <form onSubmit={handleSubmit} className={cn("space-y-4", isOwner ? "md:col-span-12" : "md:col-span-8")}>
         {success && (
-          <div className="p-4 rounded-2xl flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 text-xs font-medium animate-in fade-in slide-in-from-top-2 duration-300">
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-            <p>Settings saved successfully!</p>
+          <div className="p-3 rounded-lg flex items-center gap-2.5 bg-emerald-500/[0.07] border border-emerald-500/20 text-emerald-400 text-[13px] animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <p>Settings saved successfully.</p>
           </div>
         )}
 
         {error && (
-          <div className="p-4 rounded-2xl flex items-center gap-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="p-3 rounded-lg flex items-center gap-2 bg-red-500/[0.07] border border-red-500/20 text-red-400 text-[13px] animate-in fade-in slide-in-from-top-2 duration-300">
             <AlertTriangle className="w-4 h-4" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Form card 1 */}
-        <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6">
-          <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3 flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-accent" /> Profile Credentials
+        <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
+          <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-accent" /> Profile
           </h4>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Full Name</label>
+              <label className="text-xs font-medium text-[var(--color-text-muted)]">Full name</label>
               <input 
                 name="name"
                 type="text" 
                 required
                 defaultValue={initialName} 
-                className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
               />
             </div>
 
             {isOwner ? (
               <>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Company Name</label>
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">Company name</label>
                   <input 
                     name="companyName"
                     type="text" 
                     defaultValue={initialCompanyName || ''} 
-                    className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                    className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Company Website</label>
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">Company website</label>
                   <input 
                     name="companyWebsite"
                     type="text" 
                     defaultValue={initialCompanyWebsite || ''} 
-                    className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                    className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Company Designation</label>
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">Designation</label>
                   <input 
                     name="designation"
                     type="text" 
                     defaultValue={initialDesignation || ''} 
-                    className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                    className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                   />
                 </div>
 
-                <div className="border-t border-white/[0.03] pt-4 mt-4 space-y-4">
-                  <h5 className="text-[9px] font-black text-white/30 uppercase tracking-widest font-mono">Contact Details</h5>
-                  
+                <div className="border-t border-[var(--color-border)] pt-4 mt-4 space-y-4">
+                  <h5 className="text-xs font-medium text-[var(--color-text-muted)]">Contact details</h5>
+
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Contact Email</label>
+                    <label className="text-xs font-medium text-[var(--color-text-muted)]">Contact email</label>
                     <input 
                       name="contactEmail"
                       type="email" 
                       defaultValue={initialContactEmail || ''} 
-                      className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                      className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Contact Number</label>
+                    <label className="text-xs font-medium text-[var(--color-text-muted)]">Contact number</label>
                     <input 
                       name="contactNumber"
                       type="text" 
                       defaultValue={initialContactNumber || ''} 
-                      className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                      className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Personal LinkedIn</label>
+                    <label className="text-xs font-medium text-[var(--color-text-muted)]">Personal LinkedIn</label>
                     <input 
                       name="personalLinkedIn"
                       type="text" 
                       defaultValue={initialPersonalLinkedIn || ''} 
-                      className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                      className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                     />
                   </div>
                 </div>
@@ -203,51 +203,51 @@ export default function SettingsForm({
             ) : (
               <>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Bio Details</label>
-                  <textarea 
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">Bio</label>
+                  <textarea
                     name="bio"
-                    defaultValue={initialBio || ''} 
+                    defaultValue={initialBio || ''}
                     rows={3}
-                    className="w-full bg-white/[0.01] border border-white/5 rounded-xl p-4 text-xs text-white outline-none focus:border-accent transition-all resize-none"
+                    className="w-full bg-white/[0.02] border border-[var(--color-border)] rounded-lg p-3 text-[13px] text-white outline-none focus:border-accent transition-colors resize-none"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">GitHub Node URL</label>
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">GitHub URL</label>
                   <input 
                     name="githubUrl"
                     type="text" 
                     defaultValue={initialGithubUrl || ''} 
                     placeholder="https://github.com/username"
-                    className="w-full h-11 bg-white/[0.01] border border-white/5 rounded-xl px-4 text-xs text-white outline-none focus:border-accent transition-all"
+                    className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white outline-none focus:border-accent transition-colors"
                   />
                 </div>
               </>
             )}
             
-            <button 
+            <button
               type="submit"
               disabled={loading}
-              className="h-10 px-5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_12px_rgba(255,122,0,0.2)] active:translate-y-[1px] transition-all flex items-center gap-1.5 cursor-pointer font-bold mt-4 disabled:opacity-50"
+              className="h-9 px-4 text-[13px] font-medium rounded-lg ui-btn-primary transition-colors flex items-center gap-1.5 cursor-pointer mt-4 disabled:opacity-50"
             >
-              <Save className="w-3.5 h-3.5 stroke-[2.5px]" /> {loading ? 'Saving...' : 'Save Changes'}
+              <Save className="w-3.5 h-3.5" /> {loading ? 'Saving...' : 'Save changes'}
             </button>
           </div>
         </div>
 
         {/* Notification settings */}
-        <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6">
-          <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-accent" /> Telemetry Notifications
+        <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
+          <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-accent" /> Notifications
           </h4>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.005] border border-white/[0.03]">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)]">
               <div>
-                <h5 className="text-xs font-bold text-white">Email dispatch alerts</h5>
-                <p className="text-[9px] text-white/30 font-light mt-0.5">Receive emails for waitlist updates & contract signoffs</p>
+                <h5 className="text-[13px] font-medium text-white">Email alerts</h5>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Emails for task updates &amp; approvals</p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => handleToggle('emailAlerts')}
                 className={cn(
@@ -262,12 +262,12 @@ export default function SettingsForm({
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.005] border border-white/[0.03]">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)]">
               <div>
-                <h5 className="text-xs font-bold text-white">Slack Webhook integrations</h5>
-                <p className="text-[9px] text-white/30 font-light mt-0.5">Push log alerts directly into your organization workspace</p>
+                <h5 className="text-[13px] font-medium text-white">Slack integration</h5>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Push alerts into your workspace</p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => handleToggle('slackWebhooks')}
                 className={cn(
@@ -286,32 +286,36 @@ export default function SettingsForm({
       </form>
 
       {/* Right Column: system spec sidebar */}
-      <div className="md:col-span-4 space-y-6">
-        <div className="p-6 rounded-[2.5rem] bg-[#0b0b0e] border border-white/[0.04] space-y-6 shadow-xl">
-          <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono border-b border-white/[0.03] pb-3 flex items-center gap-2">
-            <Laptop className="w-4 h-4 text-accent" /> System Spec
-          </h4>
+      {!isOwner && (
+        <div className="md:col-span-4 space-y-4">
+          <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
+            <div className="px-4 py-3 border-b border-[var(--color-border)]">
+              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Laptop className="w-4 h-4 text-accent" /> System
+              </h4>
+            </div>
 
-          <div className="space-y-3 font-mono text-[9px] text-white/50">
-            <div className="flex justify-between items-center py-1">
-              <span>Runtime Host:</span>
-              <span className="text-accent uppercase font-bold">{systemSpecs.runtimeVersion}</span>
-            </div>
-            <div className="flex justify-between items-center py-1">
-              <span>Database State:</span>
-              <span className={cn("uppercase font-bold transition-colors", systemSpecs.databaseState === 'connected' ? "text-emerald-400" : "text-rose-500")}>
-                {systemSpecs.databaseState} {systemSpecs.dbLatencyMs > 0 && `(${systemSpecs.dbLatencyMs}ms)`}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-1">
-              <span>Telemetry SSL:</span>
-              <span className={cn("uppercase font-bold transition-colors", sslActive ? "text-emerald-400" : "text-amber-500")}>
-                {sslActive ? 'active' : 'inactive'}
-              </span>
+            <div className="divide-y divide-[var(--color-border)] text-[13px]">
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-[var(--color-text-muted)]">Runtime</span>
+                <span className="text-white font-medium font-mono text-[12px]">{systemSpecs.runtimeVersion}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-[var(--color-text-muted)]">Database</span>
+                <span className={cn("font-medium capitalize", systemSpecs.databaseState === 'connected' ? "text-emerald-400" : "text-rose-500")}>
+                  {systemSpecs.databaseState} {systemSpecs.dbLatencyMs > 0 && `(${systemSpecs.dbLatencyMs}ms)`}
+                </span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-[var(--color-text-muted)]">SSL</span>
+                <span className={cn("font-medium capitalize", sslActive ? "text-emerald-400" : "text-amber-500")}>
+                  {sslActive ? 'active' : 'inactive'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
