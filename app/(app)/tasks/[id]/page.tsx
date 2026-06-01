@@ -139,24 +139,47 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                  </div>
              </div>
 
-             <div className="lg:col-span-5">
-               <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
-                  <div className="space-y-2.5">
-                    <h2 className="text-base font-semibold text-white">Submit your work</h2>
-                    <ul className="space-y-1.5">
-                       <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                         <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
-                       </li>
-                       <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                         <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All requirements met
-                       </li>
-                    </ul>
+              <div className="lg:col-span-5 space-y-4">
+                {/* Owner Profile Card */}
+                <Link
+                  href={`/profile/${task.clientId}`}
+                  className="group flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.018] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                      <User className="w-4 h-4 text-accent" />
+                    </div>
+                    <div className="flex flex-col text-left leading-tight">
+                      <span className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Client</span>
+                      <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors font-semibold">
+                        {clientName}
+                      </span>
+                    </div>
                   </div>
+                  <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
+                    <span>Profile</span>
+                    <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
 
-                  <SubmitWorkForm taskId={task.id} />
-               </div>
-             </div>
-          </div>
+                {/* Submit Work Form */}
+                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
+                   <div className="space-y-2.5">
+                     <h2 className="text-base font-semibold text-white">Submit your work</h2>
+                     <ul className="space-y-1.5">
+                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
+                        </li>
+                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All requirements met
+                        </li>
+                     </ul>
+                   </div>
+
+                   <SubmitWorkForm taskId={task.id} />
+                </div>
+              </div>
+           </div>
         )}
 
         {/* Standard Layout - Otherwise */}
@@ -206,7 +229,8 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   </div>
 
                   <div className="space-y-2 text-[13px]">
-                    {task.clientId !== currentUser?.id && (
+                    {/* For Developer: show Owner (Client) profile */}
+                    {isDeveloper && (
                       <Link
                         href={`/profile/${task.clientId}`}
                         className="group flex items-center justify-between px-2.5 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
@@ -216,9 +240,33 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                             <User className="w-4 h-4 text-accent" />
                           </div>
                           <div className="flex flex-col text-left leading-tight">
-                            <span className="text-[11px] text-[var(--color-text-muted)]">Client</span>
-                            <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors">
+                            <span className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Client</span>
+                            <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors font-semibold">
                               {clientName}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
+                          <span>Profile</span>
+                          <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </Link>
+                    )}
+
+                    {/* For Owner: show Developer profile if claimed */}
+                    {!isDeveloper && task.claimantId && claimantName && (
+                      <Link
+                        href={`/profile/${task.claimantId}`}
+                        className="group flex items-center justify-between px-2.5 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                            <User className="w-4 h-4 text-accent" />
+                          </div>
+                          <div className="flex flex-col text-left leading-tight">
+                            <span className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Developer</span>
+                            <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors font-semibold">
+                              {claimantName}
                             </span>
                           </div>
                         </div>
