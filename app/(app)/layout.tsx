@@ -118,9 +118,9 @@ export default async function AppLayout({
             <MobileMenuTrigger />
           </div>
           {children}
-          <NotificationBell userId={user.id} initialUnreadCount={unreadNotificationsCount} />
         </main>
       </div>
+      <NotificationBell userId={user.id} initialUnreadCount={unreadNotificationsCount} />
       <LevelUpCelebration />
       <ToastContainer />
     </DashboardProvider>

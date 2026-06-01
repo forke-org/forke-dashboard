@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils/xp'
 import { XP_CLAIM_TASK } from '@/constants'
 import { z } from 'zod'
+import { createNotification } from '@/app/(app)/notifications/actions'
 
 export type CreateTaskState = {
   errors?: {
@@ -124,6 +125,15 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
       clientId: user.id,
       status: 'open',
     })
+
+    // Notify owner: task successfully posted
+    await createNotification({
+      userId: user.id,
+      type: 'task_posted',
+      title: '✅ Task posted',
+      body: `Your task "${title}" is now live and visible to developers.`,
+      link: '/tasks',
+    })
   } catch (error) {
     console.error('Database Error:', error)
     return { message: 'Something went wrong while posting the task. Please try again.' }
@@ -173,6 +183,25 @@ export async function claimTask(taskId: string) {
     .set({ xp: newXp, level: getLevelFromXp(newXp) })
     .where(eq(users.id, user.id))
 
+  // Notify the task owner that their task was claimed
+  const claimedTask = updated[0]
+  await createNotification({
+    userId: claimedTask.clientId,
+    type: 'task_claimed',
+    title: '🎯 Task claimed',
+    body: `"${claimedTask.title}" was just claimed by ${developer?.name ?? 'a developer'}. Check their profile.`,
+    link: `/tasks/${taskId}`,
+  })
+
+  // Notify the developer that they claimed successfully
+  await createNotification({
+    userId: user.id,
+    type: 'task_claimed_self',
+    title: '🚀 You claimed a task',
+    body: `You've claimed "${claimedTask.title}". Complete it before the deadline and submit your work.`,
+    link: `/tasks/${taskId}`,
+  })
+
   revalidatePath('/tasks')
   revalidatePath(`/tasks/${taskId}`)
   redirect(`/tasks/${taskId}?toast=claimed`)
@@ -201,6 +230,9 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
   if (taskResult.task.status !== 'claimed') return { error: 'Task is not in claimed state.' }
   if (taskResult.task.claimantId !== user.id) return { error: 'You are not the claimant.' }
 
+  // Look up developer name for notification
+  const [devUser] = await db.select({ name: users.name }).from(users).where(eq(users.id, user.id)).limit(1)
+
   try {
     await db.transaction(async (tx) => {
       await tx.insert(submissions).values({
@@ -215,6 +247,24 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
         .update(tasks)
         .set({ status: 'submitted' })
         .where(eq(tasks.id, taskId))
+    })
+
+    // Notify owner: submission received
+    await createNotification({
+      userId: taskResult.task.clientId,
+      type: 'submission_received',
+      title: '📦 Submission received',
+      body: `${devUser?.name ?? 'A developer'} submitted work for "${taskResult.task.title}". Review and approve or request changes.`,
+      link: `/tasks/${taskId}`,
+    })
+
+    // Notify developer: submission sent
+    await createNotification({
+      userId: user.id,
+      type: 'submission_sent',
+      title: '📤 Submission sent',
+      body: `Your submission for "${taskResult.task.title}" is under review. You'll be notified once the client responds.`,
+      link: `/tasks/${taskId}`,
     })
   } catch (error) {
     console.error('Submission Error:', error)
@@ -299,6 +349,15 @@ export async function approveSubmission(taskId: string, rating: number) {
       return { leveledUp: false, newLevel: 1 }
     })
 
+    // Notify developer: work approved
+    await createNotification({
+      userId: developerId,
+      type: 'submission_approved',
+      title: '🎉 Submission approved!',
+      body: `Your work on "${taskResult.task.title}" was approved with a ${rating}/5 rating. Escrow payment is being processed.`,
+      link: `/tasks/${taskId}`,
+    })
+
     revalidatePath('/dashboard')
     revalidatePath(`/tasks/${taskId}`)
     return result
@@ -345,6 +404,18 @@ export async function requestRevision(taskId: string, revisionNote: string) {
     const message = error instanceof Error ? error.message : 'Failed to request revision.'
     console.error('Revision Error:', error)
     throw new Error(message)
+  }
+
+  // Notify developer: revision requested
+  const claimantId = taskResult.task.claimantId
+  if (claimantId) {
+    await createNotification({
+      userId: claimantId,
+      type: 'revision_requested',
+      title: '🔁 Revision requested',
+      body: `The client requested changes on "${taskResult.task.title}": "${revisionNote.slice(0, 80)}${revisionNote.length > 80 ? '…' : ''}".`,
+      link: `/tasks/${taskId}`,
+    })
   }
 
   revalidatePath('/dashboard')

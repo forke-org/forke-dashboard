@@ -12,6 +12,8 @@ import {
 } from '@/app/(app)/notifications/actions'
 import Link from 'next/link'
 
+import { createPortal } from 'react-dom'
+
 interface Notification {
   id: string
   userId: string
@@ -44,7 +46,13 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [mounted, setMounted] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
+
+  // Set mounted status on client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Close on outside click
   useEffect(() => {
@@ -114,8 +122,10 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
     })
   }
 
-  return (
-    <div className="fixed top-4 right-4 z-50" ref={modalRef}>
+  if (!mounted) return null
+
+  return createPortal(
+    <div className="fixed top-4 right-5 z-[9999]" ref={modalRef}>
       {/* Floating Bell Button */}
       <button
         onClick={handleOpen}
@@ -187,18 +197,15 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
                   onMouseEnter={() => setHoveredId(notif.id)}
                   onMouseLeave={() => setHoveredId(null)}
                   className={cn(
-                    'flex items-start gap-3 px-4 py-3 relative transition-colors',
+                    'flex items-center gap-2 px-3 py-3 transition-colors',
                     !notif.isRead ? 'bg-accent/[0.03]' : 'bg-transparent',
                     'hover:bg-white/[0.02]'
                   )}
                 >
                   {/* Unread dot */}
-                  {!notif.isRead && (
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                  )}
-                  {notif.isRead && <span className="mt-1.5 w-1.5 h-1.5 shrink-0" />}
+                  <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', !notif.isRead ? 'bg-accent' : 'bg-transparent')} />
 
-                  {/* Content */}
+                  {/* Content — flex-1 so it takes remaining space */}
                   <div className="flex-1 min-w-0">
                     {notif.link ? (
                       <Link
@@ -206,38 +213,40 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
                         onClick={() => { setOpen(false); if (!notif.isRead) handleMarkRead(notif.id) }}
                         className="block"
                       >
-                        <p className={cn('text-[12px] font-medium leading-snug', notif.isRead ? 'text-white/60' : 'text-white')}>{notif.title}</p>
+                        <p className={cn('text-[12px] font-medium leading-snug truncate', notif.isRead ? 'text-white/60' : 'text-white')}>{notif.title}</p>
                         <p className="text-[11px] text-white/40 mt-0.5 leading-snug line-clamp-2">{notif.body}</p>
                       </Link>
                     ) : (
                       <>
-                        <p className={cn('text-[12px] font-medium leading-snug', notif.isRead ? 'text-white/60' : 'text-white')}>{notif.title}</p>
+                        <p className={cn('text-[12px] font-medium leading-snug truncate', notif.isRead ? 'text-white/60' : 'text-white')}>{notif.title}</p>
                         <p className="text-[11px] text-white/40 mt-0.5 leading-snug line-clamp-2">{notif.body}</p>
                       </>
                     )}
                     <p className="text-[10px] text-white/25 mt-1 font-mono">{timeAgo(notif.createdAt)}</p>
                   </div>
 
-                  {/* Hover actions */}
+                  {/* Action buttons — always in-flow, opacity toggles on hover */}
                   <div className={cn(
-                    'absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-all duration-150',
-                    hoveredId === notif.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    'flex items-center gap-1 shrink-0 transition-opacity duration-150',
+                    hoveredId === notif.id ? 'opacity-100' : 'opacity-0'
                   )}>
                     {!notif.isRead && (
                       <button
                         onClick={() => handleMarkRead(notif.id)}
                         disabled={isPending}
                         title="Mark as read"
-                        className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                        className="w-6 h-6 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center hover:bg-emerald-500/30 transition-colors cursor-pointer"
                       >
                         <Check className="w-3 h-3 text-emerald-400" />
                       </button>
                     )}
+                    {/* Placeholder so delete stays aligned even when check is hidden */}
+                    {notif.isRead && <span className="w-6 h-6 shrink-0" />}
                     <button
                       onClick={() => handleDelete(notif.id)}
                       disabled={isPending}
                       title="Delete"
-                      className="w-6 h-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-colors cursor-pointer"
+                      className="w-6 h-6 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center hover:bg-red-500/30 transition-colors cursor-pointer"
                     >
                       <X className="w-3 h-3 text-red-400" />
                     </button>
@@ -248,6 +257,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   )
 }
