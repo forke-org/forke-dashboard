@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { SKILL_TAGS } from '@/constants'
 import { cn } from '@/lib/utils/cn'
-import { X } from 'lucide-react'
+import { X, Search } from 'lucide-react'
 
 const BUDGET_OPTIONS = [
   { label: 'Any budget', value: '' },
@@ -104,20 +104,47 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
 
   const currentTags = searchParams.getAll('tag')
   const currentMaxBudget = isOwner ? '' : (searchParams.get('maxBudget') || '')
+  const currentSearch = searchParams.get('q') || ''
+
+  const [searchQuery, setSearchQuery] = useState(currentSearch)
+
+  // Sync state with URL parameter (important for clearing)
+  useEffect(() => {
+    setSearchQuery(currentSearch)
+  }, [currentSearch])
+
+  // Debounce search input typing to avoid heavy query reload on each key press
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery !== currentSearch) {
+        const params = new URLSearchParams(searchParams.toString())
+        if (searchQuery) {
+          params.set('q', searchQuery)
+        } else {
+          params.delete('q')
+        }
+        router.push(`${pathname}?${params.toString()}`)
+      }
+    }, 300)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery, currentSearch, pathname, router, searchParams])
 
   const updateFilters = (newTags: string[], newMaxBudget: string) => {
     const params = new URLSearchParams()
     newTags.forEach((tag) => params.append('tag', tag))
     if (newMaxBudget && !isOwner) params.set('maxBudget', newMaxBudget)
+    if (searchQuery) params.set('q', searchQuery)
 
     router.push(`${pathname}?${params.toString()}`)
   }
 
   const clearFilters = () => {
+    setSearchQuery('')
     router.push(pathname)
   }
 
-  const hasFilters = currentTags.length > 0 || currentMaxBudget !== ''
+  const hasFilters = currentTags.length > 0 || currentMaxBudget !== '' || currentSearch !== ''
 
   const skillOptions = [
     { label: 'All skills', value: '' },
@@ -126,10 +153,24 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
 
   if (isOwner) {
     const currentTag = currentTags[0] || ''
-    const hasOwnerFilters = currentTag !== ''
+    const hasOwnerFilters = currentTag !== '' || currentSearch !== ''
 
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.015] p-5 text-left select-none max-w-sm">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.015] p-5 text-left select-none space-y-4 max-w-md">
+        {/* Search Input */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-white/40" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search missions..."
+            className="block w-full pl-10 pr-4 h-10 bg-white/[0.02] border border-white/10 rounded-xl text-[13px] text-white/80 placeholder-white/30 focus:outline-none focus:border-[#ff8a00] focus:shadow-[0_0_12px_rgba(255,138,0,0.15)] transition-all font-semibold"
+          />
+        </div>
+
         <div className="flex items-end gap-3">
           <div className="flex-grow">
             <CustomSelect
@@ -155,7 +196,21 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.015] p-5 text-left select-none">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.015] p-5 text-left select-none space-y-4">
+      {/* Search Input */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-4 w-4 text-white/40" />
+        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search missions by title, description..."
+          className="block w-full pl-10 pr-4 h-10 bg-white/[0.02] border border-white/10 rounded-xl text-[13px] text-white/80 placeholder-white/30 focus:outline-none focus:border-[#ff8a00] focus:shadow-[0_0_12px_rgba(255,138,0,0.15)] transition-all font-semibold"
+        />
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-end gap-4">
         {/* Skill dropdown */}
         <div className="flex-1 sm:max-w-xs">

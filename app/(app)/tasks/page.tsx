@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string | string[]; maxBudget?: string }>
+  searchParams: Promise<{ tag?: string | string[]; maxBudget?: string; q?: string }>
 }) {
   const session = await auth()
   const user = session?.user as { id: string; xp: number; role?: 'developer' | 'owner' } | undefined
@@ -27,42 +27,45 @@ export default async function TasksPage({
 
   const tags = typeof params.tag === 'string' ? [params.tag] : params.tag
   const maxBudget = params.maxBudget ? parseInt(params.maxBudget) : undefined
+  const q = params.q || ''
 
-  const tasks = await getOpenTasks({ skillTags: tags, maxBudget })
+  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q })
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <TopBar title={isOwner ? 'Mission Feed' : 'Browse Tasks'} />
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 text-left">
-          <div className="flex flex-col gap-3">
-            <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-              {isOwner ? 'Active ' : 'Browse '}<span className="text-accent italic">{isOwner ? 'Mission Feed' : 'Missions'}</span>
-            </h2>
-            <p className="text-[var(--color-text-muted)] text-xs md:text-sm max-w-2xl font-light leading-relaxed">
-              {isOwner
-                ? 'Browse all active tasks on the platform. Post a new mission to attract top-tier developers.'
-                : 'Find work that matches your skills. Claim it. Ship it. Get paid.'}
-            </p>
+      <TopBar title="Tasks" />
+      <div className="flex-grow overflow-y-auto">
+        <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+          <div className="flex flex-wrap items-end justify-between gap-4 text-left">
+            <div className="min-w-0">
+              <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-white">
+                {isOwner ? 'All tasks' : 'Browse tasks'}
+              </h2>
+              <p className="text-sm text-[var(--color-text-muted)] mt-1 max-w-2xl">
+                {isOwner
+                  ? 'Every active task on the platform. Post a new one to attract developers.'
+                  : 'Find work that matches your skills, claim it, ship it, and get paid.'}
+              </p>
+            </div>
+
+            {isOwner && (
+              <Link
+                href="/post-task"
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg ui-btn-primary text-sm whitespace-nowrap transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Post task
+              </Link>
+            )}
           </div>
 
-          {isOwner && (
-            <Link
-              href="/post-task"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl ui-btn-primary text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4 stroke-[2.8px]" />
-              Launch Task
-            </Link>
-          )}
-        </div>
+          <div className="space-y-6">
+            <TaskFilters isOwner={isOwner} />
 
-        <div className="space-y-8 pt-2">
-          <TaskFilters isOwner={isOwner} />
-
-          <Suspense fallback={<TaskFeedSkeleton />}>
-            <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} />
-          </Suspense>
+            <Suspense fallback={<TaskFeedSkeleton />}>
+              <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} />
+            </Suspense>
+          </div>
         </div>
       </div>
     </div>
@@ -71,9 +74,9 @@ export default async function TasksPage({
 
 function TaskFeedSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="h-64 rounded-2xl ui-surface animate-pulse relative overflow-hidden">
+        <div key={i} className="h-52 rounded-xl border border-[var(--color-border)] bg-white/[0.018] animate-pulse relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent -translate-x-full animate-shimmer" />
         </div>
       ))}
