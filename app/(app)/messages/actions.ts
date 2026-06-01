@@ -1,9 +1,11 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { messages } from '@/lib/db/schema'
+import { messages, users } from '@/lib/db/schema'
 import { eq, and, or, asc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 
 export async function ensureMessagesTable() {
   try {
@@ -13,6 +15,10 @@ export async function ensureMessagesTable() {
         "sender_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
         "receiver_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
         "content" text NOT NULL,
+        "is_received" boolean DEFAULT false NOT NULL,
+        "is_seen" boolean DEFAULT false NOT NULL,
+        "file_url" text,
+        "file_name" text,
         "created_at" timestamp DEFAULT now() NOT NULL
       );
     `)
@@ -21,9 +27,66 @@ export async function ensureMessagesTable() {
   }
 }
 
+export async function uploadChatFile(formData: FormData) {
+  try {
+    const file = formData.get('file') as File
+    if (!file) {
+      return { success: false, error: 'No file provided' }
+    }
+
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    await mkdir(uploadsDir, { recursive: true })
+
+    const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+    const fileName = `${Date.now()}-${cleanName}`
+    const filePath = join(uploadsDir, fileName)
+
+    await writeFile(filePath, buffer)
+
+    const fileUrl = `/uploads/${fileName}`
+    return { success: true, fileUrl, fileName: file.name }
+  } catch (error) {
+    console.error('File upload failed:', error)
+    return { success: false, error: 'File upload failed on server' }
+  }
+}
+
 export async function getMessagesBetweenUsers(userId1: string, userId2: string) {
   await ensureMessagesTable()
   try {
+    // 1. Update userId1's lastActiveAt to now
+    await db
+      .update(users)
+      .set({ lastActiveAt: new Date() })
+      .where(eq(users.id, userId1))
+
+    // 2. Mark all messages sent to userId1 (receiver) as received (since userId1 is online)
+    await db
+      .update(messages)
+      .set({ isReceived: true })
+      .where(
+        and(
+          eq(messages.receiverId, userId1),
+          eq(messages.isReceived, false)
+        )
+      )
+
+    // 3. Mark messages sent by userId2 to userId1 as read/seen (since userId1 is viewing chat with userId2)
+    await db
+      .update(messages)
+      .set({ isReceived: true, isSeen: true })
+      .where(
+        and(
+          eq(messages.senderId, userId2),
+          eq(messages.receiverId, userId1),
+          or(eq(messages.isReceived, false), eq(messages.isSeen, false))
+        )
+      )
+
+    // 4. Fetch the message thread
     const list = await db
       .select()
       .from(messages)
@@ -34,26 +97,61 @@ export async function getMessagesBetweenUsers(userId1: string, userId2: string) 
         )
       )
       .orderBy(asc(messages.createdAt))
-    return { success: true, messages: list }
+
+    // 5. Fetch userId2's lastActiveAt status
+    const [user2] = await db
+      .select({ lastActiveAt: users.lastActiveAt })
+      .from(users)
+      .where(eq(users.id, userId2))
+
+    const isOnline = user2?.lastActiveAt
+      ? (new Date().getTime() - new Date(user2.lastActiveAt).getTime()) < 12000 // online if active within last 12 seconds
+      : false
+
+    return { success: true, messages: list, isOnline }
   } catch (e) {
     console.error('Failed to get messages:', e)
-    return { success: false, messages: [], error: 'Failed to retrieve conversation history.' }
+    return { success: false, messages: [], isOnline: false, error: 'Failed to retrieve conversation history.' }
   }
 }
 
-export async function sendMessageAction(senderId: string, receiverId: string, content: string) {
+export async function sendMessageAction(
+  senderId: string,
+  receiverId: string,
+  content: string,
+  fileUrl?: string,
+  fileName?: string
+) {
   await ensureMessagesTable()
-  if (!content || !content.trim()) {
+  if ((!content || !content.trim()) && !fileUrl) {
     return { success: false, error: 'Message content cannot be empty.' }
   }
   try {
-    await db.insert(messages).values({
-      senderId,
-      receiverId,
-      content: content.trim(),
-    })
+    // Check if receiver is online to mark as received immediately
+    const [receiver] = await db
+      .select({ lastActiveAt: users.lastActiveAt })
+      .from(users)
+      .where(eq(users.id, receiverId))
+
+    const isReceiverOnline = receiver?.lastActiveAt
+      ? (new Date().getTime() - new Date(receiver.lastActiveAt).getTime()) < 12000
+      : false
+
+    const [insertedMessage] = await db
+      .insert(messages)
+      .values({
+        senderId,
+        receiverId,
+        content: content ? content.trim() : (fileName || 'Sent a file'),
+        isReceived: isReceiverOnline,
+        isSeen: false,
+        fileUrl: fileUrl || null,
+        fileName: fileName || null,
+      })
+      .returning()
+
     revalidatePath('/messages')
-    return { success: true }
+    return { success: true, message: insertedMessage }
   } catch (e) {
     console.error('Failed to send message:', e)
     return { success: false, error: 'Database error. Failed to dispatch message.' }
