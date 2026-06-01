@@ -6,6 +6,7 @@ import { eq, and, or, asc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { encryptUrl, decryptUrl } from '@/lib/utils/encrypt'
 
 export async function ensureMessagesTable() {
   try {
@@ -47,7 +48,9 @@ export async function uploadChatFile(formData: FormData) {
     await writeFile(filePath, buffer)
 
     const fileUrl = `/uploads/${fileName}`
-    return { success: true, fileUrl, fileName: file.name }
+    // Encrypt the URL before handing it back — it will be stored encrypted in the DB
+    const encryptedUrl = encryptUrl(fileUrl)
+    return { success: true, fileUrl: encryptedUrl, fileName: file.name }
   } catch (error) {
     console.error('File upload failed:', error)
     return { success: false, error: 'File upload failed on server' }
@@ -108,7 +111,13 @@ export async function getMessagesBetweenUsers(userId1: string, userId2: string) 
       ? (new Date().getTime() - new Date(user2.lastActiveAt).getTime()) < 12000 // online if active within last 12 seconds
       : false
 
-    return { success: true, messages: list, isOnline }
+    // Decrypt fileUrl for each message before returning to the client
+    const decryptedList = list.map(msg => ({
+      ...msg,
+      fileUrl: msg.fileUrl ? (decryptUrl(msg.fileUrl) ?? msg.fileUrl) : null,
+    }))
+
+    return { success: true, messages: decryptedList, isOnline }
   } catch (e) {
     console.error('Failed to get messages:', e)
     return { success: false, messages: [], isOnline: false, error: 'Failed to retrieve conversation history.' }
