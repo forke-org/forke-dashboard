@@ -30,7 +30,7 @@ export default async function TasksPage({
   const q = params.q || ''
   const filterParam = params.filter
 
-  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: isOwner })
+  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: true })
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-[var(--color-text-primary)]">
@@ -64,7 +64,7 @@ export default async function TasksPage({
             <TaskFilters isOwner={isOwner} />
 
             <Suspense fallback={<TaskFeedSkeleton />}>
-              <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} initialFilter={filterParam} />
+              <TaskFeed tasks={tasks} userLevel={userLevel} isOwner={isOwner} initialFilter={filterParam} currentUserId={user?.id} />
             </Suspense>
           </div>
         </div>

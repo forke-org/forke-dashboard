@@ -21,6 +21,7 @@ interface TaskCardProps {
   isOwner?: boolean
   claimantName?: string | null
   claimantUsername?: string | null
+  currentUserId?: string
 }
 
 function timeAgo(date: Date) {
@@ -46,6 +47,7 @@ export default function TaskCard({
   isOwner = false,
   claimantName,
   claimantUsername,
+  currentUserId,
 }: TaskCardProps) {
   const budgetInRupees = Math.floor(task.budget / 100)
 
@@ -73,19 +75,31 @@ export default function TaskCard({
       </div>
 
       <div className="mt-auto space-y-3.5">
-        {/* Claimant Info if Claimed and viewed by Owner */}
-        {isOwner && task.status !== 'open' && claimantName && (
+        {/* Claimant Info if Claimed */}
+        {task.status !== 'open' && claimantName && (
           <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
-            <div className="flex items-center gap-1.5 text-amber-500 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <div className={cn(
+              "flex items-center gap-1.5 font-medium",
+              currentUserId === task.claimantId ? "text-emerald-500" : "text-amber-500"
+            )}>
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full animate-pulse shrink-0",
+                currentUserId === task.claimantId ? "bg-emerald-500" : "bg-amber-500"
+              )} />
               <span>
-                Claimed by{' '}
-                <Link
-                  href={claimantUsername ? `/${claimantUsername}` : `/profile/${task.claimantId || ''}`}
-                  className="text-white hover:text-accent font-semibold transition-colors underline decoration-white/20 hover:decoration-accent/40"
-                >
-                  {claimantName}
-                </Link>
+                {currentUserId === task.claimantId ? (
+                  <span>Claimed by <span className="font-semibold text-white">you</span></span>
+                ) : (
+                  <span>
+                    Claimed by{' '}
+                    <Link
+                      href={claimantUsername ? `/${claimantUsername}` : `/profile/${task.claimantId || ''}`}
+                      className="text-white hover:text-accent font-semibold transition-colors underline decoration-white/20 hover:decoration-accent/40"
+                    >
+                      {claimantName}
+                    </Link>
+                  </span>
+                )}
               </span>
             </div>
             <span className="text-[var(--color-text-muted)] font-mono text-[10px]">
@@ -94,8 +108,8 @@ export default function TaskCard({
           </div>
         )}
 
-        {/* Default Client/Created row (only if not claimed or developer is viewing) */}
-        {(!isOwner || task.status === 'open') && (
+        {/* Default Client/Created row (only if open) */}
+        {task.status === 'open' && (
           <div className={cn(
             "flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5",
             isOwner && "justify-end"

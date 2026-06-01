@@ -25,9 +25,10 @@ interface TaskFeedProps {
   userLevel: number
   isOwner?: boolean
   initialFilter?: string
+  currentUserId?: string
 }
 
-export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFilter }: TaskFeedProps) {
+export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFilter, currentUserId }: TaskFeedProps) {
   const router = useRouter()
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
@@ -83,49 +84,47 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
 
   return (
     <div className="space-y-6 select-none">
-      {/* Owner Side Filter Toggles */}
-      {isOwner && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-          <div className="flex items-center gap-1.5 p-1 bg-white/[0.02] border border-white/10 rounded-xl w-fit">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
-                filterStatus === 'all'
-                  ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
-                  : "text-[var(--color-text-muted)] hover:text-white"
-              )}
-            >
-              All Tasks
-            </button>
-            <button
-              onClick={() => setFilterStatus('unclaimed')}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
-                filterStatus === 'unclaimed'
-                  ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
-                  : "text-[var(--color-text-muted)] hover:text-white"
-              )}
-            >
-              Unclaimed
-            </button>
-            <button
-              onClick={() => setFilterStatus('claimed')}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
-                filterStatus === 'claimed'
-                  ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
-                  : "text-[var(--color-text-muted)] hover:text-white"
-              )}
-            >
-              Claimed
-            </button>
-          </div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
-            Showing {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
-          </div>
+      {/* Filter Toggles */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+        <div className="flex items-center gap-1.5 p-1 bg-white/[0.02] border border-white/10 rounded-xl w-fit">
+          <button
+            onClick={() => setFilterStatus('all')}
+            className={cn(
+              "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
+              filterStatus === 'all'
+                ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                : "text-[var(--color-text-muted)] hover:text-white"
+            )}
+          >
+            All Tasks
+          </button>
+          <button
+            onClick={() => setFilterStatus('unclaimed')}
+            className={cn(
+              "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
+              filterStatus === 'unclaimed'
+                ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                : "text-[var(--color-text-muted)] hover:text-white"
+            )}
+          >
+            Unclaimed
+          </button>
+          <button
+            onClick={() => setFilterStatus('claimed')}
+            className={cn(
+              "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
+              filterStatus === 'claimed'
+                ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                : "text-[var(--color-text-muted)] hover:text-white"
+            )}
+          >
+            Claimed
+          </button>
         </div>
-      )}
+        <div className="text-[11px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
+          Showing {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
+        </div>
+      </div>
 
       {filteredTasks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-6 text-center rounded-xl border border-dashed border-[var(--color-border)] bg-white/[0.01]">
@@ -150,6 +149,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
               isOwner={isOwner}
               claimantName={claimantName}
               claimantUsername={claimantUsername}
+              currentUserId={currentUserId}
             />
           ))}
         </div>
