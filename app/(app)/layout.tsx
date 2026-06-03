@@ -16,14 +16,13 @@ import { getLevelFromXp } from '@/lib/utils/xp'
 import LevelUpCelebration from '@/components/shared/LevelUpCelebration'
 import PendingApproval from '@/components/auth/PendingApproval'
 import { db } from '@/lib/db'
-import { owners, tasks, messages } from '@/lib/db/schema'
+import { owners, tasks, messages, users } from '@/lib/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 import ToastContainer from '@/components/shared/Toast'
 
 import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
-import NotificationBell from '@/components/shared/NotificationBell'
-import { getUnreadCount } from '@/app/(app)/notifications/actions'
+import { resolveAvatarUrl } from '@/lib/utils/avatar'
 
 export default async function AppLayout({
   children,
@@ -36,7 +35,12 @@ export default async function AppLayout({
     redirect('/')
   }
 
-  const user = session.user
+  const sessionUser = session.user
+  const dbUser = await db.query.users.findFirst({ where: eq(users.id, sessionUser.id) })
+  if (!dbUser) {
+    redirect('/signin')
+  }
+  const user = dbUser
   
   if (user.isBanned) {
     redirect('/auth-error?error=AccessDenied')
@@ -48,11 +52,11 @@ export default async function AppLayout({
   }
 
   const userLevel = getLevelFromXp(user.xp || 0)
+  const resolvedAvatarUrl = resolveAvatarUrl(user.image)
 
   let companyName = ''
   let pendingSubmissionsCount = 0
   let unreadMessagesCount = 0
-  let unreadNotificationsCount = 0
 
   // Fetch received messages count for the logged-in user dynamically
   try {
@@ -91,18 +95,29 @@ export default async function AppLayout({
     }
   }
 
-  try {
-    const notifRes = await getUnreadCount(user.id)
-    unreadNotificationsCount = notifRes.count
-  } catch { /* ignore */ }
+  // If developer has not completed onboarding (no username), hide the sidebar.
+  if (user.role === 'developer' && !user.username) {
+    return (
+      <DashboardProvider>
+        <div className="flex h-screen bg-[#070709] overflow-hidden theme-ember relative">
+          <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
+            {children}
+          </main>
+        </div>
+        <ToastContainer />
+      </DashboardProvider>
+    )
+  }
 
   return (
     <DashboardProvider>
-      <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember">
-        <Sidebar 
-          user={{ 
-            name: user.name, 
-            image: user.image, 
+      <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember relative">
+
+        <Sidebar
+          user={{
+            name: user.name,
+            image: resolvedAvatarUrl,
+            username: user.username,
             level: userLevel,
             xp: user.xp,
             currentStreak: user.currentStreak,
@@ -112,7 +127,7 @@ export default async function AppLayout({
           pendingSubmissionsCount={pendingSubmissionsCount}
           unreadMessagesCount={unreadMessagesCount}
         />
-        <main className="flex-grow flex flex-col min-w-0 overflow-hidden relative">
+        <main className="flex-grow flex flex-col min-w-0 overflow-hidden relative z-10">
           {/* Floating Mobile Trigger */}
           <div className="absolute top-3 left-4 z-40 md:hidden bg-[#0c0c0f]/80 backdrop-blur border border-white/[0.06] p-1 rounded-lg">
             <MobileMenuTrigger />
@@ -120,7 +135,6 @@ export default async function AppLayout({
           {children}
         </main>
       </div>
-      <NotificationBell userId={user.id} initialUnreadCount={unreadNotificationsCount} />
       <LevelUpCelebration />
       <ToastContainer />
     </DashboardProvider>

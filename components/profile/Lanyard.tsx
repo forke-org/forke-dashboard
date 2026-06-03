@@ -1,13 +1,3 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable @next/next/no-img-element */
 'use client'
@@ -27,7 +17,6 @@ import {
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline'
 import { RefreshCw } from 'lucide-react'
 import * as THREE from 'three'
-import { QRCodeSVG } from 'qrcode.react'
 
 extend({ MeshLineGeometry, MeshLineMaterial })
 
@@ -54,19 +43,15 @@ interface LanyardProps {
   transparent?: boolean
   className?: string
   card?: LanyardCard
-  qrUrl?: string
-  isHome?: boolean
 }
 
 export default function Lanyard({
-  position,
+  position = [0, -2, 20],
   gravity = [0, -40, 0],
   fov = 20,
   transparent = true,
   className = '',
   card,
-  qrUrl,
-  isHome = false,
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(
     () => typeof window !== 'undefined' && window.innerWidth < 768
@@ -85,12 +70,10 @@ export default function Lanyard({
     setFlipped(flipRef.current)
   }
 
-  const finalPosition = position || (isMobile ? [0, -2, 14.5] : [0, -2, 20])
-
   return (
     <div className={`relative z-0 w-full h-full flex justify-center items-center ${className}`}>
       <Canvas
-        camera={{ position: finalPosition, fov }}
+        camera={{ position, fov }}
         dpr={[1, isMobile ? 2 : 3]}
         gl={{ alpha: true, antialias: true, premultipliedAlpha: false }}
         style={{ background: 'transparent' }}
@@ -101,28 +84,24 @@ export default function Lanyard({
         }}
       >
         <ambientLight intensity={Math.PI} />
-        <React.Suspense fallback={null}>
-          <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-            <Band isMobile={isMobile} card={card} qrUrl={qrUrl} isHome={isHome} flipRef={flipRef} />
-          </Physics>
-          <Environment blur={0.75}>
-            <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-            <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-            <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-            <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
-          </Environment>
-        </React.Suspense>
+        <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
+          <Band isMobile={isMobile} card={card} flipRef={flipRef} />
+        </Physics>
+        <Environment blur={0.75}>
+          <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
+        </Environment>
       </Canvas>
 
-      {!isHome && (
-        <button
-          onClick={toggleFlip}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-9 px-4 rounded-full bg-white/[0.06] border border-white/15 hover:bg-white/[0.12] hover:border-white/25 backdrop-blur text-xs font-bold text-white/85 hover:text-white transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          {flipped ? 'Show front' : 'Flip card'}
-        </button>
-      )}
+      <button
+        onClick={toggleFlip}
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-9 px-4 rounded-full bg-white/[0.06] border border-white/15 hover:bg-white/[0.12] hover:border-white/25 backdrop-blur text-xs font-bold text-white/85 hover:text-white transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+        {flipped ? 'Show front' : 'Flip card'}
+      </button>
     </div>
   )
 }
@@ -133,8 +112,6 @@ interface BandProps {
   isMobile?: boolean
   card?: LanyardCard
   flipRef?: React.MutableRefObject<boolean>
-  qrUrl?: string
-  isHome?: boolean
 }
 
 // ---- HTML face sizing ----
@@ -146,7 +123,7 @@ const FACE_H = 536 // px
 const FACE_FUDGE = 48
 const FACE_OFFSET = 0.04 // how far each DOM face sits off the body (avoids occlusion clipping)
 
-function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qrUrl, isHome = false }: BandProps) {
+function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: BandProps) {
   const band = useRef<any>(null)
   const fixed = useRef<any>(null)
   const j1 = useRef<any>(null)
@@ -213,10 +190,8 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
       // Relax band joints toward rest, then redraw the woven strap.
       ;[j1, j2].forEach((ref) => {
         if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
-        if (!isHome) {
-          const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
-          ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
-        }
+        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
+        ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
       })
     curve.points[0].copy(j3.current.translation())
     curve.points[1].copy(j2.current.lerped)
@@ -231,14 +206,11 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
     const r = cardRef.current.rotation()
     quat.set(r.x, r.y, r.z, r.w)
     euler.setFromQuaternion(quat, 'YXZ')
-
-    if (!isHome) {
-      const targetY = flipRef?.current ? Math.PI : 0
-      let err = targetY - euler.y
-      err = Math.atan2(Math.sin(err), Math.cos(err)) // shortest path
-      ang.copy(cardRef.current.angvel())
-      cardRef.current.setAngvel({ x: ang.x, y: err * 4, z: ang.z })
-    }
+    const targetY = flipRef?.current ? Math.PI : 0
+    let err = targetY - euler.y
+    err = Math.atan2(Math.sin(err), Math.cos(err)) // shortest path
+    ang.copy(cardRef.current.angvel())
+    cardRef.current.setAngvel({ x: ang.x, y: err * 4, z: ang.z })
 
     // Mathematical camera dot-product normal-check for high-performance visibility toggling
     if (frontHtmlRef.current && backHtmlRef.current) {
@@ -270,17 +242,17 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
   return (
     <>
       <group position={[0, 4, 0]}>
-        <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={isHome ? [0, -0.8, 0] : [0.5, 0, 0]} ref={j1} {...segmentProps} type={isHome ? 'fixed' : 'dynamic'}>
+        <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
+        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={isHome ? [0, -1.6, 0] : [1, 0, 0]} ref={j2} {...segmentProps} type={isHome ? 'fixed' : 'dynamic'}>
+        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={isHome ? [0, -2.4, 0] : [1.5, 0, 0]} ref={j3} {...segmentProps} type={isHome ? 'fixed' : 'dynamic'}>
+        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={isHome ? [0, -3.85, 0] : [2, 0, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={isHome ? 'fixed' : 'dynamic'}>
+        <RigidBody position={[2, 0, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={'dynamic' as RigidBodyProps['type']}>
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
 
           {/* Physical card body + metal clip from the model (gives depth + the clasp) */}
@@ -315,7 +287,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
                 style={{ width: FACE_W, height: FACE_H }}
               >
                 <div ref={backHtmlRef} style={{ width: FACE_W, height: FACE_H, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                  <CardBack card={card} qrUrl={qrUrl} />
+                  <CardBack card={card} />
                 </div>
               </Html>
             </>
@@ -341,142 +313,66 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
 
 /* ----------------------------- DOM card faces ----------------------------- */
 
-// Editorial portrait card: black face with a tilted oval portrait, an oversized
-// thin two-line name, role, and footer meta.
+const faceClass =
+  'rounded-[28px] overflow-hidden border border-white/[0.1] p-7 flex flex-col bg-gradient-to-b from-[#151013] via-[#0d0a0c] to-[#0a0708] shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none'
+
 function CardFront({ card }: { card: LanyardCard }) {
   const initial = (card.name?.[0] || 'F').toUpperCase()
-  const rawHeadline = card.headline || 'Real, verified work.'
-  const headline = rawHeadline.length > 25 ? `${rawHeadline.slice(0, 25)}...` : rawHeadline
   return (
-    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#151414] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
-
-      {/* Header: dots + URL */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-4">
-        <div className="flex items-center gap-1.5">
-          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
-          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
-          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
-        </div>
-        <span className="text-[#FF7A00] text-[15px] tracking-tight">forke.space</span>
+    <div style={{ width: FACE_W, height: FACE_H }} className={faceClass}>
+      <div className="relative flex items-center justify-between">
+        <span className="text-[#ff8a00] font-mono font-black text-2xl">FORKE //</span>
+        <span className="text-white/35 font-mono font-bold text-[12px] tracking-[0.15em]">DEV CREDENTIAL</span>
       </div>
-      <div className="h-px bg-white/20" />
 
-      {/* Tall tilted capsule portrait — slanted right like the indicators */}
-      <div className="relative flex-1">
-        <div
-          className="absolute left-1/2 top-1/2 w-[72%] h-[94%]"
-          style={{ transform: 'translate(-50%, -50%) rotate(25deg)' }}
-        >
-          {/* the photo is clipped to a vertical pill/capsule and counter-rotated upright */}
-          <div
-            className="w-full h-full bg-[#161616] flex items-center justify-center rounded-full overflow-hidden"
-          >
-            {card.avatarUrl ? (
-              <img
-                src={card.avatarUrl}
-                alt={card.name}
-                className="w-full h-full object-cover"
-                style={{ transform: 'rotate(-25deg) scale(1.4)' }}
-                draggable={false}
-              />
-            ) : (
-              <span className="text-[120px] font-light text-white/80" style={{ transform: 'rotate(-25deg)' }}>{initial}</span>
-            )}
-          </div>
+      <div className="relative flex-1 flex flex-col items-center justify-center gap-6">
+        <div className="w-40 h-40 rounded-full overflow-hidden border-[5px] border-[#ff8a00]/70 bg-[#ff8a00]/10 flex items-center justify-center shadow-[0_0_30px_rgba(255,138,0,0.18)]">
+          {card.avatarUrl ? (
+            <img src={card.avatarUrl} alt={card.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-6xl font-black text-[#ff8a00]">{initial}</span>
+          )}
         </div>
 
-        {/* Oversized editorial serif stacked name overlapping the portrait bottom-left */}
-        <div className="absolute left-6 z-10 max-w-[85%]" style={{ bottom: '-44px' }}>
-          {(() => {
-            // First + last name only (drop middle names); single name as-is.
-            const nameParts = (card.name || 'Forke').trim().split(/\s+/).filter(Boolean)
-            const firstName = nameParts[0] || 'Forke'
-            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
-            const maxPartLength = Math.max(firstName.length, lastName.length)
-            const fontSize = maxPartLength > 15 ? '32px' : maxPartLength > 10 ? '42px' : '52px'
-            return (
-              <h2
-                className="text-white italic leading-[0.8] tracking-tight"
-                style={{ fontSize, fontFamily: 'var(--font-instrument-serif), Georgia, serif' }}
-              >
-                <div>{firstName}</div>
-                {lastName && <div className="opacity-95">{lastName}</div>}
-              </h2>
-            )
-          })()}
+        <div className="w-full space-y-3">
+          <Field><span className="font-bold text-white text-[22px]">{card.name}</span></Field>
+          <Field><span className="font-mono font-bold text-[#ff8a00] text-[18px]">LVL {card.level} · {card.title}</span></Field>
+          <Field><span className="text-white/70 text-[16px]">{card.headline || 'Building real, verified work.'}</span></Field>
         </div>
       </div>
 
-      {/* Role line (right-aligned) */}
-      <div className="px-6 pt-3 pb-3 flex items-end justify-end">
-        <span className="text-white/85 text-[19px] tracking-tight">{card.title}</span>
-      </div>
-      <div className="h-px bg-white/20 mx-6" />
-
-      {/* Identity row: level/headline + handle */}
-      <div className="px-6 py-4 flex items-start justify-between gap-3">
-        <div className="leading-snug min-w-0">
-          <p className="text-white text-[15px] tracking-tight">Level {card.level} Builder</p>
-          <p className="text-white/65 text-[14px] tracking-tight truncate">{headline}</p>
+      <div className="relative">
+        <div className="flex items-end gap-[3px] h-9 opacity-25">
+          {BARS.map((w, i) => <span key={i} className="bg-white" style={{ width: w, height: '100%' }} />)}
         </div>
-        <span className="text-[#FF7A00] text-[18px] tracking-tight whitespace-nowrap">@{card.username || 'forke'}</span>
-      </div>
-      <div className="h-px bg-white/20 mx-6" />
-      <div className="h-3" />
-    </div>
-  )
-}
-
-// Back face: same black card + dots/URL header, then just the white Forky mark,
-// the @handle and the "Developer Network" tagline centered — no oval, no footer.
-function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
-  const profileUrl = qrUrl || (typeof window !== 'undefined'
-    ? `${window.location.origin}/${card.username || 'forke'}`
-    : `https://www.forke.space/${card.username || 'forke'}`)
-
-  return (
-    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#151414] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
-      <style>{`
-        .lanyard-qr image {
-          filter: brightness(0) invert(1);
-        }
-      `}</style>
-
-      {/* Header: dots + URL */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-4">
-        <div className="flex items-center gap-1.5">
-          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
-          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
-          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
-        </div>
-        <span className="text-[#FF7A00] text-[15px] tracking-tight">forke.space</span>
-      </div>
-      <div className="h-px bg-white/20" />
-
-      {/* Centered QR code + handle + tagline */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
-        <QRCodeSVG
-          value={profileUrl}
-          size={220}
-          bgColor="#151414"
-          fgColor="#ffffff"
-          level="H"
-          imageSettings={{
-            src: FORKY_BACK,
-            height: 60,
-            width: 60,
-            excavate: true,
-          }}
-          className="lanyard-qr"
-        />
-        <div className="text-center">
-          <h2 className="text-white font-light leading-none tracking-tight" style={{ fontSize: '38px' }}>
-            @{card.username || 'forke'}
-          </h2>
-          <p className="text-[#FF7A00] text-[15px] tracking-[0.25em] uppercase mt-3">Developer Network</p>
-        </div>
+        <p className="text-[11px] font-mono text-white/30 tracking-[0.12em] mt-2">VERIFIED · PROOF OF WORK · FORKE.SPACE</p>
       </div>
     </div>
   )
 }
 
+function CardBack({ card }: { card: LanyardCard }) {
+  return (
+    <div style={{ width: FACE_W, height: FACE_H }} className={faceClass}>
+      <div className="relative flex items-center justify-between">
+        <span className="text-white/30 font-mono font-bold text-[12px] tracking-[0.15em]">FORKE NETWORK</span>
+        <span className="text-[#ff8a00] font-mono font-black text-2xl">//</span>
+      </div>
+      <div className="relative flex-1 flex flex-col items-center justify-center gap-3">
+        <img src={FORKY_BACK} alt="Forky" className="w-[300px] h-[300px] object-contain drop-shadow-[0_0_36px_rgba(255,138,0,0.22)]" />
+        <span className="text-[#ff8a00] font-mono font-black text-3xl">@{card.username || 'forke'}</span>
+      </div>
+      <p className="relative text-center text-[11px] font-mono text-white/30 tracking-[0.18em]">FORKE // DEVELOPER NETWORK</p>
+    </div>
+  )
+}
+
+function Field({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-full text-center py-3 rounded-2xl border border-[#ff8a00]/25 bg-white/[0.015]">
+      {children}
+    </div>
+  )
+}
+
+const BARS = ['3px', '5px', '2px', '7px', '3px', '2px', '6px', '3px', '4px', '8px', '2px', '5px', '3px', '6px', '4px', '2px', '7px', '3px', '5px', '4px', '2px', '6px', '8px', '3px', '4px', '5px', '2px', '7px', '3px', '4px', '6px', '2px', '5px', '3px', '8px', '4px', '2px', '6px', '3px', '5px']
