@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo, useRef } from 'react'
@@ -114,11 +114,7 @@ interface PRWithReview {
   review: AIReview | null
 }
 
-interface SandboxWorkspaceProps {
-  presetRole?: 'owner' | 'developer'
-}
-
-export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) {
+export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'developer' }) {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -127,12 +123,6 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
   const [role, setRole] = useState<'owner' | 'developer' | null>(presetRole || null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loadingSession, setLoadingSession] = useState(true)
-
-  useEffect(() => {
-    if (presetRole) {
-      setRole(presetRole)
-    }
-  }, [presetRole])
 
   // --- Owner Dashboard State ---
   const [organizations, setOrganizations] = useState<Organization[]>([])
@@ -276,8 +266,8 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
       setIsLoggedIn(true)
       localStorage.setItem('forke_github_username', githubIdParam)
       localStorage.setItem('forke_role', roleParam)
-      // Clean up search params
-      router.replace(roleParam === 'owner' ? '/sandbox-post-task' : '/sandbox-dashboard')
+      // Clean up URL params after storing session
+      router.replace(roleParam === 'owner' ? '/owner' : '/developer')
     } else {
       const savedUsername = localStorage.getItem('forke_github_username')
       const savedRole = localStorage.getItem('forke_role') as 'owner' | 'developer' | null
@@ -297,7 +287,7 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
     setGithubUsername(null)
     setRole(presetRole || null)
     setIsLoggedIn(false)
-    router.push(presetRole === 'owner' ? '/sandbox-post-task' : '/sandbox-dashboard')
+    router.push(presetRole === 'owner' ? '/owner' : presetRole === 'developer' ? '/developer' : '/')
   }
 
   // --- API Fetches: Owner ---
@@ -987,7 +977,20 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
   }
 
   return (
-    <div className="w-full relative z-10">
+    <div className="min-h-screen bg-[#030303] text-zinc-100 font-sans selection:bg-amber-500 selection:text-black relative overflow-hidden flex flex-col w-full">
+      {/* High-Fidelity Glow System */}
+      <div className="absolute top-[-15%] left-[-15%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-amber-500/8 via-transparent to-transparent blur-[160px] pointer-events-none animate-ambient-pulse"></div>
+      <div className="absolute bottom-[-15%] right-[-15%] w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-emerald-500/8 via-transparent to-transparent blur-[160px] pointer-events-none animate-ambient-pulse" style={{ animationDelay: '3s' }}></div>
+      <div className="absolute top-[30%] left-[25%] w-[600px] h-[600px] rounded-full bg-purple-500/4 blur-[140px] pointer-events-none"></div>
+
+      {/* Cybernetic Dot-Grid Mesh */}
+      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.015)_1.5px,transparent_1.5px)] bg-[size:28px_28px] pointer-events-none"></div>
+
+      {/* --- Logged In Navbar --- */}
+
+
+      {/* --- Main Dashboard Body --- */}
+      <main className="flex-1 flex flex-col p-8 max-w-7xl w-full mx-auto relative z-10">
         {!isLoggedIn ? (
           /* ========================================================================= */
           /* ======================== 1. Welcome / Auth Page ======================== */
@@ -1008,11 +1011,12 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
             </div>
 
             <div className={cn(
-              presetRole ? "w-full max-w-md mx-auto" : "grid md:grid-cols-2 gap-8 w-full max-w-3xl animate-scale-up"
+              "w-full animate-scale-up",
+              presetRole ? "max-w-md mx-auto" : "grid md:grid-cols-2 gap-8 max-w-3xl"
             )}>
               {/* Owner Authentication Box */}
               {(!presetRole || presetRole === 'owner') && (
-                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-amber-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(245,158,11,0.15)] backdrop-blur-md overflow-hidden min-h-[380px]">
+                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-amber-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(245,158,11,0.15)] backdrop-blur-md overflow-hidden">
                   <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-amber-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-amber-500/10 transition-all duration-500"></div>
 
                   <div className="relative z-10">
@@ -1042,7 +1046,7 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
 
               {/* Developer Authentication Box */}
               {(!presetRole || presetRole === 'developer') && (
-                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-emerald-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(16,185,129,0.15)] backdrop-blur-md overflow-hidden min-h-[380px]">
+                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-emerald-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(16,185,129,0.15)] backdrop-blur-md overflow-hidden">
                   <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-emerald-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-500"></div>
 
                   <div className="relative z-10">
@@ -1068,7 +1072,9 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
                     Authorize as Developer
                   </a>
                 </div>
+              )}
             </div>
+
           </div>
         ) : role === 'owner' ? (
           /* ========================================================================= */
@@ -2826,7 +2832,12 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
 
           </div>
         )}
-      {/* Closed main and footer layout */}
+      </main>
+
+      {/* --- Global Footer --- */}
+      <footer className="border-t border-zinc-900/80 bg-zinc-950/20 py-6 text-center text-[10px] text-zinc-500 font-extrabold tracking-widest relative z-10 shrink-0 uppercase select-none">
+        Built for Forke Platform validation. Ship real code. Prove skills. Level up.
+      </footer>
 
       {/* ===== PR Comparison Modal ===== */}
       {comparisonModalOpen && comparisonPRReview && (
