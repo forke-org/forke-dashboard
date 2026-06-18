@@ -1,23 +1,15 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxRepos } from '@/lib/db/schema'
-import { requireOwnerFromCookie, sandboxAuthResponse } from '@/lib/sandbox-auth'
+import { sandboxOwners, sandboxRepos } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { activeJobs } from '@/lib/jobs'
 import { runMirrorJob } from '@/lib/github/mirror'
 
 export async function POST(request: Request) {
   try {
     const { 
+      username, 
       sourceRepo, 
       targetOrg,
       taskTitle,
@@ -29,14 +21,35 @@ export async function POST(request: Request) {
       acceptanceCriteria
     } = await request.json()
 
-    if (!sourceRepo || !targetOrg || !/^[\w.-]+\/[\w.-]+$/.test(sourceRepo)) {
-      return NextResponse.json({ error: 'Missing required parameters: sourceRepo, targetOrg' }, { status: 400 })
+    if (!username || !sourceRepo || !targetOrg) {
+      return NextResponse.json({ error: 'Missing required parameters: username, sourceRepo, targetOrg' }, { status: 400 })
     }
 
-    const owner = await requireOwnerFromCookie()
-    const token = owner.token
-    const ownerId = owner.id
-    const username = owner.username
+    const cookieStore = await cookies()
+    let token = cookieStore.get('forke_access_token')?.value
+
+    let ownerId: string | null = null
+
+    // 1. Fetch token & database ID for owner
+    const existing = await db
+      .select()
+      .from(sandboxOwners)
+      .where(eq(sandboxOwners.username, username))
+
+    if (existing.length > 0) {
+      ownerId = existing[0].id
+      if (!token) {
+        token = existing[0].accessToken
+      }
+    }
+
+    if (!token) {
+      return NextResponse.json({ error: 'GitHub access token not found. Please log in again.' }, { status: 401 })
+    }
+
+    if (!ownerId) {
+      return NextResponse.json({ error: 'Owner record not found in database.' }, { status: 404 })
+    }
 
     // 2. Determine target space (defaults to targetOrg or always forke-sandbox)
     const targetSpace = 'forke-sandbox'
@@ -90,9 +103,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ jobId, sandboxRepo: fullTargetRepoPath })
   } catch (error: any) {
-    const denied = sandboxAuthResponse(error)
-    if (denied) return denied
     console.error('Mirror pipeline trigger error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }

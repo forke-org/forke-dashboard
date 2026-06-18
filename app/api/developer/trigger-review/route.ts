@@ -1,38 +1,20 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { NextRequest, NextResponse, after } from 'next/server'
-import { db, sandboxRepos, developerForks, sandboxUsers, codeReviews } from '@/lib/db'
+import { db, sandboxRepos, developerForks, sandboxOwners } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { updateCommitStatus } from '@/lib/github/commitStatus'
 import { runFullPRPipeline } from '@/lib/review/pipeline'
 import { activeJobs } from '@/lib/jobs'
-import { decryptToken } from '@/lib/token-crypto'
-import { requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const sandboxRepo = body.sandboxRepo
-    const prNumber = Number(body.prNumber)
+    const { username, sandboxRepo, prNumber } = await req.json()
 
-    if (!sandboxRepo || !Number.isInteger(prNumber) || prNumber <= 0) {
+    if (!username || !sandboxRepo || !prNumber) {
       return NextResponse.json(
-        { error: 'Missing required parameters: sandboxRepo, prNumber' },
+        { error: 'Missing required parameters: username, sandboxRepo, prNumber' },
         { status: 400 }
       )
     }
-
-    // Only the signed-in developer can trigger a review of their own fork.
-    const developer = await requireSandboxUser('developer')
-    const username = developer.username
 
     // 1. Get developer fork record
     const forkRecords = await db
@@ -67,15 +49,15 @@ export async function POST(req: NextRequest) {
 
     const ownerRecords = await db
       .select()
-      .from(sandboxUsers)
-      .where(and(eq(sandboxUsers.id, sandboxRecord.ownerId), eq(sandboxUsers.role, 'owner')))
+      .from(sandboxOwners)
+      .where(eq(sandboxOwners.id, sandboxRecord.ownerId))
       .limit(1)
 
     if (ownerRecords.length === 0) {
       return NextResponse.json({ error: 'Sandbox owner not found' }, { status: 404 })
     }
 
-    const ownerToken = decryptToken(ownerRecords[0].accessToken)
+    const ownerToken = ownerRecords[0].accessToken
 
     // 3. Fetch PR info from GitHub API to get title, description, and head SHA
     const prResponse = await fetch(`https://api.github.com/repos/${sandboxRepo}/pulls/${prNumber}`, {
@@ -135,29 +117,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check database to see if we actually have a saved review report
-    const existingReviews = await db
-      .select()
-      .from(codeReviews)
-      .where(
-        and(
-          eq(codeReviews.sandboxRepoId, sandboxRecord.id),
-          eq(codeReviews.commitSha, headSha)
-        )
-      )
-      .limit(1)
-
-    const hasSavedReview = existingReviews.length > 0
-
-    // Bypassed check to allow manual verification report generation
-    /*
-    if (isCompleted && hasSavedReview) {
+    if (isCompleted) {
       return NextResponse.json({
         triggered: false,
         message: 'Review already complete for this commit SHA.',
       })
     }
-    */
 
     if (isPending) {
       let foundJobId: string | null = null
@@ -174,33 +139,13 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Try delegating to high-performance Go review queue on forke-backend
-    const goBackendUrl = process.env.FORKE_BACKEND_URL || 'http://127.0.0.1:8080'
-    try {
-      const goResp = await fetch(`${goBackendUrl}/api/v1/reviews/trigger`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN || ''}`,
-        },
-        body: JSON.stringify({ username, sandboxRepo, prNumber }),
-        signal: AbortSignal.timeout(2000),
-      })
-      if (goResp.ok) {
-        const goData = await goResp.json()
-        return NextResponse.json(goData, { status: 202 })
-      }
-    } catch {
-      // Go backend offline or unreachable; proceed with in-process execution fallback
-    }
-
     // Set commit status to pending immediately on GitHub
     await updateCommitStatus({
       repoFullName: sandboxRepo,
       sha: headSha,
       verdict: 'pending',
       accessToken: ownerToken,
-      prNumber: prNumber,
+      prNumber: parseInt(prNumber, 10),
     })
 
     const jobId = `pr-review-${prNumber}-${Date.now()}`
@@ -217,7 +162,7 @@ export async function POST(req: NextRequest) {
         await runFullPRPipeline({
           sandboxId: sandboxRecord.id,
           ownerToken,
-          prNumber: prNumber,
+          prNumber: parseInt(prNumber, 10),
           prTitle,
           prBody,
           headSha,
@@ -238,8 +183,6 @@ export async function POST(req: NextRequest) {
     }, { status: 202 })
 
   } catch (error: any) {
-    const denied = sandboxAuthResponse(error)
-    if (denied) return denied
     console.error('[Trigger Review API] Error:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }

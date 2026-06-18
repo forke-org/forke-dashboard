@@ -1,115 +1,164 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
+import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { sandboxOwners, sandboxDevelopers } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
-import { NextRequest, NextResponse } from 'next/server'
-import { handlers } from '@/auth'
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const state = searchParams.get('state') || ''
-
-  const decodedState = decodeURIComponent(state)
-  const [role] = decodedState.split(':')
-
-  // If state is 'owner' or 'developer', this is the sandbox OAuth flow
-  if (role === 'owner' || role === 'developer') {
-    return handleSandboxCallback(request, decodedState)
-  }
-
-  // Otherwise delegate to NextAuth's built-in GitHub callback handler
-  return handlers.GET(request)
-}
-
-async function handleSandboxCallback(request: NextRequest, state: string) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
+  const role = searchParams.get('state') || 'developer'
 
   if (!code) {
-    return NextResponse.redirect(new URL('/?error=No+code+received+from+GitHub', request.url))
+    return NextResponse.redirect(
+      new URL('/?error=No code received from GitHub', request.url)
+    )
   }
 
-  const [role, callbackUrl] = state.split(':')
-  const clientId = process.env.GITHUB_CLIENT_ID || process.env.AUTH_GITHUB_ID
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.AUTH_GITHUB_SECRET
-  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/callback/github`
-
-  if (!clientId || !clientSecret) {
-    return NextResponse.redirect(new URL('/?error=GitHub+OAuth+not+configured', request.url))
-  }
+  const clientId = process.env.GITHUB_CLIENT_ID
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET
+  const redirectUri = process.env.GITHUB_REDIRECT_URI
 
   try {
-    // 1. Exchange code for access token
-    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code, redirect_uri: redirectUri }),
-    })
+    // 1. Exchange authorization code for access token
+    const tokenResponse = await fetch(
+      'https://github.com/login/oauth/access_token',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      }
+    )
 
     const tokenData = await tokenResponse.json()
 
     if (tokenData.error) {
-      const msg = encodeURIComponent(tokenData.error_description || tokenData.error)
-      return NextResponse.redirect(new URL(`/?error=${msg}`, request.url))
+      return NextResponse.redirect(
+        new URL(
+          `/?error=${encodeURIComponent(tokenData.error_description || tokenData.error)}`,
+          request.url
+        )
+      )
     }
 
     const accessToken = tokenData.access_token
-    if (!accessToken) {
-      return NextResponse.redirect(new URL('/?error=No+access+token+returned', request.url))
-    }
 
-    // 2. Fetch GitHub user info
+    // 2. Fetch user information from GitHub
     const userResponse = await fetch('https://api.github.com/user', {
-      headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'Forke-Sandbox/1.0' },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'User-Agent': 'Forke-Complete-Review-Engine/1.0',
+      },
     })
 
     const userData = await userResponse.json()
+
     if (!userData.login) {
-      return NextResponse.redirect(new URL('/?error=Failed+to+get+GitHub+user', request.url))
+      return NextResponse.redirect(
+        new URL('/?error=Failed to retrieve GitHub user details', request.url)
+      )
     }
 
     const githubUsername = userData.login
     const githubId = userData.id
 
-    // 3. Save to DB — non-blocking, never fails the login
-    try {
-      const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
-      await upsertSandboxUser({ githubId, username: githubUsername, token: accessToken, role })
-    } catch (dbErr) {
-      console.warn('[Sandbox OAuth] DB save skipped (DB unavailable):', dbErr)
+    let dbSaved = false
+
+    // 3. Save to database depending on role
+    if (role === 'owner') {
+      const existingOwners = await db
+        .select()
+        .from(sandboxOwners)
+        .where(eq(sandboxOwners.githubId, githubId))
+
+      if (existingOwners.length > 0) {
+        await db
+          .update(sandboxOwners)
+          .set({
+            username: githubUsername,
+            accessToken,
+          })
+          .where(eq(sandboxOwners.githubId, githubId))
+      } else {
+        await db.insert(sandboxOwners).values({
+          githubId,
+          username: githubUsername,
+          accessToken,
+        })
+      }
+      dbSaved = true
+    } else if (role === 'developer') {
+      const existingDevelopers = await db
+        .select()
+        .from(sandboxDevelopers)
+        .where(eq(sandboxDevelopers.githubId, githubId))
+
+      if (existingDevelopers.length > 0) {
+        await db
+          .update(sandboxDevelopers)
+          .set({
+            username: githubUsername,
+            accessToken,
+          })
+          .where(eq(sandboxDevelopers.githubId, githubId))
+      } else {
+        await db.insert(sandboxDevelopers).values({
+          githubId,
+          username: githubUsername,
+          accessToken,
+        })
+      }
+      dbSaved = true
     }
 
-    // 4. Redirect to workspace page with session info in URL params
-    // Only same-site paths; "//evil.com" or "/\\evil.com" would leave the site.
-    const safeCallback = callbackUrl && /^\/(?![\/\\])/.test(callbackUrl) ? callbackUrl : null
-    const targetPath = safeCallback || (role === 'owner' ? '/owner' : '/developer')
-    const targetUrl = new URL(targetPath, request.url)
+    // Redirect to home page with success status
+    const targetUrl = new URL('/', request.url)
     targetUrl.searchParams.set('success', 'true')
     targetUrl.searchParams.set('github_id', githubUsername)
     targetUrl.searchParams.set('role', role)
+    if (role === 'owner' || role === 'developer') {
+      targetUrl.searchParams.set('db_saved', dbSaved ? 'true' : 'false')
+    }
 
     const response = NextResponse.redirect(targetUrl)
-
-    const cookieOpts = {
+    
+    // Set HTTP-only and generic authentication cookies
+    response.cookies.set('forke_access_token', accessToken, {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    })
+    response.cookies.set('forke_role', role, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
-    }
-    response.cookies.set('forke_access_token', accessToken, { ...cookieOpts, httpOnly: true })
-    response.cookies.set('forke_role', role, { ...cookieOpts, httpOnly: false })
-    response.cookies.set('forke_username', githubUsername, { ...cookieOpts, httpOnly: false })
+    })
+    response.cookies.set('forke_username', githubUsername, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    })
 
     return response
   } catch (error) {
-    console.error('[Sandbox OAuth] Callback error:', error)
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.redirect(new URL(`/?error=${encodeURIComponent(msg)}`, request.url))
+    console.error('OAuth Callback Error:', error)
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown authentication error'
+    return NextResponse.redirect(
+      new URL(`/?error=${encodeURIComponent(errorMessage)}`, request.url)
+    )
   }
 }

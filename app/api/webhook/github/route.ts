@@ -1,20 +1,9 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { NextRequest, NextResponse, after } from 'next/server'
 import { db } from '@/lib/db'
-import { sandboxRepos, developerForks, sandboxUsers } from '@/lib/db/schema'
+import { sandboxRepos, developerForks, sandboxOwners } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { updateCommitStatus } from '@/lib/github/commitStatus'
 import { runFullPRPipeline } from '@/lib/review/pipeline'
-import { decryptToken } from '@/lib/token-crypto'
 
 /**
  * Verifies the GitHub webhook HMAC-SHA256 signature.
@@ -25,9 +14,8 @@ async function verifyWebhookSignature(
 ): Promise<boolean> {
   const secret = process.env.GITHUB_WEBHOOK_SECRET
   if (!secret || secret === 'your_webhook_secret_here') {
-    // Fail closed: without a secret anyone could forge PR events.
-    console.error('[Webhook] GITHUB_WEBHOOK_SECRET not configured — rejecting webhook')
-    return false
+    console.warn('[Webhook] GITHUB_WEBHOOK_SECRET not configured — skipping signature verification')
+    return true
   }
   if (!signatureHeader) return false
 
@@ -118,8 +106,8 @@ export async function POST(req: NextRequest) {
   // Get the owner's access token for GitHub API calls
   const ownerRecords = await db
     .select()
-    .from(sandboxUsers)
-    .where(and(eq(sandboxUsers.id, sandboxRecord.ownerId), eq(sandboxUsers.role, 'owner')))
+    .from(sandboxOwners)
+    .where(eq(sandboxOwners.id, sandboxRecord.ownerId))
     .limit(1)
 
   if (ownerRecords.length === 0) {
@@ -127,7 +115,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Owner not found' }, { status: 200 })
   }
 
-  const ownerToken = decryptToken(ownerRecords[0].accessToken)
+  const ownerToken = ownerRecords[0].accessToken
 
   // Set commit status to pending immediately
   await updateCommitStatus({
