@@ -1,20 +1,9 @@
 /**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-/**
  * Gemini AI API Wrapper
  * Handles communication with Google Gemini (gemini-2.5-flash).
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { BASELINE_SYSTEM_PROMPT } from './prompt'
 import type { AIReviewResult, AIIssue, AIRisk, AIResolvedIssue, AIResolvedRisk } from './scoreEngine'
 import type { DetectedStack } from './detector'
 import type { CategoryResult } from './runner'
@@ -30,62 +19,6 @@ function getClient() {
   return new GoogleGenerativeAI(apiKey)
 }
 
-function getMockReviewResult(userMessage?: string): AIReviewResult {
-  let changedFiles: string[] = []
-  if (userMessage) {
-    try {
-      const parsed = JSON.parse(userMessage)
-      if (parsed.changedFiles && Array.isArray(parsed.changedFiles)) {
-        changedFiles = parsed.changedFiles
-      }
-    } catch {
-      // ignore JSON parse errors
-    }
-  }
-
-  const strengths = [
-    'Clean component architecture with proper separation of concerns.',
-    'Responsive design works correctly across both desktop and mobile resolutions.',
-    'Type safety is maintained throughout the new modules with interface definitions.'
-  ]
-
-  const issues: AIIssue[] = []
-  const risks: AIRisk[] = []
-
-  if (changedFiles.length > 0) {
-    issues.push({
-      file: changedFiles[0],
-      line: 12,
-      severity: 'medium',
-      message: 'Consider optimizing re-renders by memoizing callback handlers or wrapping event handlers in useCallback.',
-      suggestion: 'Wrap the handler in useCallback(() => { ... }, []) to avoid unnecessary component re-renders.',
-      status: 'new'
-    })
-  } else {
-    issues.push({
-      file: 'components/Navbar.tsx',
-      line: 25,
-      severity: 'low',
-      message: 'Minor warning: avoid using inline style objects inside loops to optimize rendering performance.',
-      suggestion: 'Move the inline styles to a Tailwind class or custom styled component.',
-      status: 'new'
-    })
-  }
-
-  return {
-    verdict: 'pass',
-    score: 88,
-    requirement_match: 0.9,
-    summary: '⚠️ [MOCK MODE] GEMINI_API_KEY is not set. Showing simulated pull request review results.\n\nThe submission looks solid. Component styling, layout responsiveness, and state handling are properly implemented.',
-    strengths,
-    issues,
-    risks,
-    unauthorized_file_edits: [],
-    resolved_issues: [],
-    resolved_risks: []
-  }
-}
-
 /**
  * Sends the review context to Gemini and returns a structured AIReviewResult.
  * Uses gemini-2.5-flash for code analysis.
@@ -96,12 +29,6 @@ export async function runAIReview(
   userMessage: string,
   signal?: AbortSignal
 ): Promise<AIReviewResult> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-    console.warn('[Gemini] GEMINI_API_KEY is not set. Generating mock/simulated AI review report.')
-    return getMockReviewResult(userMessage)
-  }
-
   const client = getClient()
   const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash']
   let lastError: any = null
@@ -114,7 +41,7 @@ export async function runAIReview(
         generationConfig: {
           responseMimeType: 'application/json',
           temperature: 0.1, // Low temp for consistent, objective output
-          maxOutputTokens: 8192,
+          maxOutputTokens: 4096,
         },
         systemInstruction: systemPrompt,
       })
@@ -179,31 +106,17 @@ export function parseAIResponse(rawText: string): AIReviewResult {
 
 /**
  * Normalizes and validates the parsed JSON to ensure all required fields exist.
- * The AI no longer generates a score — only requirement_match (0-1 float).
- * Score is computed deterministically by computeTestScore() in scoreEngine.ts.
  */
 function normalizeAIResult(raw: Record<string, unknown>): AIReviewResult {
   const verdict = validateVerdict(raw.verdict)
-
-  // requirement_match is the ONLY numeric contribution from the AI (0.0 to 1.0)
+  const score = typeof raw.score === 'number' ? Math.max(0, Math.min(100, Math.round(raw.score))) : 50
   const requirementMatch = typeof raw.requirement_match === 'number'
     ? Math.max(0, Math.min(1, raw.requirement_match))
     : 0.5
 
-  // score field kept for legacy fallback only (won't be used if testScoreResult is present)
-  let scoreValue = 50
-  if (typeof raw.score === 'number') {
-    scoreValue = Math.max(0, Math.min(100, Math.round(raw.score)))
-  } else if (raw.score && typeof raw.score === 'object') {
-    const obj = raw.score as Record<string, any>
-    if (typeof obj.value === 'number') {
-      scoreValue = Math.max(0, Math.min(100, Math.round(obj.value)))
-    }
-  }
-
   return {
     verdict,
-    score: scoreValue,
+    score,
     requirement_match: requirementMatch,
     summary: typeof raw.summary === 'string' ? raw.summary : 'No summary provided.',
     strengths: Array.isArray(raw.strengths) ? raw.strengths.filter(s => typeof s === 'string') : [],
@@ -216,7 +129,6 @@ function normalizeAIResult(raw: Record<string, unknown>): AIReviewResult {
     resolved_risks: Array.isArray(raw.resolved_risks) ? raw.resolved_risks.map(normalizeResolvedRisk) : [],
   }
 }
-
 
 function validateVerdict(v: unknown): AIReviewResult['verdict'] {
   if (v === 'pass' || v === 'needs_changes' || v === 'high_risk') return v
@@ -324,7 +236,51 @@ export interface AIBaselineDiagnostic {
 
 // --- Gemini Baseline Prompt ---
 
+const BASELINE_SYSTEM_PROMPT = `You are a senior DevOps engineer reviewing CI/CD pipeline output and repository configuration files for a code review platform called Forke. Your task is to analyze the results of 12 deterministic test categories that were run against a repository inside a Docker sandbox container, while cross-referencing the actual configuration files and code entries from the repository.
 
+You are provided with:
+1. The detected tech stack details.
+2. The deterministic check categories, status, issue counts, and raw command logs.
+3. The content of key configuration files (e.g. package.json, requirements.txt, tsconfig.json, CMakeLists.txt, composer.json, etc.) and main entry points from the codebase.
+
+Your job is to produce an accurate, structured JSON diagnostic report. Pay special attention to:
+
+1. **Environmental False Positives vs. Config Reality**: 
+   - Many failures are caused by the sandboxed Docker environment, NOT by actual code bugs. Cross-reference the logs with the repository configuration files.
+   - For example: if a build fails because of missing dependencies, check if those dependencies are properly declared in 'package.json' or 'requirements.txt'. If they are correctly declared, but the container failed to retrieve them due to network limits or missing system library dependencies (like native tools, gcc, clang, libvips, node-gyp), flag this as an environmental false positive and adjust the status to 'warn'.
+   - If a tool like 'luacheck' or 'stylua' is missing but the repo is configured for Lua development, explain how the environment should adjust.
+   - If tests fail with 'No tests found' but the configuration files show that tests are not configured, reclassify to 'warn' (since there's nothing broken).
+
+2. **Real Issues**: Actual code problems that developers should fix:
+   - TypeScript compilation errors in source files.
+   - ESLint errors from actual code violations.
+   - Failed unit tests that indicate broken logic.
+   - Security vulnerabilities in dependencies (npm audit).
+   - SAST findings like SQL injection, XSS, hardcoded secrets.
+
+3. **Severity Adjustments**: Re-assess each category's status:
+   - If a "fail" is purely environmental, adjust to "warn".
+   - If a "warn" is just noise (e.g., E501 line-length in legacy code), adjust to "pass".
+   - If a "skip" category could have been run, note that.
+
+Respond with ONLY valid JSON matching this exact structure:
+{
+  "overallHealth": "healthy" | "needs_attention" | "critical",
+  "summary": "One paragraph assessment of the codebase health",
+  "categoryDiagnostics": [
+    {
+      "category": "build",
+      "rootCause": "Single sentence explaining the result",
+      "isFalsePositive": true/false,
+      "falsePositiveReason": "Why this is a false positive (only if isFalsePositive is true)",
+      "adjustedStatus": "pass" | "fail" | "warn" | "skip",
+      "suggestedFix": "Actionable fix suggestion (only for real issues)"
+    }
+  ]
+}
+
+Only include categories that have status "fail" or "warn" in the categoryDiagnostics array. Do not include categories that passed or were skipped.
+Be concise. Each rootCause should be one sentence. Each suggestedFix should be actionable.`
 
 // --- Helper functions for Baseline Diagnostics ---
 
@@ -446,31 +402,6 @@ export async function analyzeBaselineWithAI(
   results: Record<string, CategoryResult>,
   onLog?: (tag: string, msg: string) => void
 ): Promise<AIBaselineDiagnostic | null> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-    onLog?.('AI', '⚠️ [MOCK MODE] GEMINI_API_KEY is not set. Generating mock/simulated baseline diagnostic report.')
-    return {
-      overallHealth: 'healthy',
-      summary: '⚠️ [MOCK MODE] GEMINI_API_KEY is not set. Showing simulated baseline diagnostics.\n\nThe codebase is in healthy condition. The package configuration and setup checks pass successfully.',
-      categoryDiagnostics: [
-        {
-          category: 'TypeScript',
-          rootCause: 'Type checking passed with 0 compile errors.',
-          isFalsePositive: false,
-          adjustedStatus: 'pass'
-        },
-        {
-          category: 'Lint',
-          rootCause: 'ESLint finished with clean output.',
-          isFalsePositive: false,
-          adjustedStatus: 'pass'
-        }
-      ],
-      model: 'mock-gemini-model',
-      analyzedAt: new Date().toISOString()
-    }
-  }
-
   try {
     onLog?.('AI', 'Scanning codebase configuration and manifest structure for context...')
     const codebaseContext = gatherCodebaseContext(repoPath)

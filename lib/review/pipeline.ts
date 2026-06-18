@@ -1,15 +1,5 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { db } from '../db'
-import { sandboxRepos, baselineSnapshots, codeReviews, developerForks } from '../db/schema'
+import { sandboxRepos, baselineSnapshots, reviewResults, aiReviews, developerForks } from '../db/schema'
 import { eq, and, desc, isNull } from 'drizzle-orm'
 import { runReviewPipeline } from './runner'
 import { compareToBaseline } from './comparison'
@@ -20,9 +10,9 @@ import {
   validateForkeSubmission, 
   parsePathList 
 } from './scopeValidator'
-import { buildReviewContext, truncateDiff, PreviousReviewData } from './contextBuilder'
+import { buildReviewContext, truncateDiff } from './contextBuilder'
 import { runAIReview } from './gemini'
-import { calculateFinalScore, computeTestScore, TestScoreResult } from './scoreEngine'
+import { calculateFinalScore } from './scoreEngine'
 import { updateCommitStatus } from '../github/commitStatus'
 import { fetchPRFiles, fetchRepoTree, buildGitDiff } from '../github/prFetcher'
 import { registerReviewJob, unregisterReviewJob } from '../activeReviews'
@@ -152,14 +142,16 @@ export async function runFullPRPipeline(params: PipelineParams) {
     // D. Clone repository locally for isolated test runner execution
     addLog('GIT_CLONE', `Cloning PR ref to execute local tests...`)
     fs.mkdirSync(checkoutDir, { recursive: true })
-    const prNum = Number(prNumber)
-    if (!Number.isInteger(prNum) || prNum <= 0) throw new Error('Invalid PR number')
-    const { git, authenticatedUrl } = await import('@/lib/git')
+    const authenticatedUrl = `https://x-access-token:${ownerToken}@github.com/${repoFullName}.git`
+    
+    // We clone base, fetch PR head, and checkout
+    const { exec } = require('child_process')
+    const { promisify } = require('util')
+    const execPromise = promisify(exec)
 
-    // We clone base, fetch PR head, and checkout (no shell involved)
-    await git(['clone', authenticatedUrl(ownerToken, repoFullName), checkoutDir])
-    await git(['-C', checkoutDir, 'fetch', 'origin', `pull/${prNum}/head:pr-${prNum}`])
-    await git(['-C', checkoutDir, 'checkout', `pr-${prNum}`])
+    await execPromise(`git clone "${authenticatedUrl}" "${checkoutDir}"`)
+    await execPromise(`git -C "${checkoutDir}" fetch origin pull/${prNumber}/head:pr-${prNumber}`)
+    await execPromise(`git -C "${checkoutDir}" checkout pr-${prNumber}`)
     addLog('GIT_CLONE', 'Local repository checked out successfully.')
     updateProgress(45)
 
@@ -184,17 +176,7 @@ export async function runFullPRPipeline(params: PipelineParams) {
     addLog('SUCCESS', 'Layer 1 deterministic tests complete.')
     updateProgress(75)
 
-    // Compute raw deterministic test score from real runner results
-    const rawTestScoreResult: TestScoreResult = computeTestScore(
-      deterministicResults.results,
-      unauthorizedFiles,
-      secretFindings.length,
-      submissionValidation.valid
-    )
-
-    let testScoreResult = rawTestScoreResult
-
-    // H. Execute Baseline Comparison & Score Adjustment
+    // H. Execute Baseline Comparison
     addLog('CHECKING', 'Comparing PR verification results against repository baseline...')
     let comparisonReport = null
     let finalDeterministicVerdict: 'pass' | 'warn' | 'fail' = 'pass'
@@ -203,62 +185,6 @@ export async function runFullPRPipeline(params: PipelineParams) {
     if (baseline && baseline.results) {
       try {
         const parsedBaselineResults = JSON.parse(baseline.results)
-        
-        // Retrieve or dynamically calculate baseline score result
-        let baselineScoreResult = parsedBaselineResults.testScoreResult
-        if (!baselineScoreResult) {
-          baselineScoreResult = computeTestScore(parsedBaselineResults, [], 0, true)
-        }
-
-        // Adjust category qualities to only penalize for new regressions
-        const adjustedCategories = rawTestScoreResult.categories.map(prCat => {
-          const baseCat = baselineScoreResult.categories.find((c: any) => c.name === prCat.name)
-          if (!baseCat) {
-            // Category wasn't in baseline, any quality less than 1.0 is a regression
-            return prCat
-          }
-
-          if (prCat.quality < baseCat.quality) {
-            // Regression detected! Quality drop is the delta of base quality - PR quality
-            const regressionQuality = 1.0 - (baseCat.quality - prCat.quality)
-            return {
-              ...prCat,
-              quality: regressionQuality,
-              contribution: Math.round(prCat.weight * regressionQuality * 100) / 100
-            }
-          }
-
-          // No regression: treat as pass (100% quality) to prevent point deduction
-          return {
-            ...prCat,
-            status: 'pass',
-            quality: 1.0,
-            contribution: prCat.weight
-          }
-        })
-
-        // Recalculate score based on adjusted category qualities
-        let earned = 0
-        let possible = 0
-        for (const c of adjustedCategories) {
-          earned += c.contribution
-          possible += c.weight
-        }
-        let adjustedRawScore = possible > 0 ? Math.round((earned / possible) * 100) : 100
-        if (rawTestScoreResult.buildFailed) {
-          adjustedRawScore = Math.min(adjustedRawScore, 40)
-        }
-
-        const totalPenalty = rawTestScoreResult.penalties.reduce((sum, p) => sum + p.points, 0)
-        const adjustedTestScore = Math.max(0, Math.min(100, adjustedRawScore - totalPenalty))
-
-        testScoreResult = {
-          ...rawTestScoreResult,
-          rawScore: adjustedRawScore,
-          testScore: adjustedTestScore,
-          categories: adjustedCategories
-        }
-
         comparisonReport = compareToBaseline(parsedBaselineResults, deterministicResults.results)
         
         // Map comparison findings to verdict
@@ -286,6 +212,21 @@ export async function runFullPRPipeline(params: PipelineParams) {
     }
     updateProgress(80)
 
+    // Save Deterministic PR Review Result to database
+    addLog('CHECKING', 'Saving deterministic verification results to database.')
+    const [reviewResultRecord] = await db
+      .insert(reviewResults)
+      .values({
+        prNumber,
+        sandboxRepoId: sandboxId,
+        commitSha: headSha,
+        baselineSnapshotId: baseline ? baseline.id : null,
+        results: JSON.stringify(deterministicResults),
+        comparison: comparisonReport ? JSON.stringify(comparisonReport) : '{}',
+        verdict: finalDeterministicVerdict,
+        reportHtml
+      })
+      .returning()
     updateProgress(83)
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -299,36 +240,29 @@ export async function runFullPRPipeline(params: PipelineParams) {
     const repoStructure = await fetchRepoTree(repoFullName, headSha, ownerToken)
 
     // Retrieve previous PR review if incremental review is occurring
-    let previousReviewData: PreviousReviewData | undefined = undefined
+    let previousReviewData = undefined
     try {
       const query = db
         .select({
-          score: codeReviews.aiScore,
-          verdict: codeReviews.aiVerdict,
-          summary: codeReviews.aiSummary,
-          issues: codeReviews.aiIssues,
-          risks: codeReviews.aiRisks,
+          score: aiReviews.score,
+          verdict: aiReviews.verdict,
+          summary: aiReviews.summary,
+          issues: aiReviews.issues,
+          risks: aiReviews.risks,
         })
-        .from(codeReviews)
+        .from(aiReviews)
         .where(
           and(
-            eq(codeReviews.sandboxRepoId, sandboxId),
-            eq(codeReviews.prNumber, prNumber)
+            eq(aiReviews.sandboxRepoId, sandboxId),
+            eq(aiReviews.prNumber, prNumber)
           )
         )
-        .orderBy(desc(codeReviews.createdAt))
+        .orderBy(desc(aiReviews.createdAt))
         .limit(1)
 
       const previousReviews = await query
       if (previousReviews.length > 0) {
-        const first = previousReviews[0]
-        previousReviewData = {
-          score: first.score ?? 100,
-          verdict: first.verdict ?? 'pass',
-          summary: first.summary ?? '',
-          issues: first.issues,
-          risks: first.risks,
-        }
+        previousReviewData = previousReviews[0]
         addLog('CHECKING', 'Incremental review context: Found previous review findings.')
       } else if (baseline) {
         // Fall back to comparing against the original baseline snapshot findings
@@ -344,7 +278,7 @@ export async function runFullPRPipeline(params: PipelineParams) {
       addLog('WARN', `Error reading history context: ${e}`)
     }
 
-    // Build LLM prompts (pass test score table so AI can reference it in narrative)
+    // Build LLM prompts
     const { systemPrompt, userMessage } = buildReviewContext(
       {
         prNumber,
@@ -353,8 +287,7 @@ export async function runFullPRPipeline(params: PipelineParams) {
         developerUsername,
         changedFiles: changedFileNames,
         gitDiff,
-        repoStructure,
-        testScoreResult,
+        repoStructure
       },
       {
         taskTitle: sandbox.taskTitle || 'Coding Task',
@@ -415,8 +348,8 @@ export async function runFullPRPipeline(params: PipelineParams) {
       })
     }
 
-    // Run the scoring algorithms — deterministic test score + AI requirement_match
-    const { finalScore, finalVerdict } = calculateFinalScore(aiResult, unauthorizedFiles, testScoreResult)
+    // Run the scoring algorithms
+    const { finalScore, finalVerdict } = calculateFinalScore(aiResult, unauthorizedFiles)
 
     // Compute composite risk score (Layer 4)
     // 0-100 where higher is riskier
@@ -440,36 +373,25 @@ export async function runFullPRPipeline(params: PipelineParams) {
       riskRouting = 'reviewer_queue'
     }
 
-    // Save Unified PR Review Result to database (both deterministic and AI metrics)
-    addLog('CHECKING', 'Saving unified verification and AI review results to database...')
-    await db.insert(codeReviews).values({
-      prNumber,
-      sandboxRepoId: sandboxId,
+    // Persist AI review result in database
+    addLog('CHECKING', 'Saving AI review metrics to database...')
+    await db.insert(aiReviews).values({
       developerForkId: developerForkId || null,
-      commitSha: headSha,
-      baselineSnapshotId: baseline ? baseline.id : null,
-      // Deterministic Results
-      results: JSON.stringify({
-        ...deterministicResults,
-        testScoreResult, // deterministic weight-based score breakdown
-      }),
-      comparison: comparisonReport ? JSON.stringify(comparisonReport) : '{}',
-      verdict: finalDeterministicVerdict,
-      reportHtml,
-      // AI Review Metrics
-      aiVerdict: finalVerdict,
-      aiScore: finalScore,
+      sandboxRepoId: sandboxId,
+      prNumber,
+      verdict: finalVerdict,
+      score: finalScore,
       requirementMatch: String(aiResult.requirement_match),
-      aiSummary: aiResult.summary,
-      aiStrengths: aiResult.strengths.length > 0 ? JSON.stringify(aiResult.strengths) : null,
-      aiIssues: aiResult.issues.length > 0 ? JSON.stringify(aiResult.issues) : null,
-      aiRisks: aiResult.risks.length > 0 ? JSON.stringify(aiResult.risks) : null,
+      summary: aiResult.summary,
+      strengths: aiResult.strengths.length > 0 ? JSON.stringify(aiResult.strengths) : null,
+      issues: aiResult.issues.length > 0 ? JSON.stringify(aiResult.issues) : null,
+      risks: aiResult.risks.length > 0 ? JSON.stringify(aiResult.risks) : null,
       unauthorizedEdits: aiResult.unauthorized_file_edits.length > 0 ? JSON.stringify(aiResult.unauthorized_file_edits) : null,
       resolvedIssues: aiResult.resolved_issues && aiResult.resolved_issues.length > 0 ? JSON.stringify(aiResult.resolved_issues) : null,
       resolvedRisks: aiResult.resolved_risks && aiResult.resolved_risks.length > 0 ? JSON.stringify(aiResult.resolved_risks) : null,
       riskScore: compositeRisk,
       riskRouting,
-      aiModel: 'gemini-2.5-flash'
+      model: 'gemini-2.5-flash'
     })
 
     // Update the commit check status inside the GitHub PR UI

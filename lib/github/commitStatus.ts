@@ -1,14 +1,4 @@
 /**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-/**
  * GitHub Commit Status Updater
  * Updates the PR commit check status visible inside the GitHub PR UI.
  * Maps AI verdicts to GitHub status states.
@@ -70,8 +60,7 @@ function buildStatusPayload(
   repoFullName: string,
   prNumber: number | undefined
 ): CommitStatusPayload {
-  const isProd = process.env.NODE_ENV === 'production'
-  const baseUrl = process.env.NEXTAUTH_URL || (isProd ? 'https://dashboard.forke.space' : 'http://localhost:3000')
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const reviewUrl = prNumber
     ? `${baseUrl}/reviews/${repoFullName}/pr/${prNumber}`
     : baseUrl

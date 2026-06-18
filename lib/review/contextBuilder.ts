@@ -1,16 +1,4 @@
 /**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-import { REVIEW_SYSTEM_PROMPT } from './prompt'
-import type { TestScoreResult } from './scoreEngine'
-/**
  * PR Context Builder
  * Assembles the full structured prompt payload to send to the AI model.
  */
@@ -32,9 +20,7 @@ export interface PRData {
   developerUsername: string
   changedFiles: string[]
   gitDiff: string
-  repoStructure?: string
-  /** Pre-computed deterministic test score — AI does NOT change these numbers */
-  testScoreResult?: TestScoreResult
+  repoStructure?: string // optional directory tree
 }
 
 export interface PreviousReviewData {
@@ -55,7 +41,75 @@ export function buildReviewContext(
   task: TaskMetadata,
   previousReview?: PreviousReviewData
 ): { systemPrompt: string; userMessage: string } {
-  const systemPrompt = REVIEW_SYSTEM_PROMPT
+  const systemPrompt = `You are an expert, objective AI Code Review Engine for the Forke platform. Your task is to analyze a developer's Pull Request and evaluate it against a specific Task Description, allowed path constraints, and optionally a previous AI review of this PR.
+
+Evaluate the PR across FIVE dimensions:
+1. Requirement Validation — Did the developer solve the requested task?
+2. File Rule Validation — Did the developer only edit allowed files?
+3. Code Quality & Architecture — Is the code clean, robust, and maintainable?
+4. Security & Safety — Does the PR introduce vulnerabilities or dangerous patterns?
+5. Final Verdict — Aggregate all findings into a final decision.
+
+INCREMENTAL REVIEW INSTRUCTIONS:
+If a "PREVIOUS AI REVIEW" is provided in the user message, a new commit has been pushed. Compare the cumulative changes in the git diff with the previous review findings:
+1. Identify which previously reported issues or risks are now CORRECTED/FIXED. Move these to the "resolved_issues" or "resolved_risks" arrays. For each, describe how it was resolved.
+2. Identify which previously reported issues still persist. Keep them in the active "issues" or "risks" list and set their "status" to "unresolved".
+3. Identify any newly introduced flaws. Set their "status" to "new".
+4. Update the overall summary to mention progress made (what was fixed and what remains).
+    If no previous review is provided, resolved arrays will be empty, and all active issues and risks should have "status": "new".
+
+CRITICAL SIZE LIMIT: Be extremely concise. Limit "strengths", "issues", "risks", "resolved_issues", and "resolved_risks" to a maximum of 5 items each (focusing only on the most critical/severe findings). Keep messages, descriptions, suggestions, and summaries brief. This is strictly required to prevent token limit output truncation.
+
+IMPORTANT: Return your ENTIRE analysis as a single valid JSON object. Do NOT include any text before or after the JSON. The JSON must strictly follow this schema:
+
+{
+  "verdict": "pass" | "needs_changes" | "high_risk",
+  "score": <integer 0 to 100>,
+  "requirement_match": <float 0.0 to 1.0>,
+  "summary": "<concise overall summary string of the review, mentioning previous resolution progress if applicable>",
+  "strengths": ["<positive observation>", ...],
+  "issues": [
+    {
+      "file": "<filename>",
+      "line": <integer line number or 0 if unknown>,
+      "severity": "critical" | "high" | "medium" | "low",
+      "message": "<description of the issue>",
+      "suggestion": "<how to fix it>",
+      "status": "new" | "unresolved"
+    }
+  ],
+  "risks": [
+    {
+      "category": "security" | "safety" | "credential",
+      "message": "<description of the risk>",
+      "severity": "high" | "medium" | "low",
+      "status": "new" | "unresolved"
+    }
+  ],
+  "resolved_issues": [
+    {
+      "file": "<filename>",
+      "line": <integer>,
+      "severity": "critical" | "high" | "medium" | "low",
+      "message": "<original message>",
+      "resolution": "<brief explanation of how the developer fixed this issue>"
+    }
+  ],
+  "resolved_risks": [
+    {
+      "category": "security" | "safety" | "credential",
+      "message": "<original message>",
+      "severity": "high" | "medium" | "low",
+      "resolution": "<brief explanation of how the developer resolved this security concern>"
+    }
+  ],
+  "unauthorized_file_edits": ["<file path>", ...]
+}
+
+Verdict guide:
+- "pass": Requirements met well, no critical/high issues, good quality (score >= 75)
+- "needs_changes": Minor/major issues found, improvements needed (score 40-74)
+- "high_risk": Critical security issues, credential leaks, unauthorized file edits, or severe bugs (score < 40 or blocking issues)`
 
   const allowedPathsSection = task.allowedPaths.length > 0
     ? `ALLOWED FILE PATHS (developer MUST only modify these):
@@ -132,50 +186,6 @@ Check these previous issues and risks against the current git diff to see which 
 `
   }
 
-  // Build the test score table for the AI (so it can reference real data in its narrative)
-  let testScoreSection = ''
-  if (prData.testScoreResult) {
-    const { testScore, rawScore, buildFailed, categories, penalties } = prData.testScoreResult
-
-    const header = `| ${'Category'.padEnd(20)} | Status | Weight | Quality | Earned  | Max  |`
-    const divider = `|${''.padEnd(22, '-')}|--------|--------|---------|---------|------|`
-    const rows = categories.map(c => {
-      const name = c.name.replace(/_/g, ' ').padEnd(20)
-      const status = c.status.toUpperCase().padEnd(6)
-      const weight = String(c.weight).padEnd(6)
-      const quality = `${Math.round(c.quality * 100)}%`.padEnd(7)
-      const earned = String(c.contribution).padEnd(7)
-      const max = String(c.maxContribution)
-      return `| ${name} | ${status} | ${weight} | ${quality} | ${earned} | ${max}  |`
-    }).join('\n')
-
-    const penaltyText = penalties.length > 0
-      ? '\nPENALTIES:\n' + penalties.map(p => `  - ${p.reason}: -${p.points} pts`).join('\n')
-      : ''
-
-    const buildAlert = buildFailed
-      ? '\n⚠️  BUILD FAILURE DETECTED — execution score is capped. Code does not compile.\n'
-      : ''
-
-    testScoreSection = `
-=== DETERMINISTIC EXECUTION SCORE (computed by Forke engine — do NOT modify these numbers) ===
-${buildAlert}
-Execution Quality Score: ${testScore} / 100 (raw: ${rawScore}/100 before penalties)
-Score formula: (sum of weight×quality for ran categories) / (sum of weights) × 100
-Skipped categories are fully excluded from both numerator and denominator.
-
-${header}
-${divider}
-${rows}
-${penaltyText}
-
-The remaining 30% of the FINAL SCORE comes from your REQUIREMENT FULFILLMENT assessment.
-Output "requirement_match" as a float 0.0–1.0 based on how well the developer met the task.
-Final score = round(${testScore} × 0.7 + requirement_match × 100 × 0.3)
-DO NOT output a score field — only output requirement_match and the narrative fields.
-`
-  }
-
   const userMessage = `=== TASK DEFINITION ===
 Title: ${task.taskTitle}
 Description: ${task.taskDescription}
@@ -188,7 +198,7 @@ ${acceptanceCriteriaSection}
 ${allowedPathsSection}
 ${restrictedPathsSection}
 
-${testScoreSection}${previousReviewSection ? `\n${previousReviewSection}\n` : ''}=== PULL REQUEST DETAILS ===
+${previousReviewSection ? `\n${previousReviewSection}\n` : ''}=== PULL REQUEST DETAILS ===
 PR #${prData.prNumber}: "${prData.prTitle}"
 Developer: ${prData.developerUsername}
 PR Description: ${prData.prDescription || '(no description provided)'}
@@ -202,7 +212,7 @@ ${repoStructureSection}
 ${prData.gitDiff || '(no diff available)'}
 \`\`\`
 
-Please analyze the above PR. Output only requirement_match (0.0-1.0), summary, strengths, issues, risks, resolved_issues, resolved_risks, and unauthorized_file_edits. Do NOT output a score value.`
+Please analyze the above PR against the task requirements and previous feedback, and provide your structured JSON review.`
 
   return { systemPrompt, userMessage }
 }
