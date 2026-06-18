@@ -128,6 +128,11 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loadingSession, setLoadingSession] = useState(true)
 
+  // --- PAT Login State ---
+  const [patInput, setPatInput] = useState('')
+  const [patError, setPatError] = useState('')
+  const [patLoading, setPatLoading] = useState(false)
+
   useEffect(() => {
     if (presetRole) {
       setRole(presetRole)
@@ -281,11 +286,13 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
     } else {
       const savedUsername = localStorage.getItem('forke_github_username')
       const savedRole = localStorage.getItem('forke_role') as 'owner' | 'developer' | null
+      const savedPat = localStorage.getItem('forke_access_token')
       const activeRole = presetRole || savedRole
       if (savedUsername && activeRole) {
         setGithubUsername(savedUsername)
         setRole(activeRole)
         setIsLoggedIn(true)
+        if (savedPat) setPatInput(savedPat)
       }
     }
     setLoadingSession(false)
@@ -294,9 +301,11 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
   const handleSignOut = () => {
     localStorage.removeItem('forke_github_username')
     localStorage.removeItem('forke_role')
+    localStorage.removeItem('forke_access_token')
     setGithubUsername(null)
     setRole(presetRole || null)
     setIsLoggedIn(false)
+    setPatInput('')
     router.push(presetRole === 'owner' ? '/sandbox-post-task' : '/sandbox-dashboard')
   }
 
@@ -1010,65 +1019,203 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
             <div className={cn(
               presetRole ? "w-full max-w-md mx-auto" : "grid md:grid-cols-2 gap-8 w-full max-w-3xl animate-scale-up"
             )}>
-              {/* Owner Authentication Box */}
-              {(!presetRole || presetRole === 'owner') && (
-                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-amber-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(245,158,11,0.15)] backdrop-blur-md overflow-hidden min-h-[380px]">
-                  <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-amber-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-amber-500/10 transition-all duration-500"></div>
+              {/* PAT Login Form */}
+              <div className={cn(
+                "relative rounded-3xl border backdrop-blur-md overflow-hidden p-8",
+                presetRole === 'owner'
+                  ? "border-amber-500/30 bg-zinc-900/10 shadow-[0_0_50px_-12px_rgba(245,158,11,0.12)]"
+                  : presetRole === 'developer'
+                  ? "border-emerald-500/30 bg-zinc-900/10 shadow-[0_0_50px_-12px_rgba(16,185,129,0.12)]"
+                  : "border-zinc-800/80 bg-zinc-900/10"
+              )}>
+                {/* Ambient glow */}
+                <div className={cn(
+                  "absolute right-[-10%] top-[-10%] w-40 h-40 blur-[50px] rounded-full pointer-events-none",
+                  presetRole === 'owner' ? "bg-amber-500/8" : presetRole === 'developer' ? "bg-emerald-500/8" : "bg-zinc-500/5"
+                )} />
 
-                  <div className="relative z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 transition-all duration-300 shadow-inner">
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <div className="relative z-10 space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl border flex items-center justify-center",
+                      presetRole === 'owner'
+                        ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                        : presetRole === 'developer'
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                    )}>
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                       </svg>
                     </div>
+                    <div>
+                      <h3 className={cn(
+                        "text-lg font-black tracking-wide",
+                        presetRole === 'owner' ? "text-amber-400" : presetRole === 'developer' ? "text-emerald-400" : "text-white"
+                      )}>
+                        {presetRole === 'owner' ? 'Connect as Owner' : presetRole === 'developer' ? 'Connect as Developer' : 'Connect with GitHub'}
+                      </h3>
+                      <p className="text-zinc-500 text-xs">Uses your GitHub Personal Access Token</p>
+                    </div>
+                  </div>
 
-                    <h3 className="text-2xl font-black mb-3 tracking-wide text-zinc-100 group-hover:text-amber-400 transition-colors">
-                      Repository Owner
-                    </h3>
+                  {/* Role selector (only when no presetRole) */}
+                  {!presetRole && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setRole('owner')}
+                        className={cn(
+                          "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border",
+                          role === 'owner'
+                            ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
+                            : "bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:border-zinc-600"
+                        )}
+                      >
+                        🏢 Owner
+                      </button>
+                      <button
+                        onClick={() => setRole('developer')}
+                        className={cn(
+                          "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border",
+                          role === 'developer'
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+                            : "bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:border-zinc-600"
+                        )}
+                      >
+                        💻 Developer
+                      </button>
+                    </div>
+                  )}
 
-                    <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-10 font-medium">
-                      Import production repository structures, select scopes/organizations, and run bare mirroring pipelines inside sandbox target directories.
+                  {/* PAT input */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                      GitHub Personal Access Token
+                      <a
+                        href="https://github.com/settings/tokens/new?scopes=repo,read:org,read:user,delete_repo&description=Forke+Sandbox"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 transition-colors"
+                        title="Generate a new token"
+                      >
+                        <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        {' '}Generate one
+                      </a>
+                    </label>
+                    <input
+                      type="password"
+                      value={patInput}
+                      onChange={e => { setPatInput(e.target.value); setPatError('') }}
+                      onKeyDown={e => e.key === 'Enter' && !patLoading && patInput.startsWith('ghp_') && (role || presetRole) && (
+                        (async () => {
+                          const activeRole = presetRole || role
+                          if (!activeRole) return
+                          setPatLoading(true)
+                          setPatError('')
+                          try {
+                            const res = await fetch('/api/auth/sandbox/token', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ token: patInput, role: activeRole }),
+                            })
+                            const data = await res.json()
+                            if (res.ok && data.success) {
+                              setGithubUsername(data.username)
+                              setRole(activeRole)
+                              setIsLoggedIn(true)
+                              localStorage.setItem('forke_github_username', data.username)
+                              localStorage.setItem('forke_role', activeRole)
+                              localStorage.setItem('forke_access_token', patInput)
+                            } else {
+                              setPatError(data.error || 'Authentication failed')
+                            }
+                          } catch (err) {
+                            setPatError('Network error — please try again')
+                          } finally {
+                            setPatLoading(false)
+                          }
+                        })()
+                      )}
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                      className="w-full bg-zinc-900/60 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono transition-colors"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <p className="text-zinc-600 text-[11px]">
+                      Required scopes: <span className="text-zinc-400 font-mono">repo, read:org, read:user, delete_repo</span>
                     </p>
                   </div>
 
-                  <a
-                    href="/api/auth/login?role=owner"
-                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-center text-xs tracking-widest uppercase shadow-lg shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] block relative z-10"
-                  >
-                    Authorize as Owner
-                  </a>
-                </div>
-              )}
-
-              {/* Developer Authentication Box */}
-              {(!presetRole || presetRole === 'developer') && (
-                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-emerald-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(16,185,129,0.15)] backdrop-blur-md overflow-hidden min-h-[380px]">
-                  <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-emerald-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-500"></div>
-
-                  <div className="relative z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/15 transition-all duration-300 shadow-inner">
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  {/* Error */}
+                  {patError && (
+                    <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                      <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
+                      <p className="text-red-400 text-xs">{patError}</p>
                     </div>
+                  )}
 
-                    <h3 className="text-2xl font-black mb-3 tracking-wide text-zinc-100 group-hover:text-emerald-400 transition-colors">
-                      Developer Contributor
-                    </h3>
-
-                    <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-10 font-medium">
-                      Fork sandbox projects seamlessly, execute branchless git instructions locally, and push contributions directly back via native pull request checks.
-                    </p>
-                  </div>
-
-                  <a
-                    href="/api/auth/login?role=developer"
-                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black font-black text-center text-xs tracking-widest uppercase shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] block relative z-10"
+                  {/* Submit button */}
+                  <button
+                    onClick={async () => {
+                      const activeRole = presetRole || role
+                      if (!activeRole) { setPatError('Please select a role first'); return }
+                      if (!patInput) { setPatError('Please enter your GitHub PAT'); return }
+                      setPatLoading(true)
+                      setPatError('')
+                      try {
+                        const res = await fetch('/api/auth/sandbox/token', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ token: patInput, role: activeRole }),
+                        })
+                        const data = await res.json()
+                        if (res.ok && data.success) {
+                          setGithubUsername(data.username)
+                          setRole(activeRole)
+                          setIsLoggedIn(true)
+                          localStorage.setItem('forke_github_username', data.username)
+                          localStorage.setItem('forke_role', activeRole)
+                          localStorage.setItem('forke_access_token', patInput)
+                        } else {
+                          setPatError(data.error || 'Authentication failed')
+                        }
+                      } catch (err) {
+                        setPatError('Network error — please try again')
+                      } finally {
+                        setPatLoading(false)
+                      }
+                    }}
+                    disabled={patLoading || !patInput}
+                    className={cn(
+                      "w-full py-3.5 px-5 rounded-2xl font-black text-center text-xs tracking-widest uppercase shadow-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed",
+                      presetRole === 'owner' || role === 'owner'
+                        ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black shadow-amber-500/10 hover:shadow-amber-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                        : "bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black shadow-emerald-500/10 hover:shadow-emerald-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                    )}
                   >
-                    Authorize as Developer
-                  </a>
+                    {patLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Verifying...
+                      </span>
+                    ) : (
+                      presetRole === 'owner' ? 'Connect as Owner →' :
+                      presetRole === 'developer' ? 'Connect as Developer →' :
+                      role === 'owner' ? 'Connect as Owner →' :
+                      role === 'developer' ? 'Connect as Developer →' :
+                      'Connect →'
+                    )}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         ) : role === 'owner' ? (
