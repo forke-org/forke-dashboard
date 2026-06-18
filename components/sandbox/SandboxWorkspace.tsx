@@ -277,7 +277,7 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
       localStorage.setItem('forke_github_username', githubIdParam)
       localStorage.setItem('forke_role', roleParam)
       // Clean up search params
-      router.replace(roleParam === 'owner' ? '/post-task' : '/dashboard')
+      router.replace(roleParam === 'owner' ? '/sandbox-post-task' : '/sandbox-dashboard')
     } else {
       const savedUsername = localStorage.getItem('forke_github_username')
       const savedRole = localStorage.getItem('forke_role') as 'owner' | 'developer' | null
@@ -297,7 +297,7 @@ export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) 
     setGithubUsername(null)
     setRole(presetRole || null)
     setIsLoggedIn(false)
-    router.push(presetRole === 'owner' ? '/post-task' : '/dashboard')
+    router.push(presetRole === 'owner' ? '/sandbox-post-task' : '/sandbox-dashboard')
   }
 
   // --- API Fetches: Owner ---
