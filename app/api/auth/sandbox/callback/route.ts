@@ -1,13 +1,3 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -21,9 +11,9 @@ export async function GET(request: Request) {
     )
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID || process.env.AUTH_GITHUB_ID
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.AUTH_GITHUB_SECRET
-  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/callback/github`
+  const clientId = process.env.GITHUB_CLIENT_ID
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET
+  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
@@ -86,10 +76,38 @@ export async function GET(request: Request) {
 
     // 3. Save to database — non-blocking, never fail login because of DB issues
     try {
-      const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
+      const { db } = await import('@/lib/db')
+      const { sandboxOwners, sandboxDevelopers } = await import('@/lib/db/schema')
+      const { eq } = await import('drizzle-orm')
 
-      if (role === 'owner' || role === 'developer') {
-        await upsertSandboxUser({ githubId, username: githubUsername, token: accessToken, role })
+      if (role === 'owner') {
+        const existing = await db
+          .select()
+          .from(sandboxOwners)
+          .where(eq(sandboxOwners.githubId, githubId))
+
+        if (existing.length > 0) {
+          await db
+            .update(sandboxOwners)
+            .set({ username: githubUsername, accessToken })
+            .where(eq(sandboxOwners.githubId, githubId))
+        } else {
+          await db.insert(sandboxOwners).values({ githubId, username: githubUsername, accessToken })
+        }
+      } else if (role === 'developer') {
+        const existing = await db
+          .select()
+          .from(sandboxDevelopers)
+          .where(eq(sandboxDevelopers.githubId, githubId))
+
+        if (existing.length > 0) {
+          await db
+            .update(sandboxDevelopers)
+            .set({ username: githubUsername, accessToken })
+            .where(eq(sandboxDevelopers.githubId, githubId))
+        } else {
+          await db.insert(sandboxDevelopers).values({ githubId, username: githubUsername, accessToken })
+        }
       }
     } catch (dbErr) {
       // DB save failed — log but continue. User can still use the sandbox.
