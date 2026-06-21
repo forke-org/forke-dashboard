@@ -1,14 +1,4 @@
 /**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-/**
  * GET /api/owner/repo-tree?username=X&repo=owner/repo
  *
  * Returns a recursive flat list of file/folder paths for the given repo
@@ -16,22 +6,34 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
+import { db } from '@/lib/db'
+import { sandboxOwners } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
+  const username = searchParams.get('username')
   const repo = searchParams.get('repo') // e.g. "owner/repo-name"
 
-  if (!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
-    return NextResponse.json({ error: 'Missing or invalid repo parameter' }, { status: 400 })
+  if (!username || !repo) {
+    return NextResponse.json({ error: 'Missing username or repo parameter' }, { status: 400 })
   }
 
-  // Use the caller's own GitHub token, so they only see repos they can access.
-  let token: string
+  // Get token from DB
+  let token: string | undefined
   try {
-    token = (await requireSandboxUser('owner')).token
-  } catch (err) {
-    return sandboxAuthResponse(err) ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const rows = await db
+      .select()
+      .from(sandboxOwners)
+      .where(eq(sandboxOwners.username, username))
+      .limit(1)
+    if (rows.length > 0) token = rows[0].accessToken
+  } catch {
+    // fall through — will 401 below
+  }
+
+  if (!token) {
+    return NextResponse.json({ error: 'GitHub token not found. Please log in again.' }, { status: 401 })
   }
 
   try {

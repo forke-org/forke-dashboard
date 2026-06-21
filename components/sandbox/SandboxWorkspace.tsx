@@ -1,9 +1,10 @@
 ﻿'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { IndianRupee, Calendar, Tag, AlertCircle, CheckCircle2, Search, X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import FileTree from '@/components/sandbox/FileTree'
 
 interface Repository {
   id: number
@@ -158,6 +159,7 @@ export default function SandboxHome({
   const [taskFormSandbox, setTaskFormSandbox] = useState<SandboxRepo | null>(null)
   const [taskFormOpen, setTaskFormOpen] = useState(false)
   const [savingTask, setSavingTask] = useState(false)
+  const [taskSubmitted, setTaskSubmitted] = useState<string | null>(null) // holds submitted task title on success
   const [taskForm, setTaskForm] = useState({
     taskTitle: '',
     taskDescription: '',
@@ -173,6 +175,8 @@ export default function SandboxHome({
   const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false)
   const [budget, setBudget] = useState('500')
   const [deadline, setDeadline] = useState('')
+  // File tree: set of file paths the owner has checked as "allowed to edit"
+  const [checkedPaths, setCheckedPaths] = useState<Set<string>>(new Set())
 
   // Derive frontend/backend stack based on selected skills to keep the backend validated
   useEffect(() => {
@@ -211,6 +215,23 @@ export default function SandboxHome({
       backendStack: backend
     }))
   }, [selectedSkills])
+
+  // Sync checkedPaths → allowedPaths / restrictedPaths in taskForm
+  // treeAllFiles holds every file path in the loaded tree (set once on tree load)
+  const [treeAllFiles, setTreeAllFiles] = useState<string[]>([])
+  const treeAllFilesRef = useRef<string[]>([])
+
+  const handleCheckedPathsChange = useCallback((next: Set<string>) => {
+    setCheckedPaths(next)
+    const files = treeAllFilesRef.current
+    const allowed = files.filter(f => next.has(f))
+    const restricted = files.filter(f => !next.has(f))
+    setTaskForm(prev => ({
+      ...prev,
+      allowedPaths: allowed.join('\n'),
+      restrictedPaths: restricted.join('\n'),
+    }))
+  }, [])
 
   const selectedRepoMirror = useMemo(() => {
     if (!selectedOwnerRepo) return null;
@@ -725,8 +746,8 @@ export default function SandboxHome({
 
       setTaskFormOpen(false)
       fetchMirrors() // refresh mirrors list to show updated task metadata
-      // Navigate to the tasks feed so the new task is immediately visible
-      router.push(`/tasks?q=${encodeURIComponent(taskForm.taskTitle.trim())}`)
+      // Show success panel — do NOT auto-navigate; user clicks "View task" to go there
+      setTaskSubmitted(taskForm.taskTitle.trim())
     } catch (err: any) {
       alert(`Network error: ${err.message}`)
     } finally {
@@ -1307,6 +1328,7 @@ export default function SandboxHome({
                           type="button"
                           onClick={() => {
                             setSelectedOwnerRepo(null);
+                            setTaskSubmitted(null);
                             setTaskForm({
                               taskTitle: '',
                               taskDescription: '',
@@ -1321,8 +1343,7 @@ export default function SandboxHome({
                           className="px-2.5 py-1 text-[11px] font-medium border border-white/10 hover:border-white/20 text-[var(--color-text-muted)] hover:text-white rounded-lg transition-colors cursor-pointer"
                         >
                           Switch Repo
-                        </button>
-                      </div>
+                        </button>                      </div>
                       {selectedOwnerRepo?.description && (
                         <p className="text-[var(--color-text-muted)] text-xs leading-relaxed">
                           {selectedOwnerRepo.description}
@@ -1343,7 +1364,41 @@ export default function SandboxHome({
                     </div>
 
                     {/* Task Form Elements */}
-                    <div className="space-y-6 pt-4 border-t border-[var(--color-border)]">
+                    <div className="relative space-y-6 pt-4 border-t border-[var(--color-border)]">
+
+                      {/* ── Submitting overlay — greys out the form while in-flight ── */}
+                      {savingTask && (
+                        <div className="absolute inset-0 z-10 rounded-lg bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 pointer-events-all">
+                          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                          <p className="text-sm font-medium text-white">Submitting task…</p>
+                          <p className="text-[11px] text-[var(--color-text-muted)]">Please wait, this may take a moment</p>
+                        </div>
+                      )}
+
+                      {/* ── Success panel — shown after successful submit ── */}
+                      {taskSubmitted ? (
+                        <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
+                          <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                            <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-base font-semibold text-white">Task posted</p>
+                            <p className="text-[13px] text-[var(--color-text-muted)] max-w-xs">
+                              "{taskSubmitted}" is now live and visible to developers on the platform.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/tasks?q=${encodeURIComponent(taskSubmitted)}`)}
+                            className="h-9 px-5 rounded-lg text-[13px] font-medium ui-btn-primary transition-colors cursor-pointer"
+                          >
+                            View task
+                          </button>
+                        </div>
+                      ) : (
+                        <>
                       {/* Task Title */}
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-end">
@@ -1626,13 +1681,15 @@ export default function SandboxHome({
                           {savingTask ? (
                             <>
                               <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                              Saving Guidelines...
+                              Submitting…
                             </>
                           ) : (
-                            'Save Task Guidelines & Start Review'
+                            'Submit Task'
                           )}
                         </button>
                       </div>
+                        </>
+                      )}
                     </div>
                   </>
                 )}
@@ -1759,74 +1816,90 @@ export default function SandboxHome({
             </div>
 
             {/* Active Sandbox Mirrors Grid section */}
-            <div className="space-y-6 border-t border-zinc-900/80 pt-10">
-              <div>
-                <h3 className="text-xl font-black tracking-tight text-zinc-50 mb-1 flex items-center gap-2">
-                  Active Sandbox Mirrors
-                  <span className="px-2 py-0.5 rounded-md border border-[var(--color-border)] bg-white/[0.03] text-[10px] font-medium text-[var(--color-text-muted)]">
-                    {mirroredRepos.length}
-                  </span>
-                </h3>
-                <p className="text-zinc-400 text-xs font-medium">
-                  Review sandbox environments that have been successfully cloned and mapped.
-                </p>
+            <div className="space-y-5 border-t border-[var(--color-border)] pt-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+                    Active Sandbox Mirrors
+                    <span className="px-1.5 py-0.5 rounded border border-[var(--color-border)] bg-white/[0.03] text-[11px] font-medium text-[var(--color-text-muted)] tabular-nums">
+                      {mirroredRepos.length}
+                    </span>
+                  </h3>
+                  <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+                    Sandbox environments that have been successfully cloned and mapped.
+                  </p>
+                </div>
               </div>
 
               {mirroredRepos.length === 0 ? (
-                <div className="app-empty p-12 text-center text-xs font-medium">
-                  No active mirrored sandboxes found
+                <div className="app-empty p-10 text-center text-[13px] text-[var(--color-text-muted)] font-medium">
+                  No active mirrored sandboxes yet
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {mirroredRepos.map(mirror => (
                     <div
                       key={mirror.id}
-                      className="app-panel app-panel-hover p-5 flex flex-col justify-between gap-4 relative overflow-hidden group/card transition-colors"
+                      className="group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 flex flex-col gap-4 transition-colors hover:border-white/[0.14]"
                     >
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      {/* Card header */}
+                      <div className="space-y-2.5">
+                        {/* Status badges */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           {mirror.verificationStatus === 'verifying' ? (
-                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-amber-500/20 bg-amber-500/5 text-amber-400 tracking-widest animate-pulse">
-                              ⏳ Under Verification
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-500/20 bg-amber-500/8 text-amber-500 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              Verifying
                             </span>
                           ) : mirror.verificationStatus === 'failed' ? (
-                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-red-500/20 bg-red-500/5 text-red-400 tracking-widest">
-                              ❌ Verification Failed
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded border border-red-500/20 bg-red-500/8 text-red-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                              Failed
                             </span>
                           ) : (
-                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 tracking-widest">
-                              🟢 Verified
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/8 text-emerald-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              Verified
                             </span>
                           )}
                           {mirror.taskTitle && (
-                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-400 tracking-widest font-bold">
-                              ✦ Task Active
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/8 text-[var(--color-accent-text)]">
+                              Task posted
                             </span>
                           )}
                         </div>
-                        <div className="font-mono text-xs md:text-sm font-extrabold truncate text-zinc-100 group-hover/card:text-amber-400 transition-colors">
-                          {mirror.sandboxRepo}
-                        </div>
-                        {mirror.taskTitle && (
-                          <div className="text-[10px] text-violet-300 font-semibold leading-snug line-clamp-1">
-                            📋 {mirror.taskTitle}
-                          </div>
-                        )}
-                        <div className="text-[10px] text-zinc-500 font-semibold truncate leading-none">
-                          Source: <span className="font-mono text-zinc-400">{mirror.sourceRepo}</span>
+
+                        {/* Repo name */}
+                        <div>
+                          <p className="font-mono text-[13px] font-medium text-white truncate group-hover:text-accent transition-colors">
+                            {mirror.sandboxRepo}
+                          </p>
+                          {mirror.taskTitle && (
+                            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 line-clamp-1">
+                              {mirror.taskTitle}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Baseline Snapshot Status */}
-                        <div className="flex items-center gap-2 border-t border-zinc-900/60 pt-2.5 mt-1.5 text-[10px] font-semibold">
-                          <span className="text-zinc-500 uppercase tracking-wider">Baseline snap:</span>
+                        {/* Source */}
+                        <p className="text-[11px] text-[var(--color-text-muted)] truncate">
+                          Source: <span className="font-mono text-white/50">{mirror.sourceRepo}</span>
+                        </p>
+
+                        {/* Baseline status */}
+                        <div className="flex items-center gap-1.5 text-[11px] pt-2.5 border-t border-[var(--color-border)]">
+                          <span className="text-[var(--color-text-muted)]">Baseline:</span>
                           {baselines[mirror.sandboxRepo] ? (
-                            <span className="text-emerald-400 font-bold flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                              Ready ({baselines[mirror.sandboxRepo].commitSha.substring(0, 7)})
+                            <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              Ready
+                              <span className="font-mono text-[var(--color-text-muted)]">
+                                ({baselines[mirror.sandboxRepo].commitSha.substring(0, 7)})
+                              </span>
                             </span>
                           ) : (
-                            <span className="text-amber-500 font-bold flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            <span className="flex items-center gap-1 text-[var(--color-text-muted)] font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse" />
                               Pending
                             </span>
                           )}
@@ -1834,34 +1907,20 @@ export default function SandboxHome({
                       </div>
 
                       {/* Action buttons */}
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-auto">
+                        {/* Primary action row */}
                         <div className="flex gap-2">
-                          {mirror.verificationStatus === 'verifying' ? (
+                          {mirror.verificationStatus === 'verifying' || mirror.verificationStatus === 'failed' ? (
                             <>
                               <button
                                 disabled
-                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-zinc-900 bg-zinc-950/20 text-zinc-500 cursor-not-allowed opacity-50 font-bold"
+                                className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary opacity-40 cursor-not-allowed"
                               >
-                                Verifying...
+                                {mirror.verificationStatus === 'verifying' ? 'Verifying…' : 'Unavailable'}
                               </button>
                               <button
                                 disabled
-                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-zinc-900 bg-zinc-950/20 text-zinc-500 cursor-not-allowed opacity-50 font-bold"
-                              >
-                                View PRs
-                              </button>
-                            </>
-                          ) : mirror.verificationStatus === 'failed' ? (
-                            <>
-                              <button
-                                disabled
-                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-red-950/20 bg-red-950/10 text-red-500 cursor-not-allowed opacity-50 font-bold"
-                              >
-                                Failed
-                              </button>
-                              <button
-                                disabled
-                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-zinc-900 bg-zinc-950/20 text-zinc-500 cursor-not-allowed opacity-50 font-bold"
+                                className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary opacity-40 cursor-not-allowed"
                               >
                                 View PRs
                               </button>
@@ -1870,7 +1929,7 @@ export default function SandboxHome({
                             <>
                               <button
                                 onClick={() => openSandboxPRs(mirror)}
-                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 hover:border-violet-500/60 transition-all duration-200 cursor-pointer font-bold"
+                                className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer"
                               >
                                 View PRs
                               </button>
@@ -1881,7 +1940,7 @@ export default function SandboxHome({
                                     setSelectedBaselineReport(baselines[mirror.sandboxRepo])
                                     setSelectedBaselineCategoryLog(null)
                                   }}
-                                  className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/60 transition-all duration-200 cursor-pointer font-bold"
+                                  className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer"
                                 >
                                   View Baseline
                                 </button>
@@ -1889,52 +1948,58 @@ export default function SandboxHome({
                                 <button
                                   onClick={() => triggerBaselineSnapshot(mirror.sandboxRepo)}
                                   disabled={triggeringBaseline[mirror.sandboxRepo]}
-                                  className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 hover:border-amber-500/60 transition-all duration-200 cursor-pointer font-bold disabled:opacity-50"
+                                  className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {triggeringBaseline[mirror.sandboxRepo] ? 'Running...' : 'Gen Baseline'}
+                                  {triggeringBaseline[mirror.sandboxRepo] ? 'Generating…' : 'Gen Baseline'}
                                 </button>
                               )}
                             </>
                           )}
                         </div>
-                        <div className="flex items-center justify-between text-[10px] font-semibold">
-                          <span className="text-zinc-500">
+
+                        {/* Secondary row: meta + actions */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-[var(--color-text-muted)]">
                             {new Date(mirror.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            {/* View Task */}
                             {mirror.taskTitle ? (
                               <button
                                 onClick={() => router.push(`/tasks?q=${encodeURIComponent(mirror.taskTitle!)}`)}
-                                className="border border-emerald-500/25 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-400 hover:border-emerald-500/50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-0.5 transition-all duration-300 cursor-pointer"
-                                title="View associated task"
+                                className="h-7 px-2.5 rounded text-[11px] font-medium border border-[var(--color-accent)]/25 bg-[var(--color-accent)]/8 text-[var(--color-accent-text)] hover:bg-[var(--color-accent)]/15 transition-colors cursor-pointer"
+                                title="View task in feed"
                               >
-                                View Task
+                                View task
                               </button>
                             ) : (
                               <button
                                 disabled
-                                className="border border-zinc-800 bg-zinc-900/30 text-zinc-600 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-0.5 cursor-not-allowed opacity-40 select-none"
+                                className="h-7 px-2.5 rounded text-[11px] font-medium border border-[var(--color-border)] bg-transparent text-[var(--color-text-muted)] opacity-40 cursor-not-allowed"
                                 title="No task posted yet"
                               >
-                                View Task
+                                View task
                               </button>
                             )}
+
+                            {/* Delete */}
                             <button
                               onClick={() => handleDeleteSandbox(mirror.sandboxRepo)}
                               disabled={deletingRepos[mirror.sandboxRepo]}
-                              className={`border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 hover:border-red-500/50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-1 transition-all duration-300 cursor-pointer ${
-                                deletingRepos[mirror.sandboxRepo] ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
+                              className="h-7 px-2.5 rounded text-[11px] font-medium border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {deletingRepos[mirror.sandboxRepo] ? '...' : 'Delete'}
+                              {deletingRepos[mirror.sandboxRepo] ? '…' : 'Delete'}
                             </button>
+
+                            {/* GitHub link */}
                             <a
                               href={`https://github.com/${mirror.sandboxRepo}`}
-                              target="_blank" rel="noreferrer"
-                              className="text-amber-400 hover:text-amber-300 font-bold transition duration-200 flex items-center gap-1 uppercase tracking-wider text-[9px]"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="h-7 px-2.5 rounded text-[11px] font-medium border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white hover:border-white/10 transition-colors flex items-center gap-1"
                             >
                               GitHub
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                               </svg>
                             </a>
