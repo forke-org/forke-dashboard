@@ -1,16 +1,5 @@
 'use client'
 
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
-import { useState } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 // ─── Types (mirror SandboxWorkspace.tsx AIReview interface) ──────────────────
@@ -64,6 +53,9 @@ interface AIReviewReportProps {
   review: AIReviewData
   title?: string
   prUrl?: string
+  onRequestChanges?: () => void
+  onApprove?: () => void
+  onReject?: () => void
 }
 
 // ─── Score Ring ──────────────────────────────────────────────────────────────
@@ -86,10 +78,10 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center" style={{ marginTop: '-54px' }}>
-        <span className="text-xl font-medium text-white tabular-nums leading-none">{score}</span>
-        <span className="text-[10.5px] text-[var(--color-text-muted)] font-medium leading-none mt-0.5">/ 100</span>
+        <span className="text-xl font-black text-white tabular-nums leading-none">{score}</span>
+        <span className="text-[9px] text-[var(--color-text-muted)] font-medium leading-none mt-0.5">/ 100</span>
       </div>
-      <span className="text-[10.5px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono -mt-1">AI Score</span>
+      <span className="text-[9px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider -mt-1">AI Score</span>
     </div>
   )
 }
@@ -103,7 +95,7 @@ function VerdictBanner({ verdict, summary }: { verdict: string; summary: string 
     : { bg: 'bg-amber-500/8 border-amber-500/25', icon: '~', iconBg: 'bg-amber-500', label: 'Recommended: Approve with fixes', color: 'text-amber-400' }
   return (
     <div className={cn('flex items-start gap-3 p-4 rounded-xl border', cfg.bg)}>
-      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-black font-medium text-xs shrink-0 mt-0.5', cfg.iconBg)}>
+      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-black font-black text-xs shrink-0 mt-0.5', cfg.iconBg)}>
         {cfg.icon}
       </div>
       <div className="min-w-0">
@@ -116,12 +108,7 @@ function VerdictBanner({ verdict, summary }: { verdict: string; summary: string 
 
 // ─── Metrics Strip ────────────────────────────────────────────────────────────
 function MetricsStrip({ review }: { review: AIReviewData }) {
-  // deterministicResults is stored as ReviewRunnerResult { commitSha, techStack, results, durationMs }
-  // The GET route passes the whole object as review.results, so we need to unwrap
-  const rawResults = review.results || {}
-  const results: Record<string, any> = (rawResults.results && typeof rawResults.results === 'object')
-    ? rawResults.results
-    : rawResults
+  const results = review.results || {}
   const comparison = review.comparison || {}
 
   const unitTests = results['unit_tests']
@@ -140,12 +127,7 @@ function MetricsStrip({ review }: { review: AIReviewData }) {
   const lintIssues = lint?.issuesCount ?? null
   const typeErrors = types?.issuesCount ?? null
   const reqMatch = Math.round(review.requirementMatch * 100)
-  // comparison.regressions is a Record<category, issueCountDelta>
-  const reqDelta = comparison.regressions?.['unit_tests']
-    ? comparison.regressions['unit_tests']
-    : comparison.improvements?.['unit_tests']
-    ? -comparison.improvements['unit_tests']
-    : null
+  const reqDelta = comparison['unit_tests'] ? (comparison['unit_tests'].prIssues - comparison['unit_tests'].baselineIssues) : null
 
   const metrics = [
     {
@@ -203,13 +185,7 @@ function MetricsStrip({ review }: { review: AIReviewData }) {
 }
 
 // ─── Test Suite Cards ─────────────────────────────────────────────────────────
-function TestSuiteCards({ results: rawResults }: { results: Record<string, any> }) {
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
-
-  // Unwrap ReviewRunnerResult wrapper if present
-  const results: Record<string, any> = (rawResults.results && typeof rawResults.results === 'object')
-    ? rawResults.results
-    : rawResults
+function TestSuiteCards({ results }: { results: Record<string, any> }) {
   const suiteCategories = ['unit_tests', 'integration_tests', 'e2e_tests', 'build', 'lint', 'type_checks', 'security', 'sast', 'format', 'code_quality', 'dependencies', 'performance']
   const active = suiteCategories.filter(k => results[k] && results[k].status !== 'skip')
   if (active.length === 0) return null
@@ -230,7 +206,7 @@ function TestSuiteCards({ results: rawResults }: { results: Record<string, any> 
 
   return (
     <div>
-      <p className="text-[11px] font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-[0.1em] font-mono">Test suites</p>
+      <p className="text-[11px] font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wider">Test suites</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {active.map(k => {
           const cat = results[k]
@@ -241,49 +217,26 @@ function TestSuiteCards({ results: rawResults }: { results: Record<string, any> 
           const barColor = cat.status === 'pass' ? 'bg-emerald-500' : cat.status === 'fail' ? 'bg-red-500' : 'bg-amber-500'
           const total = nums ? (nums.passed + nums.failed + nums.skipped) : null
           const passRatio = total && total > 0 ? (nums!.passed / total) * 100 : cat.status === 'pass' ? 100 : 0
-          const isExpanded = expandedCategory === k
 
           return (
-            <div key={k} className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setExpandedCategory(isExpanded ? null : k)}
-                className={cn(
-                  'w-full text-left rounded-lg border p-3 space-y-2 transition-all hover:bg-white/[0.02]',
-                  statusColor,
-                  isExpanded ? 'border-zinc-500' : ''
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-white">{humanName(k)}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold uppercase">{cat.status}</span>
-                    <span className="text-[10px] opacity-50">{isExpanded ? '▼' : '▶'}</span>
-                  </div>
+            <div key={k} className={cn('rounded-lg border p-3 space-y-2', statusColor)}>
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-medium text-white">{humanName(k)}</span>
+                <span className="text-[10px] font-bold uppercase">{cat.status}</span>
+              </div>
+              <div className="h-1 w-full rounded-full bg-white/10">
+                <div className={cn('h-full rounded-full transition-all duration-500', barColor)} style={{ width: `${passRatio}%` }} />
+              </div>
+              {nums && (
+                <div className="flex items-center gap-3 text-[10px]">
+                  <span className="text-emerald-400">{nums.passed} passed</span>
+                  {nums.skipped > 0 && <span className="text-zinc-500">{nums.skipped} skipped</span>}
+                  {nums.failed > 0 && <span className="text-red-400">{nums.failed} failed</span>}
+                  {nums.duration && <span className="text-zinc-500 ml-auto">{nums.duration}s</span>}
                 </div>
-                <div className="h-1 w-full rounded-full bg-white/10">
-                  <div className={cn('h-full rounded-full transition-all duration-500', barColor)} style={{ width: `${passRatio}%` }} />
-                </div>
-                {nums && (
-                  <div className="flex items-center gap-3 text-[10px]">
-                    <span className="text-emerald-400">{nums.passed} passed</span>
-                    {nums.skipped > 0 && <span className="text-white/40">{nums.skipped} skipped</span>}
-                    {nums.failed > 0 && <span className="text-red-400">{nums.failed} failed</span>}
-                    {nums.duration && <span className="text-white/40 ml-auto">{nums.duration}s</span>}
-                  </div>
-                )}
-                {!nums && cat.issuesCount > 0 && (
-                  <p className="text-[10px]">{cat.issuesCount} issue{cat.issuesCount !== 1 ? 's' : ''} detected (click to view logs)</p>
-                )}
-                {!nums && cat.issuesCount === 0 && (
-                  <p className="text-[10px] opacity-75">Click to view execution logs</p>
-                )}
-              </button>
-              
-              {isExpanded && cat.logs && (
-                <div className="rounded-lg border border-white/[0.08] bg-black/60 p-3 mt-0.5 max-h-60 overflow-y-auto font-mono text-[10px] text-white/75 whitespace-pre-wrap break-all leading-normal">
-                  {cat.logs}
-                </div>
+              )}
+              {!nums && cat.issuesCount > 0 && (
+                <p className="text-[10px]">{cat.issuesCount} issue{cat.issuesCount !== 1 ? 's' : ''} detected</p>
               )}
             </div>
           )
@@ -300,14 +253,14 @@ function FindingsTable({ review }: { review: AIReviewData }) {
 
   // Strengths (good)
   for (const s of review.strengths || []) {
-    rows.push({ severity: 'good', label: 'Best Practice', detail: s, location: '', isGood: true })
+    rows.push({ severity: 'good', label: s.slice(0, 60), detail: s, location: '', isGood: true })
   }
   // Active issues
   for (const issue of review.issues || []) {
     rows.push({
       severity: issue.severity,
-      label: issue.message,
-      detail: issue.suggestion || 'No suggestion available',
+      label: issue.message.slice(0, 60),
+      detail: issue.suggestion ? `${issue.message} → ${issue.suggestion}` : issue.message,
       location: `${issue.file}${issue.line ? `:${issue.line}` : ''}`,
     })
   }
@@ -315,24 +268,14 @@ function FindingsTable({ review }: { review: AIReviewData }) {
   for (const risk of review.risks || []) {
     rows.push({
       severity: risk.severity === 'high' ? 'critical' : risk.severity,
-      label: `${risk.category.toUpperCase()} Risk`,
+      label: risk.message.slice(0, 60),
       detail: risk.message,
-      location: risk.category,
+      location: `${risk.category}`,
     })
   }
-  // Resolved Issues
+  // Resolved
   for (const r of review.resolvedIssues || []) {
-    rows.push({ severity: 'resolved', label: r.message, detail: r.resolution, location: `${r.file}${r.line ? `:${r.line}` : ''}`, isGood: true })
-  }
-  // Resolved Risks
-  for (const r of review.resolvedRisks || []) {
-    rows.push({
-      severity: 'resolved',
-      label: `${r.category.toUpperCase()} Risk Resolved`,
-      detail: r.resolution,
-      location: r.category,
-      isGood: true
-    })
+    rows.push({ severity: 'resolved', label: r.message.slice(0, 60), detail: r.resolution, location: `${r.file}${r.line ? `:${r.line}` : ''}`, isGood: true })
   }
 
   if (rows.length === 0) return null
@@ -343,7 +286,7 @@ function FindingsTable({ review }: { review: AIReviewData }) {
     if (s === 'medium') return 'bg-amber-500 text-black'
     if (s === 'low') return 'bg-blue-400/80 text-white'
     if (s === 'good' || s === 'resolved') return 'bg-emerald-500 text-black'
-    return 'bg-zinc-700 text-white/75'
+    return 'bg-zinc-700 text-zinc-300'
   }
   function severityLabel(s: string) {
     if (s === 'critical') return 'Blocker'
@@ -358,37 +301,37 @@ function FindingsTable({ review }: { review: AIReviewData }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">AI Findings</p>
+        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">AI Findings</p>
       </div>
       <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
         <table className="w-full text-[11px]">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-20">Severity</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-48">Finding</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Detail</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-36">Location</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-20">Severity</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-40">Finding</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Detail</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-36">Location</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, i) => (
               <tr key={i} className={cn('border-b border-[var(--color-border)] last:border-0', row.isGood ? 'bg-emerald-500/[0.03]' : '')}>
                 <td className="px-3 py-2.5">
-                  <span className={cn('inline-flex items-center gap-1 text-[10.5px] font-bold uppercase px-2 py-0.5 rounded', severityBadge(row.severity))}>
+                  <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded', severityBadge(row.severity))}>
                     {row.severity === 'critical' && '⊗ '}
                     {row.severity === 'medium' && '△ '}
                     {(row.severity === 'good' || row.severity === 'resolved') && '✓ '}
                     {severityLabel(row.severity)}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 font-medium text-white text-[11px] whitespace-normal break-words">
-                  {row.label}
+                <td className="px-3 py-2.5 font-medium text-white max-w-[160px]">
+                  <span className="line-clamp-2">{row.label}</span>
                 </td>
-                <td className="px-3 py-2.5 text-[var(--color-text-muted)] leading-relaxed whitespace-normal break-words">
-                  {row.detail}
+                <td className="px-3 py-2.5 text-[var(--color-text-muted)] leading-relaxed max-w-xs">
+                  <span className="line-clamp-3">{row.detail}</span>
                 </td>
-                <td className="px-3 py-2.5 font-mono text-[var(--color-text-muted)] text-[10px] whitespace-normal break-all">
-                  {row.location || '—'}
+                <td className="px-3 py-2.5 font-mono text-[var(--color-text-muted)] text-[10px]">
+                  <span className="truncate block max-w-[140px]">{row.location}</span>
                 </td>
               </tr>
             ))}
@@ -444,7 +387,7 @@ function FilesChanged({ review }: { review: AIReviewData }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Files changed</p>
+        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Files changed</p>
         <span className="text-[11px] text-[var(--color-text-muted)]">{files.length} file{files.length !== 1 ? 's' : ''}</span>
       </div>
       <div className="rounded-xl border border-[var(--color-border)] divide-y divide-[var(--color-border)] overflow-hidden">
@@ -458,9 +401,9 @@ function FilesChanged({ review }: { review: AIReviewData }) {
               </svg>
               <span className="font-mono text-[11px] text-white/80 flex-1 truncate">{f}</span>
               {isUnauth && (
-                <span className="text-[10.5px] font-bold px-1.5 py-0.5 rounded border text-red-400 bg-red-500/10 border-red-500/20 shrink-0">Unauthorized</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-red-400 bg-red-500/10 border-red-500/20 shrink-0">Unauthorized</span>
               )}
-              <span className={cn('text-[10.5px] font-bold px-1.5 py-0.5 rounded border shrink-0', riskBadge(risk))}>
+              <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0', riskBadge(risk))}>
                 {riskLabel(risk)}
               </span>
             </div>
@@ -471,213 +414,70 @@ function FilesChanged({ review }: { review: AIReviewData }) {
   )
 }
 
-// ─── Action Buttons — replaced by informational guidance; only keep GitHub link ──
-function ActionButtons({ review, prUrl }: {
+// ─── Action Buttons ───────────────────────────────────────────────────────────
+function ActionButtons({ review, onApprove, onReject, onRequestChanges, prUrl }: {
   review: AIReviewData
+  onApprove?: () => void
+  onReject?: () => void
+  onRequestChanges?: () => void
   prUrl?: string
 }) {
-  if (!prUrl) return null
   return (
-    <div className="pt-2 border-t border-[var(--color-border)]">
-      <a
-        href={prUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="flex items-center justify-center gap-2 w-full h-10 rounded-lg border border-[var(--color-border)] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 text-[13px] font-medium text-white transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-        </svg>
-        View PR on GitHub
-      </a>
-    </div>
-  )
-}
-
-// ─── Scorecard Breakdown ──────────────────────────────────────────────────────
-function ScorecardBreakdown({ results, requirementMatch }: { results: any; requirementMatch: number }) {
-  const ts = results?.testScoreResult
-  if (!ts) return null
-
-  const { testScore, rawScore, buildFailed, categories, penalties } = ts
-
-  // Calculate sum of weights for ran categories to determine exact raw loss contribution
-  const possibleWeight = (categories as any[]).reduce((sum, c) => sum + (c.weight || 0), 0)
-
-  // Compute detailed deductions list
-  const categoryDeductions = (categories as any[])
-    .filter(c => c.quality < 1)
-    .map(c => {
-      const rawLoss = possibleWeight > 0 ? (c.weight * (1 - c.quality) / possibleWeight) * 100 : 0
-      const finalLoss = rawLoss * 0.7
-      const count = typeof c.issuesCount === 'number' ? c.issuesCount : 0
-      return {
-        type: 'test_category',
-        name: String(c.name).replace(/_/g, ' '),
-        detail: `Status is ${c.status.toUpperCase()} (${count} issue${count === 1 ? '' : 's'} detected)`,
-        rawLoss: Math.round(rawLoss * 10) / 10,
-        finalLoss: Math.round(finalLoss * 10) / 10,
-      }
-    })
-
-  const penaltyDeductions = (penalties as any[] || []).map((p: any) => {
-    const rawLoss = p.points
-    const finalLoss = p.points * 0.7
-    return {
-      type: 'penalty',
-      name: p.reason,
-      detail: 'Deterministic policy penalty',
-      rawLoss: Math.round(rawLoss * 10) / 10,
-      finalLoss: Math.round(finalLoss * 10) / 10,
-    }
-  })
-
-  const reqDeductions = []
-  if (requirementMatch < 1.0) {
-    const finalLoss = (1 - requirementMatch) * 30
-    reqDeductions.push({
-      type: 'requirement',
-      name: 'Requirement Fulfillment',
-      detail: `AI assessed requirement completion at ${Math.round(requirementMatch * 100)}%`,
-      rawLoss: 0,
-      finalLoss: Math.round(finalLoss * 10) / 10,
-    })
-  }
-
-  const allDeductions = [...categoryDeductions, ...penaltyDeductions, ...reqDeductions]
-
-  // Build failure alert
-  const buildAlert = buildFailed ? (
-    <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
-      <span className="text-red-400 text-[18px] leading-none shrink-0 mt-0.5">🔴</span>
-      <div>
-        <p className="text-[12px] font-bold text-red-400">Build Failure Detected</p>
-        <p className="text-[11px] text-red-400/70 mt-0.5">Code does not compile. Execution score is capped regardless of other results.</p>
-      </div>
-    </div>
-  ) : null
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Execution Score Breakdown</p>
-        <div className="text-right">
-          <span className="text-[11px] text-white/55">Test Quality: </span>
-          <span className="text-[13px] font-medium text-white">{testScore}</span>
-          <span className="text-[10px] text-white/40"> / 100</span>
-          {rawScore !== testScore && (
-            <span className="text-[10px] text-white/30 ml-1">(raw {rawScore})</span>
-          )}
-        </div>
-      </div>
-
-      {buildAlert}
-
-      <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
-        <table className="w-full text-[11px]">
-          <thead>
-            <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Category</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-20">Status</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-16">Weight</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Quality</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(categories as any[]).map((c: any, i: number) => {
-              const statusColor = c.status === 'pass'
-                ? 'text-emerald-400'
-                : c.status === 'fail'
-                  ? 'text-red-400'
-                  : 'text-amber-400'
-              const barColor = c.status === 'pass' ? 'bg-emerald-500' : c.status === 'fail' ? 'bg-red-500' : 'bg-amber-500'
-              const qualityPct = Math.round(c.quality * 100)
-
-              return (
-                <tr key={i} className="border-b border-[var(--color-border)] last:border-0">
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-1.5">
-                      {c.isBlocking && (
-                        <span className="text-[10px] text-white/40 font-bold border border-white/[0.12] rounded px-1">BLOCKING</span>
-                      )}
-                      <span className="font-medium text-white capitalize">{String(c.name).replace(/_/g, ' ')}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className={cn('text-[10px] font-bold uppercase', statusColor)}>{c.status}</span>
-                  </td>
-                  <td className="px-3 py-2.5 text-[var(--color-text-muted)] font-mono">
-                    ×{c.weight}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 rounded-full bg-white/10 min-w-[60px]">
-                        <div
-                          className={cn('h-full rounded-full transition-all duration-500', barColor)}
-                          style={{ width: `${qualityPct}%` }}
-                        />
-                      </div>
-                      <span className={cn('text-[10px] font-medium w-8 text-right shrink-0', statusColor)}>
-                        {qualityPct}%
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Score Deductions Audit Trail */}
-      <div className="space-y-2">
-        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Score Deductions (Final Score Impact)</p>
-        {allDeductions.length > 0 ? (
-          <div className="space-y-1.5">
-            {allDeductions.map((d, idx) => (
-              <div key={idx} className="flex items-start justify-between gap-4 p-3 rounded-lg border border-red-500/10 bg-red-500/[0.015] hover:border-red-500/15 transition-all">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-extrabold uppercase px-1 py-0.5 rounded border border-red-500/20 bg-red-500/5 text-red-400 shrink-0">
-                      {d.type.replace('_', ' ')}
-                    </span>
-                    <p className="text-[11px] font-semibold text-white/95 capitalize truncate">{d.name}</p>
-                  </div>
-                  <p className="text-[10px] text-white/40 mt-0.5 leading-normal">{d.detail}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[12px] font-medium text-red-400">−{d.finalLoss} pts</p>
-                  {d.type === 'test_category' && d.rawLoss > 0 && (
-                    <p className="text-[10.5px] text-white/30 mt-0.5">−{d.rawLoss} raw quality pts (scaled ×0.7)</p>
-                  )}
-                  {d.type === 'penalty' && (
-                    <p className="text-[10.5px] text-white/30 mt-0.5">penalty points (scaled ×0.7)</p>
-                  )}
-                  {d.type === 'requirement' && (
-                    <p className="text-[10.5px] text-white/30 mt-0.5">requirement score impact (scaled ×0.3)</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-3.5 rounded-lg border border-emerald-500/10 bg-emerald-500/[0.01] text-[11px] text-emerald-400/80 italic">
-            No deductions. Perfect score!
-          </div>
-        )}
-      </div>
+    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--color-border)]">
+      {onApprove && (
+        <button
+          onClick={onApprove}
+          disabled={review.verdict === 'high_risk'}
+          className="h-9 px-4 rounded-lg text-[13px] font-medium bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1.5"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Approve & Merge
+        </button>
+      )}
+      {onRequestChanges && (
+        <button
+          onClick={onRequestChanges}
+          className="h-9 px-4 rounded-lg text-[13px] font-medium bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer flex items-center gap-1.5"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 12H18.21" />
+          </svg>
+          Request Changes
+        </button>
+      )}
+      {onReject && (
+        <button
+          onClick={onReject}
+          className="h-9 px-4 rounded-lg text-[13px] font-medium bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer flex items-center gap-1.5"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Reject
+        </button>
+      )}
+      {prUrl && (
+        <a
+          href={prUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="h-9 px-4 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors flex items-center gap-1.5 ml-auto"
+        >
+          View PR on GitHub
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      )}
     </div>
   )
 }
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
-export default function AIReviewReport({ review, title, prUrl }: AIReviewReportProps) {
-  const rawResults = review.results
-  const hasResults = rawResults && (
-    Object.keys(rawResults).length > 0 &&
-    // handle both flat and nested ReviewRunnerResult
-    (rawResults.results ? Object.keys(rawResults.results).length > 0 : true)
-  )
+export default function AIReviewReport({ review, title, prUrl, onApprove, onReject, onRequestChanges }: AIReviewReportProps) {
+  const hasResults = review.results && Object.keys(review.results).length > 0
 
   return (
     <div className="space-y-5 text-left">
@@ -702,9 +502,6 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
       {/* Metrics strip */}
       <MetricsStrip review={review} />
 
-      {/* Scorecard breakdown */}
-      <ScorecardBreakdown results={review.results} requirementMatch={review.requirementMatch} />
-
       {/* Test suite cards */}
       {hasResults && <TestSuiteCards results={review.results!} />}
 
@@ -714,9 +511,16 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
       {/* Files changed */}
       <FilesChanged review={review} />
 
-      {/* Action buttons — GitHub link only */}
-      {prUrl && <ActionButtons review={review} prUrl={prUrl} />}
+      {/* Action buttons */}
+      {(onApprove || onReject || onRequestChanges || prUrl) && (
+        <ActionButtons
+          review={review}
+          onApprove={onApprove}
+          onReject={onReject}
+          onRequestChanges={onRequestChanges}
+          prUrl={prUrl}
+        />
+      )}
     </div>
   )
 }
-

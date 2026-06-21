@@ -1,10 +1,11 @@
-﻿'use client'
+'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { IndianRupee, Calendar, Tag, AlertCircle, CheckCircle2, Search, X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import FileTree from '@/components/sandbox/FileTree'
+import AIReviewReport from '@/components/sandbox/AIReviewReport'
 
 interface Repository {
   id: number
@@ -216,9 +217,8 @@ export default function SandboxHome({
     }))
   }, [selectedSkills])
 
-  // Sync checkedPaths → allowedPaths / restrictedPaths in taskForm
-  // treeAllFiles holds every file path in the loaded tree (set once on tree load)
-  const [treeAllFiles, setTreeAllFiles] = useState<string[]>([])
+  // Sync checkedPaths ? allowedPaths / restrictedPaths in taskForm
+  // treeAllFilesRef holds every file path in the loaded tree (set once on tree load)
   const treeAllFilesRef = useRef<string[]>([])
 
   const handleCheckedPathsChange = useCallback((next: Set<string>) => {
@@ -231,6 +231,10 @@ export default function SandboxHome({
       allowedPaths: allowed.join('\n'),
       restrictedPaths: restricted.join('\n'),
     }))
+  }, [])
+
+  const handleTreeLoad = useCallback((allFilePaths: string[]) => {
+    treeAllFilesRef.current = allFilePaths
   }, [])
 
   const selectedRepoMirror = useMemo(() => {
@@ -608,16 +612,16 @@ export default function SandboxHome({
       if (response.ok && data.success) {
         let message = `Sandbox "${sandboxRepoName}" deleted successfully!\n\n`
         if (data.sandboxDeletedOnGitHub) {
-          message += `• Cleaned up sandbox organization repository on GitHub.\n`
+          message += `� Cleaned up sandbox organization repository on GitHub.\n`
         } else {
-          message += `• Warning: Failed to clean up organization repo on GitHub: ${data.sandboxDeleteError || 'Unknown API issue'}.\n`
+          message += `� Warning: Failed to clean up organization repo on GitHub: ${data.sandboxDeleteError || 'Unknown API issue'}.\n`
         }
 
         const deletedForks = data.deletedForks || []
         if (deletedForks.length > 0) {
           const ghCount = deletedForks.filter((f: any) => f.deletedOnGitHub).length
-          message += `• Cleaned up ${deletedForks.length} fork record(s) from database.\n`
-          message += `• Cleaned up ${ghCount} fork repository/repositories from GitHub (best effort).`
+          message += `� Cleaned up ${deletedForks.length} fork record(s) from database.\n`
+          message += `� Cleaned up ${ghCount} fork repository/repositories from GitHub (best effort).`
         }
         alert(message)
         fetchMirrors()
@@ -710,7 +714,7 @@ export default function SandboxHome({
     }
     setSavingTask(true)
     try {
-      // Step 1: Save task metadata to the sandbox repo record (existing behaviour — must not break)
+      // Step 1: Save task metadata to the sandbox repo record (existing behaviour � must not break)
       const response = await fetch('/api/owner/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -739,14 +743,14 @@ export default function SandboxHome({
             skillTags: selectedSkills,
           }),
         })
-        // Note: we don't block or error on publish failure — the sandbox save already succeeded
+        // Note: we don't block or error on publish failure � the sandbox save already succeeded
       } catch {
-        // Silently ignore — sandbox metadata is already saved
+        // Silently ignore � sandbox metadata is already saved
       }
 
       setTaskFormOpen(false)
       fetchMirrors() // refresh mirrors list to show updated task metadata
-      // Show success panel — do NOT auto-navigate; user clicks "View task" to go there
+      // Show success panel � do NOT auto-navigate; user clicks "View task" to go there
       setTaskSubmitted(taskForm.taskTitle.trim())
     } catch (err: any) {
       alert(`Network error: ${err.message}`)
@@ -798,7 +802,7 @@ export default function SandboxHome({
       })
       const data = await response.json()
       if (response.ok) {
-        alert(`✅ Action "${action.replace('_', ' ')}" completed successfully!`)
+        alert(`? Action "${action.replace('_', ' ')}" completed successfully!`)
         openSandboxPRs(selectedSandboxForPRs) // refresh PR list
         setSelectedPR(null)
         setPrActionMessage('')
@@ -1152,7 +1156,7 @@ export default function SandboxHome({
                               ))}
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-                              ▼
+                              ?
                             </div>
                           </div>
 
@@ -1302,7 +1306,7 @@ export default function SandboxHome({
                         <details className="group">
                           <summary className="text-[11px] text-[var(--color-text-muted)] hover:text-white cursor-pointer select-none font-medium flex items-center gap-1 mt-2">
                             <span>View Pipeline Logs</span>
-                            <span className="transition-transform group-open:rotate-180">▼</span>
+                            <span className="transition-transform group-open:rotate-180">?</span>
                           </summary>
                           <div ref={terminalRef} className="w-full bg-[#040406]/98 rounded-xl p-4 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-[11px] text-zinc-300 leading-normal max-h-[165px] overflow-y-auto mt-2 custom-scrollbar">
                             {mirrorLogs.map((log, idx) => (
@@ -1329,6 +1333,8 @@ export default function SandboxHome({
                           onClick={() => {
                             setSelectedOwnerRepo(null);
                             setTaskSubmitted(null);
+                            setCheckedPaths(new Set());
+                            treeAllFilesRef.current = [];
                             setTaskForm({
                               taskTitle: '',
                               taskDescription: '',
@@ -1366,16 +1372,16 @@ export default function SandboxHome({
                     {/* Task Form Elements */}
                     <div className="relative space-y-6 pt-4 border-t border-[var(--color-border)]">
 
-                      {/* ── Submitting overlay — greys out the form while in-flight ── */}
+                      {/* -- Submitting overlay � greys out the form while in-flight -- */}
                       {savingTask && (
                         <div className="absolute inset-0 z-10 rounded-lg bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 pointer-events-all">
                           <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                          <p className="text-sm font-medium text-white">Submitting task…</p>
+                          <p className="text-sm font-medium text-white">Submitting task�</p>
                           <p className="text-[11px] text-[var(--color-text-muted)]">Please wait, this may take a moment</p>
                         </div>
                       )}
 
-                      {/* ── Success panel — shown after successful submit ── */}
+                      {/* -- Success panel � shown after successful submit -- */}
                       {taskSubmitted ? (
                         <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
                           <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
@@ -1472,7 +1478,7 @@ export default function SandboxHome({
                                   className="ml-0.5 hover:opacity-75 text-base leading-none cursor-pointer"
                                   aria-label={`Remove ${skill}`}
                                 >
-                                  ×
+                                  �
                                 </button>
                               </span>
                             ))}
@@ -1505,7 +1511,7 @@ export default function SandboxHome({
                                 onClick={() => { setSkillSearchQuery(''); setIsSkillDropdownOpen(false) }}
                                 className="text-white/40 hover:text-white p-1"
                               >
-                                ×
+                                �
                               </button>
                             )}
                           </div>
@@ -1596,7 +1602,7 @@ export default function SandboxHome({
                               className="w-full h-10 pl-9 pr-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-[13px] text-white placeholder-white/25"
                             />
                           </div>
-                          <p className="text-[10px] text-[var(--color-text-muted)]">Minimum ₹100 · Maximum ₹1,00,000</p>
+                          <p className="text-[10px] text-[var(--color-text-muted)]">Minimum ?100 � Maximum ?1,00,000</p>
                         </div>
 
                         {/* Deadline */}
@@ -1619,53 +1625,44 @@ export default function SandboxHome({
                         </div>
                       </div>
 
-                      {/* Advanced configuration inputs (paths and criteria) directly editable now */}
-                      <details className="group border-t border-white/[0.05] pt-4">
-                        <summary className="text-xs text-[var(--color-text-muted)] hover:text-white cursor-pointer select-none font-medium flex items-center gap-1">
-                          <span>Advanced guidelines config (file paths, criteria)</span>
-                          <span className="transition-transform group-open:rotate-180">▼</span>
-                        </summary>
-                        <div className="space-y-4 pt-4">
-                          <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5">
-                              Allowed File Paths <span className="text-white/30 font-normal normal-case">(optional, globs like src/components/**)</span>
-                            </label>
-                            <textarea
-                              value={taskForm.allowedPaths}
-                              onChange={e => setTaskForm(prev => ({ ...prev, allowedPaths: e.target.value }))}
-                              placeholder={`src/components/Navbar.tsx\nsrc/styles/navbar.css`}
-                              rows={2}
-                              className="w-full px-3 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-xs text-white font-mono placeholder-white/20 resize-none"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5">
-                              Restricted Paths <span className="text-white/30 font-normal normal-case">(optional)</span>
-                            </label>
-                            <textarea
-                              value={taskForm.restrictedPaths}
-                              onChange={e => setTaskForm(prev => ({ ...prev, restrictedPaths: e.target.value }))}
-                              placeholder={`.env\npackage.json`}
-                              rows={2}
-                              className="w-full px-3 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-xs text-white font-mono placeholder-white/20 resize-none"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5">
-                              Acceptance Criteria <span className="text-white/30 font-normal normal-case">(optional)</span>
-                            </label>
-                            <textarea
-                              value={taskForm.acceptanceCriteria}
-                              onChange={e => setTaskForm(prev => ({ ...prev, acceptanceCriteria: e.target.value }))}
-                              placeholder={`- Navbar collapses on mobile\n- Animation is smooth`}
-                              rows={2}
-                              className="w-full px-3 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-xs text-white placeholder-white/20 resize-none"
-                            />
-                          </div>
+                      {/* File Access Control � replaces allowed/restricted path textareas */}
+                      <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
+                        <div>
+                          <p className="text-sm font-medium text-white">File access control</p>
+                          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
+                            Tick the files developers are allowed to edit. Unticked files are marked restricted.
+                          </p>
                         </div>
-                      </details>
+
+                        {selectedOwnerRepo ? (
+                          <FileTree
+                            username={githubUsername ?? ''}
+                            repo={selectedOwnerRepo.full_name}
+                            checkedPaths={checkedPaths}
+                            onChange={handleCheckedPathsChange}
+                            onLoad={handleTreeLoad}
+                          />
+                        ) : (
+                          <div className="app-empty py-6 text-center text-[13px] text-[var(--color-text-muted)]">
+                            Select a repository to load its file tree
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Acceptance Criteria */}
+                      <div className="space-y-1.5 pt-4 border-t border-[var(--color-border)]">
+                        <label htmlFor="acceptance" className="text-xs font-medium text-[var(--color-text-muted)]">
+                          Acceptance criteria <span className="text-white/30">(optional)</span>
+                        </label>
+                        <textarea
+                          id="acceptance"
+                          value={taskForm.acceptanceCriteria}
+                          onChange={e => setTaskForm(prev => ({ ...prev, acceptanceCriteria: e.target.value }))}
+                          placeholder={`- Navbar collapses on mobile\n- Animation is smooth`}
+                          rows={3}
+                          className="w-full px-3 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-[13px] text-white placeholder-white/25 resize-none leading-relaxed"
+                        />
+                      </div>
 
                       {/* Submission Row */}
                       <div className="pt-4 border-t border-[var(--color-border)]">
@@ -1681,7 +1678,7 @@ export default function SandboxHome({
                           {savingTask ? (
                             <>
                               <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                              Submitting…
+                              Submitting�
                             </>
                           ) : (
                             'Submit Task'
@@ -1724,7 +1721,7 @@ export default function SandboxHome({
                             <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
                               Visibility
                             </span>
-                            <span className="text-white/80">{selectedOwnerRepo ? (selectedOwnerRepo.private ? 'Private' : 'Public') : '—'}</span>
+                            <span className="text-white/80">{selectedOwnerRepo ? (selectedOwnerRepo.private ? 'Private' : 'Public') : '�'}</span>
                           </div>
                         </div>
 
@@ -1733,7 +1730,7 @@ export default function SandboxHome({
                             Description
                           </span>
                           <p className="text-[12px] text-white/45 leading-relaxed">
-                            {selectedOwnerRepo?.description || 'Select a repository to see its description here…'}
+                            {selectedOwnerRepo?.description || 'Select a repository to see its description here�'}
                           </p>
                         </div>
 
@@ -1759,12 +1756,12 @@ export default function SandboxHome({
                             {taskForm.taskTitle || 'Your task title'}
                           </h4>
                           <div className="bg-accent/10 border border-accent/20 px-2 py-0.5 rounded text-accent font-medium text-[13px] tabular-nums whitespace-nowrap shrink-0">
-                            ₹{(budget ? Number(budget) : 0).toLocaleString()}
+                            ?{(budget ? Number(budget) : 0).toLocaleString()}
                           </div>
                         </div>
 
                         <p className="text-[13px] text-white/45 line-clamp-3 min-h-[4em] leading-relaxed">
-                          {taskForm.taskDescription || 'Your task description will appear here as you type…'}
+                          {taskForm.taskDescription || 'Your task description will appear here as you type�'}
                         </p>
 
                         <div className="flex flex-wrap gap-1.5">
@@ -1916,7 +1913,7 @@ export default function SandboxHome({
                                 disabled
                                 className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary opacity-40 cursor-not-allowed"
                               >
-                                {mirror.verificationStatus === 'verifying' ? 'Verifying…' : 'Unavailable'}
+                                {mirror.verificationStatus === 'verifying' ? 'Verifying�' : 'Unavailable'}
                               </button>
                               <button
                                 disabled
@@ -1950,7 +1947,7 @@ export default function SandboxHome({
                                   disabled={triggeringBaseline[mirror.sandboxRepo]}
                                   className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {triggeringBaseline[mirror.sandboxRepo] ? 'Generating…' : 'Gen Baseline'}
+                                  {triggeringBaseline[mirror.sandboxRepo] ? 'Generating�' : 'Gen Baseline'}
                                 </button>
                               )}
                             </>
@@ -1988,7 +1985,7 @@ export default function SandboxHome({
                               disabled={deletingRepos[mirror.sandboxRepo]}
                               className="h-7 px-2.5 rounded text-[11px] font-medium border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {deletingRepos[mirror.sandboxRepo] ? '…' : 'Delete'}
+                              {deletingRepos[mirror.sandboxRepo] ? '�' : 'Delete'}
                             </button>
 
                             {/* GitHub link */}
@@ -2022,7 +2019,7 @@ export default function SandboxHome({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       Received PRs
-                      <span className="font-mono text-sm text-zinc-400 font-normal">— {selectedSandboxForPRs.sandboxRepo}</span>
+                      <span className="font-mono text-sm text-zinc-400 font-normal">� {selectedSandboxForPRs.sandboxRepo}</span>
                     </h3>
                     <p className="text-zinc-400 text-xs font-medium mt-1">Developer submissions with AI review reports</p>
                   </div>
@@ -2030,7 +2027,7 @@ export default function SandboxHome({
                     onClick={() => { setSelectedSandboxForPRs(null); setSelectedPR(null) }}
                     className="text-zinc-500 hover:text-zinc-300 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    ✕ Close
+                    ? Close
                   </button>
                 </div>
 
@@ -2054,7 +2051,7 @@ export default function SandboxHome({
                           : v === 'high_risk'
                           ? 'border-red-500/40 bg-red-500/5 text-red-400'
                           : 'border-amber-500/40 bg-amber-500/5 text-amber-400'
-                        const verdictLabel = v === 'pass' ? '🟢 PASS' : v === 'high_risk' ? '🔴 HIGH RISK' : v === 'needs_changes' ? '🟡 NEEDS CHANGES' : '⏳ PENDING'
+                        const verdictLabel = v === 'pass' ? '?? PASS' : v === 'high_risk' ? '?? HIGH RISK' : v === 'needs_changes' ? '?? NEEDS CHANGES' : '? PENDING'
 
                         return (
                           <button
@@ -2070,7 +2067,7 @@ export default function SandboxHome({
                               <div>
                                 <div className="font-bold text-zinc-200 text-sm">@{pr.fork.githubUsername}</div>
                                 <div className="text-[10px] text-zinc-500 mt-0.5">
-                                  {pr.review ? `PR #${pr.review.prNumber}` : 'No PR'} · {new Date(pr.fork.createdAt).toLocaleDateString()}
+                                  {pr.review ? `PR #${pr.review.prNumber}` : 'No PR'} � {new Date(pr.fork.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
@@ -2102,14 +2099,14 @@ export default function SandboxHome({
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">AI Review Report</div>
-                                <div className="text-sm font-bold text-zinc-200 mt-0.5">@{selectedPR.fork.githubUsername} · PR #{selectedPR.review.prNumber}</div>
+                                <div className="text-sm font-bold text-zinc-200 mt-0.5">@{selectedPR.fork.githubUsername} � PR #{selectedPR.review.prNumber}</div>
                               </div>
                               <div className={`text-xs font-black px-3 py-1.5 rounded-xl border ${
                                 selectedPR.review.verdict === 'pass' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                                 : selectedPR.review.verdict === 'high_risk' ? 'border-red-500/40 bg-red-500/10 text-red-400'
                                 : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
                               }`}>
-                                {selectedPR.review.verdict === 'pass' ? '🟢 PASS' : selectedPR.review.verdict === 'high_risk' ? '🔴 HIGH RISK' : '🟡 NEEDS CHANGES'}
+                                {selectedPR.review.verdict === 'pass' ? '?? PASS' : selectedPR.review.verdict === 'high_risk' ? '?? HIGH RISK' : '?? NEEDS CHANGES'}
                               </div>
                             </div>
 
@@ -2136,7 +2133,7 @@ export default function SandboxHome({
                               onClick={() => handleOpenComparison(selectedSandboxForPRs!.id, selectedPR.review!, `PR #${selectedPR.review!.prNumber} from @${selectedPR.fork.githubUsername}`)}
                               className="w-full h-10 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer flex items-center justify-center gap-2"
                             >
-                              📊 View AI Review Report
+                              ?? View AI Review Report
                             </button>
 
                             {/* Summary */}
@@ -2148,11 +2145,11 @@ export default function SandboxHome({
                             {/* Strengths */}
                             {selectedPR.review.strengths && selectedPR.review.strengths.length > 0 && (
                               <div className="space-y-1.5">
-                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✅ Strengths ({selectedPR.review.strengths.length})</div>
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">? Strengths ({selectedPR.review.strengths.length})</div>
                                 <div className="space-y-1 pl-1">
                                   {selectedPR.review.strengths.map((s, i) => (
                                     <div key={i} className="flex items-start gap-2 text-[10px] text-zinc-300">
-                                      <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
+                                      <span className="text-emerald-500 shrink-0 mt-0.5">�</span>
                                       {s}
                                     </div>
                                   ))}
@@ -2163,7 +2160,7 @@ export default function SandboxHome({
                             {/* Issues */}
                             {selectedPR.review.issues.length > 0 && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider">⚠️ Active Issues ({selectedPR.review.issues.length})</div>
+                                <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider">?? Active Issues ({selectedPR.review.issues.length})</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.issues.map((issue, i) => (
                                     <div key={i} className={`p-3 rounded-xl border text-[10px] leading-relaxed ${
@@ -2182,7 +2179,7 @@ export default function SandboxHome({
                                         )}
                                       </div>
                                       <div>{issue.message}</div>
-                                      {issue.suggestion && <div className="mt-1 text-zinc-500 italic">→ {issue.suggestion}</div>}
+                                      {issue.suggestion && <div className="mt-1 text-zinc-500 italic">? {issue.suggestion}</div>}
                                     </div>
                                   ))}
                                 </div>
@@ -2192,7 +2189,7 @@ export default function SandboxHome({
                             {/* Risks */}
                             {selectedPR.review.risks && selectedPR.review.risks.length > 0 && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">🔴 Active Security Risks ({selectedPR.review.risks.length})</div>
+                                <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">?? Active Security Risks ({selectedPR.review.risks.length})</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.risks.map((risk, i) => (
                                     <div key={i} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[10px] text-red-300">
@@ -2217,7 +2214,7 @@ export default function SandboxHome({
                             {((selectedPR.review.resolvedIssues && selectedPR.review.resolvedIssues.length > 0) || 
                               (selectedPR.review.resolvedRisks && selectedPR.review.resolvedRisks.length > 0)) && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">🟢 Corrected Items ({
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">?? Corrected Items ({
                                   (selectedPR.review.resolvedIssues?.length || 0) + (selectedPR.review.resolvedRisks?.length || 0)
                                 })</div>
                                 <div className="space-y-2">
@@ -2228,7 +2225,7 @@ export default function SandboxHome({
                                         <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
                                       </div>
                                       <div className="line-through text-zinc-500">{issue.message}</div>
-                                      {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {issue.resolution}</div>}
+                                      {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">? Fixed: {issue.resolution}</div>}
                                     </div>
                                   ))}
                                   {selectedPR.review.resolvedRisks?.map((risk, i) => (
@@ -2238,7 +2235,7 @@ export default function SandboxHome({
                                         <span>[{risk.severity.toUpperCase()}] Category: {risk.category}</span>
                                       </div>
                                       <div className="line-through text-zinc-500">{risk.message}</div>
-                                      {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {risk.resolution}</div>}
+                                      {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">? Fixed: {risk.resolution}</div>}
                                     </div>
                                   ))}
                                 </div>
@@ -2248,11 +2245,11 @@ export default function SandboxHome({
                             {/* Unauthorized Edits */}
                             {selectedPR.review.unauthorizedEdits && selectedPR.review.unauthorizedEdits.length > 0 && (
                               <div className="space-y-1.5">
-                                <div className="text-[10px] font-black text-red-500 uppercase tracking-wider">🚫 Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
+                                <div className="text-[10px] font-black text-red-500 uppercase tracking-wider">?? Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
                                 <div className="space-y-1">
                                   {selectedPR.review.unauthorizedEdits.map((f, i) => (
                                     <div key={i} className="font-mono text-[10px] text-red-400 bg-red-500/5 border border-red-500/15 px-3 py-1 rounded-lg">
-                                      🚫 {f}
+                                      ?? {f}
                                     </div>
                                   ))}
                                 </div>
@@ -2263,7 +2260,7 @@ export default function SandboxHome({
                             {selectedPR.fork.prUrl && (
                               <a href={selectedPR.fork.prUrl} target="_blank" rel="noreferrer"
                                 className="flex items-center gap-1.5 text-xs font-bold text-violet-400 hover:text-violet-300 transition">
-                                View PR on GitHub →
+                                View PR on GitHub ?
                               </a>
                             )}
 
@@ -2281,21 +2278,21 @@ export default function SandboxHome({
                                   disabled={prActionInProgress || selectedPR.review.verdict === 'high_risk'}
                                   className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                                 >
-                                  ✅ Approve & Merge
+                                  ? Approve & Merge
                                 </button>
                                 <button
                                   onClick={() => handlePRAction('request_changes', selectedPR)}
                                   disabled={prActionInProgress}
                                   className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                                 >
-                                  🔄 Request Changes
+                                  ?? Request Changes
                                 </button>
                                 <button
                                   onClick={() => handlePRAction('reject', selectedPR)}
                                   disabled={prActionInProgress}
                                   className="py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                                 >
-                                  ✕ Reject
+                                  ? Reject
                                 </button>
                               </div>
                             </div>
@@ -2419,7 +2416,7 @@ export default function SandboxHome({
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
                               devStatus.hasFork ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
-                              {devStatus.hasFork ? '✓' : '1'}
+                              {devStatus.hasFork ? '?' : '1'}
                             </span>
                             Step 1: Create Isolated Workspace (GitHub Fork)
                           </h5>
@@ -2448,7 +2445,7 @@ export default function SandboxHome({
                             </button>
                             {forkRegistered && (
                               <p className="text-[10px] text-amber-500/90 font-semibold flex items-center gap-1">
-                                <span>💡</span> GitHub fork page opened in a new tab! Complete the fork creation, then proceed below to clone.
+                                <span>??</span> GitHub fork page opened in a new tab! Complete the fork creation, then proceed below to clone.
                               </p>
                             )}
                           </div>
@@ -2485,7 +2482,7 @@ export default function SandboxHome({
                           {/* Command clone */}
                           <div className="space-y-2 relative group">
                             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
-                              A — Clone your isolated Fork locally
+                              A � Clone your isolated Fork locally
                             </span>
                             <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
                               <span className="text-accent select-text truncate">
@@ -2503,7 +2500,7 @@ export default function SandboxHome({
                           {/* Command remote */}
                           <div className="space-y-2 relative group">
                             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
-                              B — Add upstream tracking to sandbox
+                              B � Add upstream tracking to sandbox
                             </span>
                             <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
                               <span className="text-accent select-text truncate">
@@ -2521,7 +2518,7 @@ export default function SandboxHome({
                           {/* Command push */}
                           <div className="space-y-2 relative group">
                             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
-                              C — Make changes, commit, and push directly to main
+                              C � Make changes, commit, and push directly to main
                             </span>
                             <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
                               <span className="text-accent select-text truncate">
@@ -2545,7 +2542,7 @@ export default function SandboxHome({
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
                               devStatus.hasPR ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
-                              {devStatus.hasPR ? '✓' : '3'}
+                              {devStatus.hasPR ? '?' : '3'}
                             </span>
                             Step 3: Open Pull Request to Sandbox Repo
                           </h5>
@@ -2611,7 +2608,7 @@ export default function SandboxHome({
                                 {devStatus.prDetails.title}
                               </h6>
                               <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-500 border-t border-zinc-900/60 pt-3 relative z-10">
-                                <span>PR #{devStatus.prDetails.number} • Created {new Date(devStatus.prDetails.createdAt).toLocaleDateString()}</span>
+                                <span>PR #{devStatus.prDetails.number} � Created {new Date(devStatus.prDetails.createdAt).toLocaleDateString()}</span>
                                 <a
                                   href={devStatus.prDetails.url}
                                   target="_blank"
@@ -2636,7 +2633,7 @@ export default function SandboxHome({
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
                               aiReview ? (aiReview.verdict === 'pass' ? 'bg-emerald-400 text-black' : aiReview.verdict === 'high_risk' ? 'bg-red-500 text-white' : 'bg-amber-500 text-black') : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
                             }`}>
-                              {aiReview ? (aiReview.verdict === 'pass' ? '✓' : aiReview.verdict === 'high_risk' ? '!' : '~') : '4'}
+                              {aiReview ? (aiReview.verdict === 'pass' ? '?' : aiReview.verdict === 'high_risk' ? '!' : '~') : '4'}
                             </span>
                             Step 4: AI Review Report
                           </h5>
@@ -2646,7 +2643,7 @@ export default function SandboxHome({
                               : aiReview.verdict === 'high_risk' ? 'border-red-500/30 bg-red-500/5 text-red-400'
                               : 'border-amber-500/30 bg-amber-500/5 text-amber-400 animate-pulse'
                             }`}>
-                              {aiReview.verdict === 'pass' ? '🟢 PASS' : aiReview.verdict === 'high_risk' ? '🔴 HIGH RISK' : '🟡 NEEDS CHANGES'}
+                              {aiReview.verdict === 'pass' ? '?? PASS' : aiReview.verdict === 'high_risk' ? '?? HIGH RISK' : '?? NEEDS CHANGES'}
                             </span>
                           )}
                         </div>
@@ -2730,179 +2727,12 @@ export default function SandboxHome({
                               </div>
 
                               {aiReview && (
-                                <div className="space-y-4 animate-fade-in">
-                                  <button
-                                    onClick={() => handleOpenComparison(selectedSandboxRepo.id, aiReview, `PR #${aiReview.prNumber}`)}
-                                    className="w-full h-10 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer flex items-center justify-center gap-2 mb-2"
-                                  >
-                                    📊 View AI Review Report
-                                  </button>
-                                  {/* Score & Requirement Match */}
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-zinc-900/60 rounded-xl p-3 border border-zinc-800/60">
-                                      <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Score</div>
-                                      <div className="text-2xl font-black text-zinc-100">{aiReview.score}<span className="text-sm font-bold text-zinc-500">/100</span></div>
-                                      <div className="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
-                                        <div className={`h-full rounded-full ${
-                                          aiReview.score >= 75 ? 'bg-emerald-500' : aiReview.score >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                                        }`} style={{ width: `${aiReview.score}%` }} />
-                                      </div>
-                                    </div>
-                                    <div className="bg-zinc-900/60 rounded-xl p-3 border border-zinc-800/60">
-                                      <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Req Match</div>
-                                      <div className="text-2xl font-black text-zinc-100">{Math.round(aiReview.requirementMatch * 100)}<span className="text-sm font-bold text-zinc-500">%</span></div>
-                                      <div className="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
-                                        <div className={`h-full rounded-full ${
-                                          aiReview.requirementMatch >= 0.8 ? 'bg-emerald-500' : aiReview.requirementMatch >= 0.5 ? 'bg-amber-500' : 'bg-red-500'
-                                        }`} style={{ width: `${aiReview.requirementMatch * 100}%` }} />
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Summary */}
-                                  <div className="bg-zinc-900/40 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed border border-zinc-800/40">
-                                    <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">AI Summary</div>
-                                    {aiReview.summary}
-                                  </div>
-
-                                  {/* Strengths */}
-                                  {aiReview.strengths.length > 0 && (
-                                    <div>
-                                      <button onClick={() => toggleSection('strengths')} className="w-full flex items-center justify-between text-xs font-black text-emerald-400 uppercase tracking-wider py-1 cursor-pointer">
-                                        <span>✅ Strengths ({aiReview.strengths.length})</span>
-                                        <span>{reviewExpandedSections.strengths ? '▲' : '▼'}</span>
-                                      </button>
-                                      {reviewExpandedSections.strengths && (
-                                        <div className="mt-2 space-y-1.5">
-                                          {aiReview.strengths.map((s, i) => (
-                                            <div key={i} className="flex items-start gap-2 text-[10px] text-zinc-300">
-                                              <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
-                                              {s}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Issues */}
-                                  {aiReview.issues.length > 0 && (
-                                    <div>
-                                      <button onClick={() => toggleSection('issues')} className="w-full flex items-center justify-between text-xs font-black text-amber-400 uppercase tracking-wider py-1 cursor-pointer">
-                                        <span>⚠️ Active Issues ({aiReview.issues.length})</span>
-                                        <span>{reviewExpandedSections.issues ? '▲' : '▼'}</span>
-                                      </button>
-                                      {reviewExpandedSections.issues && (
-                                        <div className="mt-2 space-y-2">
-                                          {aiReview.issues.map((issue, i) => (
-                                            <div key={i} className={`p-3 rounded-xl border text-[10px] leading-relaxed ${
-                                              issue.severity === 'critical' || issue.severity === 'high' ? 'border-red-500/25 bg-red-500/5 text-red-300'
-                                              : issue.severity === 'medium' ? 'border-amber-500/25 bg-amber-500/5 text-amber-300'
-                                              : 'border-zinc-800 bg-zinc-900/40 text-zinc-400'
-                                            }`}>
-                                              <div className="flex items-center justify-between font-black mb-1">
-                                                <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
-                                                {issue.status && (
-                                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
-                                                    issue.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30 shadow-[0_0_5px_rgba(139,92,246,0.1)]' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                                                  }`}>
-                                                    {issue.status}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              <div>{issue.message}</div>
-                                              {issue.suggestion && <div className="mt-1 text-zinc-500 italic">→ {issue.suggestion}</div>}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Risks */}
-                                  {aiReview.risks.length > 0 && (
-                                    <div>
-                                      <button onClick={() => toggleSection('risks')} className="w-full flex items-center justify-between text-xs font-black text-red-400 uppercase tracking-wider py-1 cursor-pointer">
-                                        <span>🔴 Active Security Risks ({aiReview.risks.length})</span>
-                                        <span>{reviewExpandedSections.risks ? '▲' : '▼'}</span>
-                                      </button>
-                                      {reviewExpandedSections.risks && (
-                                        <div className="mt-2 space-y-2">
-                                          {aiReview.risks.map((risk, i) => (
-                                            <div key={i} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[10px] text-red-300">
-                                              <div className="flex items-center justify-between font-black mb-1">
-                                                <span>[{risk.severity.toUpperCase()}] {risk.category}</span>
-                                                {risk.status && (
-                                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
-                                                    risk.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30 shadow-[0_0_5px_rgba(139,92,246,0.1)]' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                                                  }`}>
-                                                    {risk.status}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {risk.message}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Resolved Issues & Risks */}
-                                  {((aiReview.resolvedIssues && aiReview.resolvedIssues.length > 0) || 
-                                    (aiReview.resolvedRisks && aiReview.resolvedRisks.length > 0)) && (
-                                    <div>
-                                      <button onClick={() => toggleSection('resolved')} className="w-full flex items-center justify-between text-xs font-black text-emerald-400 uppercase tracking-wider py-1 cursor-pointer animate-pulse-slow">
-                                        <span>🟢 Corrected Items ({
-                                          (aiReview.resolvedIssues?.length || 0) + (aiReview.resolvedRisks?.length || 0)
-                                        })</span>
-                                        <span>{reviewExpandedSections.resolved ? '▲' : '▼'}</span>
-                                      </button>
-                                      {reviewExpandedSections.resolved && (
-                                        <div className="mt-2 space-y-2">
-                                          {aiReview.resolvedIssues?.map((issue, i) => (
-                                            <div key={`resolved-issue-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
-                                              <div className="font-black mb-1 flex items-center gap-1.5">
-                                                <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
-                                                <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
-                                              </div>
-                                              <div className="line-through text-zinc-500">{issue.message}</div>
-                                              {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {issue.resolution}</div>}
-                                            </div>
-                                          ))}
-                                          {aiReview.resolvedRisks?.map((risk, i) => (
-                                            <div key={`resolved-risk-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
-                                              <div className="font-black mb-1 flex items-center gap-1.5">
-                                                <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
-                                                <span>[{risk.severity.toUpperCase()}] Category: {risk.category}</span>
-                                              </div>
-                                              <div className="line-through text-zinc-500">{risk.message}</div>
-                                              {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {risk.resolution}</div>}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Unauthorized edits */}
-                                  {aiReview.unauthorizedEdits.length > 0 && (
-                                    <div>
-                                      <button onClick={() => toggleSection('unauthorized')} className="w-full flex items-center justify-between text-xs font-black text-red-500 uppercase tracking-wider py-1 cursor-pointer">
-                                        <span>🚫 Unauthorized Edits ({aiReview.unauthorizedEdits.length})</span>
-                                        <span>{reviewExpandedSections.unauthorized ? '▲' : '▼'}</span>
-                                      </button>
-                                      {reviewExpandedSections.unauthorized && (
-                                        <div className="mt-2 space-y-1">
-                                          {aiReview.unauthorizedEdits.map((f, i) => (
-                                            <div key={i} className="font-mono text-[10px] text-red-400 bg-red-500/5 border border-red-500/15 px-3 py-1.5 rounded-lg">
-                                              🚫 {f}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
+                                <div className="animate-fade-in mt-4">
+                                  <AIReviewReport
+                                    review={aiReview}
+                                    title={`PR #${aiReview.prNumber}`}
+                                    prUrl={devStatus.prDetails?.url}
+                                  />
                                 </div>
                               )}
                             </>
@@ -2944,448 +2774,38 @@ export default function SandboxHome({
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
           {/* Modal */}
-          <div className="relative z-10 w-full max-w-4xl app-modal overflow-hidden flex flex-col max-h-[85vh] font-sans">
+          <div className="relative z-10 w-full max-w-3xl app-modal overflow-hidden flex flex-col max-h-[90vh] font-sans">
             {/* Modal Header */}
-            <div className="flex flex-col px-7 pt-7 pb-4 border-b border-zinc-900 gap-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 font-mono">AI Review Report</div>
-                  <h3 className="text-xl font-semibold text-white truncate max-w-[500px]">{comparisonTitle}</h3>
-                </div>
-                <button onClick={() => setComparisonModalOpen(false)} className="text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 w-9 h-9 rounded-xl flex items-center justify-center transition cursor-pointer">
-                  ✕
-                </button>
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--color-border)]">
+              <div>
+                <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">AI Review Report</p>
+                <h3 className="text-base font-semibold text-white mt-0.5 truncate max-w-[460px]">{comparisonTitle}</h3>
               </div>
-
-              {/* Tab Selector */}
-              <div className="flex gap-2 border-b border-[var(--color-border)] pb-1 mt-1 overflow-x-auto">
-                <button
-                  onClick={() => setComparisonTab('overview')}
-                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
-                    comparisonTab === 'overview'
-                      ? 'app-tab-active'
-                      : 'app-tab'
-                  }`}
-                >
-                  Score & summary
-                </button>
-                <button
-                  onClick={() => setComparisonTab('issues')}
-                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
-                    comparisonTab === 'issues'
-                      ? 'app-tab-active'
-                      : 'app-tab'
-                  }`}
-                >
-                  Issues ({comparisonPRReview.issues?.length || 0})
-                </button>
-                <button
-                  onClick={() => setComparisonTab('risks')}
-                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
-                    comparisonTab === 'risks'
-                      ? 'app-tab-active'
-                      : 'app-tab'
-                  }`}
-                >
-                  Security risks ({comparisonPRReview.risks?.length || 0})
-                </button>
-                <button
-                  onClick={() => setComparisonTab('deterministic')}
-                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
-                    comparisonTab === 'deterministic'
-                      ? 'app-tab-active'
-                      : 'app-tab'
-                  }`}
-                >
-                  Deterministic
-                </button>
-              </div>
+              <button onClick={() => setComparisonModalOpen(false)} className="text-[var(--color-text-muted)] hover:text-white border border-[var(--color-border)] hover:border-white/10 w-8 h-8 rounded-lg flex items-center justify-center transition cursor-pointer text-sm">
+                ?
+              </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="px-7 py-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-                <div className="space-y-6 text-left">
-                  {/* Tab Contents: Overview */}
-                  {comparisonTab === 'overview' && (
-                    <div className="space-y-6 animate-fade-in">
-                      {/* Verdict Badge */}
-                      <div className="flex items-center gap-3">
-                        <div className={`text-sm font-black px-4 py-2 rounded-xl border inline-flex items-center gap-2 ${
-                          comparisonPRReview.verdict === 'pass' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-                          : comparisonPRReview.verdict === 'high_risk' ? 'border-red-500/40 bg-red-500/10 text-red-400'
-                          : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
-                        }`}>
-                          {comparisonPRReview.verdict === 'pass' ? '🟢 PASS' : comparisonPRReview.verdict === 'high_risk' ? '🔴 HIGH RISK' : '🟡 NEEDS CHANGES'}
-                        </div>
-                      </div>
-
-                      {/* Metric Cards */}
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {/* Score Metric Card */}
-                        <div className="app-panel p-5 flex flex-col justify-between gap-4">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">AI Verification Score</div>
-                          <div className="flex flex-col">
-                            <span className="text-3xl font-black text-zinc-50 font-mono">{comparisonPRReview.score}/100</span>
-                          </div>
-                          <div className="space-y-2 pt-1">
-                            <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
-                              <div
-                                className={`h-full rounded-full transition-all duration-700 ${
-                                  comparisonPRReview.score >= 75 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
-                                  comparisonPRReview.score >= 50 ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
-                                  'bg-gradient-to-r from-red-600 to-rose-500'
-                                }`}
-                                style={{ width: `${comparisonPRReview.score}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Req Match Card */}
-                        <div className="app-panel p-5 flex flex-col justify-between gap-4">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Task Requirements Match</div>
-                          <div className="flex flex-col">
-                            <span className="text-3xl font-black text-zinc-50 font-mono">{Math.round(comparisonPRReview.requirementMatch * 100)}%</span>
-                          </div>
-                          <div className="space-y-2 pt-1">
-                            <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
-                              <div
-                                className={`h-full rounded-full transition-all duration-700 ${
-                                  comparisonPRReview.requirementMatch >= 0.8 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
-                                  comparisonPRReview.requirementMatch >= 0.5 ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
-                                  'bg-gradient-to-r from-red-600 to-rose-500'
-                                }`}
-                                style={{ width: `${comparisonPRReview.requirementMatch * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* AI Review Summary */}
-                      <div className="app-panel p-5 text-xs leading-relaxed text-zinc-300">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-2.5 font-mono">AI Review Summary</div>
-                        {comparisonPRReview.summary}
-                      </div>
-
-                      {/* Strengths */}
-                      {comparisonPRReview.strengths && comparisonPRReview.strengths.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider font-mono">✅ Strengths ({comparisonPRReview.strengths.length})</div>
-                          <div className="space-y-1.5 pl-1">
-                            {comparisonPRReview.strengths.map((s: string, i: number) => (
-                              <div key={i} className="flex items-start gap-2.5 text-[11px] text-zinc-300">
-                                <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
-                                <span>{s}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Stats Summary Grid */}
-                      <div className="app-panel p-5 space-y-3">
-                        <div className="text-[10px] font-semibold text-[var(--color-text-muted)] font-mono border-b border-[var(--color-border)] pb-2">
-                          Review Findings Summary
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
-                            <div className="text-xl font-black text-zinc-100 font-mono">{comparisonPRReview.score}/100</div>
-                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Verification Score</div>
-                          </div>
-                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
-                            <div className="text-xl font-black text-emerald-400 font-mono">{Math.round(comparisonPRReview.requirementMatch * 100)}%</div>
-                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Requirements Match</div>
-                          </div>
-                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
-                            <div className="text-xl font-black text-amber-500 font-mono">{comparisonPRReview.issues?.length || 0}</div>
-                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Issues Found</div>
-                          </div>
-                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
-                            <div className="text-xl font-black text-red-500 font-mono">{comparisonPRReview.risks?.length || 0}</div>
-                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Security Risks</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tab Contents: Issues */}
-                  {comparisonTab === 'issues' && (
-                    <div className="space-y-6 animate-fade-in">
-                      {/* All Issues */}
-                      <div className="space-y-3">
-                        <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          Issues Found ({comparisonPRReview.issues?.length || 0})
-                        </div>
-                        {(!comparisonPRReview.issues || comparisonPRReview.issues.length === 0) ? (
-                          <div className="app-empty py-4 text-center text-[11px]">
-                            No issues found — clean code! Excellent work.
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            {comparisonPRReview.issues.map((issue: any, i: number) => (
-                              <div key={`issue-${i}`} className={`p-4 rounded-2xl border text-[11px] leading-relaxed ${
-                                issue.severity === 'critical' || issue.severity === 'high' ? 'border-red-500/20 bg-red-500/5 text-red-300'
-                                : issue.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
-                                : 'border-zinc-900 bg-zinc-950/40 text-zinc-400'
-                              }`}>
-                                <div className="flex items-center justify-between font-black mb-1.5 font-mono">
-                                  <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
-                                  <span className={`text-[8px] px-1.5 py-0.5 rounded leading-none shrink-0 font-black tracking-wide ${
-                                    issue.severity === 'critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                    issue.severity === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                                    issue.severity === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                    'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                                  }`}>{issue.severity.toUpperCase()}</span>
-                                </div>
-                                <div className="text-zinc-300 mt-1">{issue.message}</div>
-                                {issue.suggestion && (
-                                  <div className="mt-2 text-zinc-500 italic bg-[#030305] p-2 rounded-lg border border-zinc-900/60 text-xs">
-                                    <span className="font-bold font-mono not-italic text-zinc-400 mr-1">Fix Suggestion:</span>
-                                    {issue.suggestion}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Unauthorized File Edits */}
-                      {comparisonPRReview.unauthorizedEdits && comparisonPRReview.unauthorizedEdits.length > 0 && (
-                        <div className="space-y-3 pt-2">
-                          <div className="text-[10px] font-black text-red-500 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                            Unauthorized File Edits ({comparisonPRReview.unauthorizedEdits.length})
-                          </div>
-                          <div className="space-y-2">
-                            {comparisonPRReview.unauthorizedEdits.map((file: string, i: number) => (
-                              <div key={`unauth-${i}`} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[11px] text-red-300 font-mono">
-                                🚫 {file}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Tab Contents: Security Risks */}
-                  {comparisonTab === 'risks' && (
-                    <div className="space-y-6 animate-fade-in">
-                      {/* All Security Risks */}
-                      <div className="space-y-3">
-                        <div className="text-[10px] font-black text-red-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-red-400"></span>
-                          Security Risks ({comparisonPRReview.risks?.length || 0})
-                        </div>
-                        {(!comparisonPRReview.risks || comparisonPRReview.risks.length === 0) ? (
-                          <div className="app-empty py-4 text-center text-[11px]">
-                            No security risks detected. Code is clean.
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            {comparisonPRReview.risks.map((risk: any, i: number) => (
-                              <div key={`risk-${i}`} className={`p-4 rounded-2xl border text-[11px] leading-relaxed ${
-                                risk.severity === 'high' ? 'border-red-500/25 bg-red-500/5 text-red-300'
-                                : risk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
-                                : 'border-zinc-900 bg-zinc-950/40 text-zinc-400'
-                              }`}>
-                                <div className="flex items-center justify-between font-black mb-1.5 font-mono">
-                                  <span>[{risk.severity.toUpperCase()}] {risk.category.toUpperCase()}</span>
-                                  <span className={`text-[8px] px-1.5 py-0.5 rounded leading-none shrink-0 font-black tracking-wide ${
-                                    risk.severity === 'high' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                    risk.severity === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                    'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                                  }`}>{risk.severity.toUpperCase()}</span>
-                                </div>
-                                <div className="text-zinc-300 font-sans mt-1">{risk.message}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tab Contents: Deterministic Comparison */}
-                  {comparisonTab === 'deterministic' && (
-                    <div className="space-y-6 animate-fade-in">
-                      {/* Deterministic Report HTML */}
-                      {comparisonPRReview.reportHtml ? (
-                        <div className="space-y-4">
-                          <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                            Deterministic Review Report
-                          </div>
-                          <div
-                            className="app-panel p-5 text-xs text-zinc-300 leading-relaxed overflow-auto max-h-[300px] custom-scrollbar prose prose-invert prose-xs"
-                            dangerouslySetInnerHTML={{ __html: comparisonPRReview.reportHtml }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="py-4 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                          No deterministic report HTML available for this PR.
-                        </div>
-                      )}
-
-                      {/* Deterministic Test Category Results */}
-                      {comparisonPRReview.results && Object.keys(comparisonPRReview.results).length > 0 && (
-                        <div className="space-y-3">
-                          <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                            Test Category Results ({Object.keys(comparisonPRReview.results).length} categories)
-                          </div>
-                          <div className="grid md:grid-cols-2 gap-3">
-                            {Object.entries(comparisonPRReview.results).map(([category, result]: [string, any]) => {
-                              const statusColor = result.status === 'pass'
-                                ? 'border-emerald-500/25 bg-emerald-500/5 text-emerald-400'
-                                : result.status === 'fail'
-                                ? 'border-red-500/25 bg-red-500/5 text-red-400'
-                                : result.status === 'warn'
-                                ? 'border-amber-500/25 bg-amber-500/5 text-amber-400'
-                                : 'border-zinc-800 bg-zinc-900/40 text-zinc-400'
-                              return (
-                                <div key={category} className={`p-3.5 rounded-xl border ${statusColor} text-[11px]`}>
-                                  <div className="flex items-center justify-between font-black mb-1">
-                                    <span className="uppercase tracking-wider text-[10px]">
-                                      {category.replace(/([A-Z])/g, ' $1').trim()}
-                                    </span>
-                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${
-                                      result.status === 'pass' ? 'bg-emerald-500/15 border-emerald-500/25' :
-                                      result.status === 'fail' ? 'bg-red-500/15 border-red-500/25' :
-                                      result.status === 'warn' ? 'bg-amber-500/15 border-amber-500/25' :
-                                      'bg-zinc-800 border-zinc-700'
-                                    }`}>
-                                      {result.status?.toUpperCase() || 'SKIP'}
-                                    </span>
-                                  </div>
-                                  {result.issuesCount > 0 && (
-                                    <div className="text-zinc-400 text-[10px] mt-0.5">
-                                      {result.issuesCount} issue(s) found
-                                    </div>
-                                  )}
-                                  {result.durationMs && (
-                                    <div className="text-zinc-500 text-[9px] mt-0.5 font-mono">
-                                      Duration: {result.durationMs}ms
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Baseline Comparison Results */}
-                      {comparisonPRReview.comparison && Object.keys(comparisonPRReview.comparison).length > 0 && (
-                        <div className="space-y-3">
-                          <div className="text-[10px] font-black text-violet-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-violet-400"></span>
-                            Baseline ↔ PR Comparison
-                          </div>
-                          <div className="space-y-2">
-                            {Object.entries(comparisonPRReview.comparison).map(([category, diff]: [string, any]) => {
-                              const improved = diff.baselineIssues > diff.prIssues
-                              const worsened = diff.prIssues > diff.baselineIssues
-                              const same = diff.baselineIssues === diff.prIssues
-                              return (
-                                <div key={category} className={`p-3 rounded-xl border text-[11px] ${
-                                  improved ? 'border-emerald-500/20 bg-emerald-500/5'
-                                  : worsened ? 'border-red-500/20 bg-red-500/5'
-                                  : 'border-zinc-800/60 bg-zinc-900/30'
-                                }`}>
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-bold text-zinc-200 uppercase tracking-wider text-[10px]">
-                                      {category.replace(/([A-Z])/g, ' $1').trim()}
-                                    </span>
-                                    <div className="flex items-center gap-3 text-[10px] font-mono">
-                                      <span className="text-zinc-500">Baseline: <span className="text-zinc-300 font-bold">{diff.baselineIssues ?? '—'}</span></span>
-                                      <span className={improved ? 'text-emerald-400' : worsened ? 'text-red-400' : 'text-zinc-500'}>→</span>
-                                      <span className="text-zinc-500">PR: <span className={`font-bold ${improved ? 'text-emerald-400' : worsened ? 'text-red-400' : 'text-zinc-300'}`}>{diff.prIssues ?? '—'}</span></span>
-                                      {improved && <span className="text-emerald-400 font-black">↓ IMPROVED</span>}
-                                      {worsened && <span className="text-red-400 font-black">↑ REGRESSION</span>}
-                                      {same && <span className="text-zinc-500 font-bold">= SAME</span>}
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Resolved Issues from Deterministic comparison */}
-                      {comparisonPRReview.resolvedIssues && comparisonPRReview.resolvedIssues.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                            Resolved Issues ({comparisonPRReview.resolvedIssues.length})
-                          </div>
-                          <div className="space-y-2">
-                            {comparisonPRReview.resolvedIssues.map((issue: any, i: number) => (
-                              <div key={`det-resolved-issue-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-300 leading-relaxed">
-                                <div className="font-black mb-1 flex items-center gap-1.5">
-                                  <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
-                                  <span>[{issue.severity?.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
-                                </div>
-                                <div className="line-through text-zinc-500">{issue.message}</div>
-                                {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ {issue.resolution}</div>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Resolved Risks from Deterministic comparison */}
-                      {comparisonPRReview.resolvedRisks && comparisonPRReview.resolvedRisks.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                            Resolved Security Risks ({comparisonPRReview.resolvedRisks.length})
-                          </div>
-                          <div className="space-y-2">
-                            {comparisonPRReview.resolvedRisks.map((risk: any, i: number) => (
-                              <div key={`det-resolved-risk-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-300 leading-relaxed">
-                                <div className="font-black mb-1 flex items-center gap-1.5">
-                                  <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
-                                  <span>[{risk.severity?.toUpperCase()}] {risk.category}</span>
-                                </div>
-                                <div className="line-through text-zinc-500">{risk.message}</div>
-                                {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ {risk.resolution}</div>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Empty state */}
-                      {!comparisonPRReview.reportHtml && (!comparisonPRReview.results || Object.keys(comparisonPRReview.results).length === 0) && (
-                        <div className="py-8 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                          No deterministic review data available yet. The review pipeline may still be processing.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+            {/* Modal Body � new AIReviewReport */}
+            <div className="px-6 py-5 overflow-y-auto custom-scrollbar flex-1">
+              <AIReviewReport
+                review={comparisonPRReview}
+                title={comparisonTitle}
+              />
             </div>
 
             {/* Modal Footer */}
-            <div className="px-7 py-5 border-t border-[var(--color-border)]">
+            <div className="px-6 py-4 border-t border-[var(--color-border)]">
               <button
                 onClick={() => setComparisonModalOpen(false)}
-                className="w-full h-10 rounded-lg ui-btn-secondary text-[13px] font-medium transition-colors cursor-pointer"
+                className="w-full h-9 rounded-lg ui-btn-secondary text-[13px] font-medium transition-colors cursor-pointer"
               >
-                Close Report
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
-
-
 
       {/* Baseline Report Display Overlay */}
       {selectedBaselineReport && (
@@ -3408,8 +2828,8 @@ export default function SandboxHome({
                 {selectedBaselineReport.techStack?.language && (
                   <span className="text-[10px] px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded font-mono">
                     {selectedBaselineReport.techStack.language}
-                    {selectedBaselineReport.techStack.packageManager ? ` · ${selectedBaselineReport.techStack.packageManager}` : ''}
-                    {selectedBaselineReport.techStack.frontend ? ` · ${selectedBaselineReport.techStack.frontend}` : ''}
+                    {selectedBaselineReport.techStack.packageManager ? ` � ${selectedBaselineReport.techStack.packageManager}` : ''}
+                    {selectedBaselineReport.techStack.frontend ? ` � ${selectedBaselineReport.techStack.frontend}` : ''}
                   </span>
                 )}
               </div>
@@ -3420,7 +2840,7 @@ export default function SandboxHome({
                 }}
                 className="text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
               >
-                ✕ Close
+                ? Close
               </button>
             </div>
 
@@ -3521,7 +2941,7 @@ export default function SandboxHome({
                         .trim()
 
                       // Icon per status
-                      const statusIcon = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'warn' ? '⚠' : '–'
+                      const statusIcon = status === 'pass' ? '?' : status === 'fail' ? '?' : status === 'warn' ? '?' : '�'
 
                       return (
                         <button
@@ -3573,14 +2993,14 @@ export default function SandboxHome({
                         // Classify each line for colour coding
                         const classifyLine = (line: string): { color: string; icon: string } => {
                           const l = line.toLowerCase()
-                          if (l.includes('error') || l.includes('fail') || l.includes('critical') || l.startsWith('✗') || l.startsWith('×')) {
-                            return { color: 'text-red-400', icon: '✗' }
+                          if (l.includes('error') || l.includes('fail') || l.includes('critical') || l.startsWith('?') || l.startsWith('�')) {
+                            return { color: 'text-red-400', icon: '?' }
                           }
                           if (l.includes('warn') || l.includes('caution') || l.includes('notice')) {
-                            return { color: 'text-amber-400', icon: '⚠' }
+                            return { color: 'text-amber-400', icon: '?' }
                           }
-                          if (l.includes('pass') || l.includes('success') || l.includes('ok') || l.startsWith('✓') || l.startsWith('✔')) {
-                            return { color: 'text-emerald-400', icon: '✓' }
+                          if (l.includes('pass') || l.includes('success') || l.includes('ok') || l.startsWith('?') || l.startsWith('?')) {
+                            return { color: 'text-emerald-400', icon: '?' }
                           }
                           if (l.startsWith('#') || l.includes('===') || l.includes('---')) {
                             return { color: 'text-cyan-400 font-semibold', icon: '' }
@@ -3710,14 +3130,14 @@ export default function SandboxHome({
                             ? 'bg-red-500/10 border border-red-500/25 text-red-400'
                             : 'bg-amber-500/10 border border-amber-500/25 text-amber-400'
                         }`}>
-                          {selectedBaselineReport.aiSummary.overallHealth === 'healthy' ? '✓' : selectedBaselineReport.aiSummary.overallHealth === 'critical' ? '!' : '~'}
+                          {selectedBaselineReport.aiSummary.overallHealth === 'healthy' ? '?' : selectedBaselineReport.aiSummary.overallHealth === 'critical' ? '!' : '~'}
                         </div>
                         <div>
                           <div className="text-sm font-black text-zinc-100">Repository Health Assessment</div>
                           <div className="text-[10px] text-zinc-500 font-semibold">
                             Model: <span className="text-violet-400 font-mono">{selectedBaselineReport.aiSummary.model || 'gemini'}</span>
                             {selectedBaselineReport.aiSummary.analyzedAt && (
-                              <> · {new Date(selectedBaselineReport.aiSummary.analyzedAt).toLocaleString()}</>
+                              <> � {new Date(selectedBaselineReport.aiSummary.analyzedAt).toLocaleString()}</>
                             )}
                           </div>
                         </div>
@@ -3770,12 +3190,12 @@ export default function SandboxHome({
                                 <div className="text-zinc-300 leading-relaxed">{diag.rootCause}</div>
                                 {diag.isFalsePositive && diag.falsePositiveReason && (
                                   <div className="mt-1.5 text-amber-400/80 text-[10px] italic bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
-                                    ⚠️ {diag.falsePositiveReason}
+                                    ?? {diag.falsePositiveReason}
                                   </div>
                                 )}
                                 {diag.suggestedFix && (
                                   <div className="mt-1.5 text-cyan-400/80 text-[10px] bg-cyan-500/5 p-2 rounded-lg border border-cyan-500/10">
-                                    💡 <span className="font-bold">Suggested Fix:</span> {diag.suggestedFix}
+                                    ?? <span className="font-bold">Suggested Fix:</span> {diag.suggestedFix}
                                   </div>
                                 )}
                               </div>
