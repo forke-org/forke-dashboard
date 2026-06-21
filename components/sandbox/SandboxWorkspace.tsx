@@ -114,7 +114,13 @@ interface PRWithReview {
   review: AIReview | null
 }
 
-export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'developer' }) {
+export default function SandboxHome({
+  presetRole,
+  embedded = false,
+}: {
+  presetRole?: 'owner' | 'developer'
+  embedded?: boolean
+}) {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -953,21 +959,16 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
 
   if (loadingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#030303] text-zinc-100 font-sans relative overflow-hidden">
-        {/* Background ambient blobs */}
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-amber-500/5 blur-[120px] pointer-events-none animate-ambient-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none animate-ambient-pulse" style={{ animationDelay: '2s' }}></div>
-        
+      <div className={cn("flex items-center justify-center app-page-shell relative overflow-hidden", embedded ? "min-h-[280px]" : "min-h-screen")}>
         <div className="flex flex-col items-center gap-6 relative z-10">
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/20 flex items-center justify-center font-black text-amber-500 text-3xl shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+            <div className="w-14 h-14 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center font-semibold text-accent text-2xl">
               F
             </div>
-            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 opacity-20 blur-md animate-pulse"></div>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-1 border-t-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest animate-pulse">
+            <div className="w-9 h-9 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[var(--color-text-muted)] text-xs font-medium animate-pulse">
               Authenticating Sandbox Session...
             </p>
           </div>
@@ -977,36 +978,35 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
   }
 
   return (
-    <div className="min-h-screen bg-[#030303] text-zinc-100 font-sans selection:bg-amber-500 selection:text-black relative overflow-hidden flex flex-col w-full">
-      {/* High-Fidelity Glow System */}
-      <div className="absolute top-[-15%] left-[-15%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-amber-500/8 via-transparent to-transparent blur-[160px] pointer-events-none animate-ambient-pulse"></div>
-      <div className="absolute bottom-[-15%] right-[-15%] w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-emerald-500/8 via-transparent to-transparent blur-[160px] pointer-events-none animate-ambient-pulse" style={{ animationDelay: '3s' }}></div>
-      <div className="absolute top-[30%] left-[25%] w-[600px] h-[600px] rounded-full bg-purple-500/4 blur-[140px] pointer-events-none"></div>
-
-      {/* Cybernetic Dot-Grid Mesh */}
-      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.015)_1.5px,transparent_1.5px)] bg-[size:28px_28px] pointer-events-none"></div>
-
+    <div className={cn(
+      "app-page-shell relative overflow-hidden flex flex-col w-full",
+      embedded ? "min-h-0" : "min-h-screen bg-[var(--color-bg-surface)] theme-ember"
+    )}>
+      {!embedded && (
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+      )}
       {/* --- Logged In Navbar --- */}
 
 
       {/* --- Main Dashboard Body --- */}
-      <main className="flex-1 flex flex-col p-8 max-w-7xl w-full mx-auto relative z-10">
+      <main className={cn(
+        "flex-1 flex flex-col w-full mx-auto relative z-10",
+        embedded ? "p-0 max-w-none" : "p-5 md:p-8 max-w-7xl"
+      )}>
         {!isLoggedIn ? (
           /* ========================================================================= */
           /* ======================== 1. Welcome / Auth Page ======================== */
           /* ========================================================================= */
           <div className="flex-1 flex flex-col items-center justify-center max-w-4xl w-full mx-auto py-12">
-            <div className="text-center mb-16 animate-fade-in relative">
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none"></div>
-              
-              <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 items-center justify-center font-black text-black text-3xl shadow-xl shadow-amber-500/20 mb-8 hover:rotate-6 transition duration-300">
+            <div className="text-center mb-10 animate-fade-in relative">
+              <div className="inline-flex w-14 h-14 rounded-xl bg-accent text-[#0a0a0a] items-center justify-center font-semibold text-2xl mb-6">
                 F
               </div>
-              <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4 bg-gradient-to-b from-white via-zinc-100 to-zinc-500 bg-clip-text text-transparent">
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3 text-white">
                 Forke Native Sandbox
               </h1>
-              <p className="text-zinc-400 max-w-2xl mx-auto text-sm md:text-base leading-relaxed font-medium">
-                A secure environment to validate OAuth role-permissions, orchestrate git mirrors under <span className="text-zinc-200 font-bold">{process.env.NEXT_PUBLIC_GITHUB_SANDBOX_ORG || 'forke-sandbox'}</span>, and configure fork-based engineering workspaces with real-time GitHub status checks.
+              <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto text-sm leading-relaxed">
+                A secure environment to validate OAuth permissions, orchestrate git mirrors under <span className="text-white font-medium">{process.env.NEXT_PUBLIC_GITHUB_SANDBOX_ORG || 'forke-sandbox'}</span>, and configure review-ready engineering workspaces.
               </p>
             </div>
 
@@ -1016,28 +1016,26 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
             )}>
               {/* Owner Authentication Box */}
               {(!presetRole || presetRole === 'owner') && (
-                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-amber-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(245,158,11,0.15)] backdrop-blur-md overflow-hidden">
-                  <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-amber-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-amber-500/10 transition-all duration-500"></div>
-
+                <div className="group relative app-panel app-panel-hover p-6 flex flex-col justify-between overflow-hidden">
                   <div className="relative z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 transition-all duration-300 shadow-inner">
+                    <div className="w-11 h-11 rounded-lg bg-accent/10 border border-accent/20 text-accent flex items-center justify-center mb-5 transition-colors">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
 
-                    <h3 className="text-2xl font-black mb-3 tracking-wide text-zinc-100 group-hover:text-amber-400 transition-colors">
+                    <h3 className="text-lg font-semibold mb-2 text-white group-hover:text-accent transition-colors">
                       Repository Owner
                     </h3>
 
-                    <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-10 font-medium">
+                    <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-8">
                       Import production repository structures, select scopes/organizations, and run bare mirroring pipelines inside sandbox target directories.
                     </p>
                   </div>
 
                   <a
                     href="/api/auth/login?role=owner"
-                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-center text-xs tracking-widest uppercase shadow-lg shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] block relative z-10"
+                    className="w-full h-10 px-4 rounded-lg ui-btn-primary text-center text-[13px] font-medium transition-colors flex items-center justify-center relative z-10"
                   >
                     Authorize as Owner
                   </a>
@@ -1046,28 +1044,26 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
 
               {/* Developer Authentication Box */}
               {(!presetRole || presetRole === 'developer') && (
-                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-emerald-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(16,185,129,0.15)] backdrop-blur-md overflow-hidden">
-                  <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-emerald-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-500"></div>
-
+                <div className="group relative app-panel app-panel-hover p-6 flex flex-col justify-between overflow-hidden">
                   <div className="relative z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/15 transition-all duration-300 shadow-inner">
+                    <div className="w-11 h-11 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5 transition-colors">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                       </svg>
                     </div>
 
-                    <h3 className="text-2xl font-black mb-3 tracking-wide text-zinc-100 group-hover:text-emerald-400 transition-colors">
+                    <h3 className="text-lg font-semibold mb-2 text-white group-hover:text-emerald-400 transition-colors">
                       Developer Contributor
                     </h3>
 
-                    <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-10 font-medium">
+                    <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-8">
                       Fork sandbox projects seamlessly, execute branchless git instructions locally, and push contributions directly back via native pull request checks.
                     </p>
                   </div>
 
                   <a
                     href="/api/auth/login?role=developer"
-                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black font-black text-center text-xs tracking-widest uppercase shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] block relative z-10"
+                    className="w-full h-10 px-4 rounded-lg bg-emerald-400 text-[#0a0a0a] hover:bg-emerald-300 text-center text-[13px] font-medium transition-colors flex items-center justify-center relative z-10"
                   >
                     Authorize as Developer
                   </a>
@@ -1746,7 +1742,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
               <div>
                 <h3 className="text-xl font-black tracking-tight text-zinc-50 mb-1 flex items-center gap-2">
                   Active Sandbox Mirrors
-                  <span className="px-2 py-0.5 rounded-md border border-zinc-850 bg-zinc-900 text-[10px] font-black text-zinc-400">
+                  <span className="px-2 py-0.5 rounded-md border border-[var(--color-border)] bg-white/[0.03] text-[10px] font-medium text-[var(--color-text-muted)]">
                     {mirroredRepos.length}
                   </span>
                 </h3>
@@ -1756,7 +1752,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
               </div>
 
               {mirroredRepos.length === 0 ? (
-                <div className="bg-[#070709] border border-zinc-900 rounded-2xl p-12 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest shadow-inner">
+                <div className="app-empty p-12 text-center text-xs font-medium">
                   No active mirrored sandboxes found
                 </div>
               ) : (
@@ -1764,7 +1760,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                   {mirroredRepos.map(mirror => (
                     <div
                       key={mirror.id}
-                      className="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden group/card hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-[0_10px_35px_-10px_rgba(245,158,11,0.06)] transition-all duration-300"
+                      className="app-panel app-panel-hover p-5 flex flex-col justify-between gap-4 relative overflow-hidden group/card transition-colors"
                     >
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1947,7 +1943,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                     <span className="text-zinc-400 text-sm font-bold">Loading PRs...</span>
                   </div>
                 ) : sandboxPRs.length === 0 ? (
-                  <div className="bg-[#070709] border border-zinc-900 rounded-2xl p-12 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                  <div className="app-empty p-12 text-center text-xs font-medium">
                     No developer PRs found for this sandbox
                   </div>
                 ) : (
@@ -1967,10 +1963,10 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                           <button
                             key={pr.fork.id}
                             onClick={() => setSelectedPR(pr)}
-                            className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 ${
+                            className={`w-full text-left p-4 rounded-xl border transition-colors ${
                               selectedPR?.fork.id === pr.fork.id
                                 ? 'border-violet-500/50 bg-violet-500/5'
-                                : 'border-zinc-800/60 bg-[#070709]/60 hover:border-zinc-700'
+                                : 'border-[var(--color-border)] bg-white/[0.018] hover:border-white/[0.14]'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-3">
@@ -2002,7 +1998,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
 
                     {/* PR Detail Panel */}
                     {selectedPR ? (
-                      <div className="glass-card rounded-2xl p-5 space-y-5">
+                      <div className="app-panel p-5 space-y-5">
                         {selectedPR.review ? (
                           <>
                             {/* Header */}
@@ -2041,13 +2037,13 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
 
                             <button
                               onClick={() => handleOpenComparison(selectedSandboxForPRs!.id, selectedPR.review!, `PR #${selectedPR.review!.prNumber} from @${selectedPR.fork.githubUsername}`)}
-                              className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-400 border border-amber-500/30 hover:border-amber-500/50 shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                              className="w-full h-10 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer flex items-center justify-center gap-2"
                             >
                               📊 View AI Review Report
                             </button>
 
                             {/* Summary */}
-                            <div className="bg-zinc-900/50 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed border border-zinc-800/60">
+                            <div className="app-panel p-4 text-xs text-zinc-300 leading-relaxed">
                               <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">AI Summary</div>
                               {selectedPR.review.summary}
                             </div>
@@ -2180,7 +2176,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                                 value={prActionMessage}
                                 onChange={e => setPrActionMessage(e.target.value)}
                                 placeholder="Optional message to leave on the PR..."
-                                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-violet-500/60 resize-none h-16"
+                                className="w-full app-field px-3 py-2.5 text-xs placeholder:text-white/25 resize-none h-16"
                               />
                               <div className="flex gap-2">
                                 <button
@@ -2215,7 +2211,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                         )}
                       </div>
                     ) : (
-                      <div className="glass-card rounded-2xl p-12 text-center text-zinc-600 text-xs font-bold uppercase tracking-widest">
+                      <div className="app-empty p-12 text-center text-xs font-medium">
                         Select a PR from the list to view its AI review
                       </div>
                     )}
@@ -2229,36 +2225,39 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
           /* ========================================================================= */
           /* ======================== 3. Developer Workspace Space ==================== */
           /* ========================================================================= */
-          <div className="space-y-10 animate-fade-in">
+          <div className={cn("animate-fade-in", embedded ? "space-y-4" : "space-y-10")}>
             {/* Developer Workspace Header */}
             <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-black tracking-tight text-zinc-50 flex items-center gap-3">
-                <svg className="w-8 h-8 text-emerald-400 shadow-inner" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <h2 className={cn(
+                "tracking-tight text-white flex items-center gap-2",
+                embedded ? "text-sm font-medium" : "text-3xl font-black"
+              )}>
+                <svg className={cn("text-accent", embedded ? "w-4 h-4" : "w-8 h-8")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                Developer Workspace Engine
+                Developer workspace
               </h2>
-              <p className="text-zinc-400 text-sm font-medium">
-                Fork fully isolated project codebases, clone them locally using simplified branchless commands, and verify pull requests targeting the main sandbox environment.
+              <p className={cn("text-[var(--color-text-muted)] leading-relaxed", embedded ? "text-[13px]" : "text-sm font-medium")}>
+                Fork an isolated sandbox, open a PR, and run the same review flow from the rest of Forke.
               </p>
             </div>
 
-            <div className="grid lg:grid-cols-5 gap-8">
+            <div className={cn("grid lg:grid-cols-5", embedded ? "gap-4" : "gap-8")}>
               {/* Left Sandbox Repos list (Col Span 2) */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="glass-card rounded-3xl p-6 space-y-4">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
-                    Available Sandbox repositories
+                <div className={cn("app-panel space-y-3", embedded ? "p-4" : "p-5")}>
+                  <span className="text-xs font-medium text-[var(--color-text-muted)] block">
+                    Available sandboxes
                   </span>
 
-                  <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1.5 custom-scrollbar">
+                  <div className={cn("space-y-2.5 overflow-y-auto pr-1.5 custom-scrollbar", embedded ? "max-h-[190px]" : "max-h-[460px]")}>
                     {loadingSandboxRepos ? (
-                      <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider animate-pulse">Syncing sandboxes...</span>
+                      <div className="flex flex-col items-center justify-center py-10 gap-3">
+                        <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-[var(--color-text-muted)] text-xs font-medium animate-pulse">Syncing sandboxes...</span>
                       </div>
                     ) : mirroredRepos.filter(repo => repo.verificationStatus === 'verified').length === 0 ? (
-                      <div className="py-16 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest font-mono">
+                      <div className="app-empty py-10 text-center text-xs">
                         No verified sandboxes available
                       </div>
                     ) : (
@@ -2266,17 +2265,17 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                         <button
                           key={repo.id}
                           onClick={() => handleSelectSandboxRepo(repo)}
-                          className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex flex-col gap-2 relative overflow-hidden group/item ${
+                          className={`w-full text-left rounded-lg border transition-colors flex flex-col gap-2 relative overflow-hidden group/item ${embedded ? 'p-3' : 'p-4'} ${
                             selectedSandboxRepo?.id === repo.id
-                              ? 'bg-emerald-500/5 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.02)]'
-                              : 'bg-[#070709]/60 border-zinc-800/60 hover:border-zinc-700/80 hover:bg-[#0d0d11]/80 hover:translate-x-1'
+                              ? 'bg-accent/5 border-accent/35'
+                              : 'bg-white/[0.018] border-[var(--color-border)] hover:border-white/[0.14]'
                           }`}
                         >
-                          <div className="font-extrabold text-sm text-zinc-100 truncate w-full font-mono group-hover/item:text-emerald-400 transition-colors">
+                          <div className="font-medium text-[13px] text-white truncate w-full font-mono group-hover/item:text-accent transition-colors">
                             {repo.sandboxRepo}
                           </div>
-                          <div className="text-[10px] text-zinc-400 font-semibold border-t border-zinc-900/60 pt-2 mt-1">
-                            Original: <span className="font-mono text-zinc-300">{repo.sourceRepo}</span>
+                          <div className="text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-2 mt-1 truncate">
+                            Original: <span className="font-mono text-white/70">{repo.sourceRepo}</span>
                           </div>
                         </button>
                       ))
@@ -2288,18 +2287,18 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
               {/* Right Workspace interactive CLI (Col Span 3) */}
               <div className="lg:col-span-3 space-y-6">
                 {selectedSandboxRepo ? (
-                  <div className="glass-card rounded-3xl p-6 space-y-6">
+                  <div className={cn("app-panel space-y-4", embedded ? "p-4" : "p-5 md:p-6")}>
                     {/* Selected Repository Header */}
-                    <div className="border-b border-zinc-900 pb-5 space-y-2">
+                    <div className="border-b border-[var(--color-border)] pb-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                          Active Sandbox Workspace
+                        <span className="text-xs font-medium text-[var(--color-text-muted)]">
+                          Active sandbox
                         </span>
                         <a
                           href={`https://github.com/${selectedSandboxRepo.sandboxRepo}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 leading-none transition"
+                          className="text-xs text-accent hover:text-accent-hover font-medium flex items-center gap-1 leading-none transition"
                         >
                           Open Sandbox
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -2307,45 +2306,45 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                           </svg>
                         </a>
                       </div>
-                      <h4 className="text-xl font-mono font-black text-zinc-100 truncate flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 shadow-sm animate-pulse"></span>
+                      <h4 className={cn("font-mono font-semibold text-white truncate flex items-center gap-2", embedded ? "text-sm" : "text-xl")}>
+                        <span className="w-2 h-2 rounded-full bg-accent shrink-0"></span>
                         {selectedSandboxRepo.sandboxRepo}
                       </h4>
                     </div>
 
                     {/* Step-by-step Interactive Pipeline */}
-                    <div className="space-y-7">
+                    <div className={cn(embedded ? "space-y-4" : "space-y-7")}>
                       
                       {/* Step 1: Fork */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
+                          <h5 className="text-[13px] font-medium text-white flex items-center gap-2.5">
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
-                              devStatus.hasFork ? 'bg-emerald-400 text-black shadow-emerald-400/20' : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
+                              devStatus.hasFork ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
                               {devStatus.hasFork ? '✓' : '1'}
                             </span>
                             Step 1: Create Isolated Workspace (GitHub Fork)
                           </h5>
                           {devStatus.hasFork && (
-                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/5 shadow-inner">
+                            <span className="app-badge px-2 py-1 text-accent border-accent/25 bg-accent/[0.08]">
                               Verified
                             </span>
                           )}
                         </div>
 
                         {!devStatus.hasFork ? (
-                          <div className="bg-[#070709] border border-zinc-850 p-5 rounded-2xl flex flex-col gap-4 shadow-inner">
-                            <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+                          <div className={cn("app-panel flex flex-col gap-3", embedded ? "p-4" : "p-5")}>
+                            <p className="text-[var(--color-text-muted)] text-xs leading-relaxed">
                               GitHub forks serve as fully isolated developer workspaces. This maps the repository safely to your profile, giving you a completely isolated repository to work on.
                             </p>
                             <button
                               onClick={executeForkPipeline}
                               disabled={registeringFork}
-                              className={`py-3.5 px-4 rounded-2xl text-black font-black text-xs tracking-widest uppercase transition-all duration-300 shadow-xl ${
+                              className={`h-10 px-4 rounded-lg font-medium text-[13px] transition-colors ${
                                 registeringFork
-                                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none border border-zinc-700/30'
-                                  : 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-emerald-500/10 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
+                                  ? 'bg-white/[0.03] text-white/35 cursor-not-allowed border border-[var(--color-border)]'
+                                  : 'ui-btn-primary cursor-pointer'
                               }`}
                             >
                               {registeringFork ? 'Initiating Fork Access...' : 'Fork Sandbox Repository'}
@@ -2357,8 +2356,8 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                             )}
                           </div>
                         ) : (
-                          <div className="bg-emerald-500/5 border border-emerald-500/15 p-4 rounded-2xl flex items-center gap-3 shadow-inner">
-                            <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <div className="bg-accent/5 border border-accent/15 p-4 rounded-xl flex items-center gap-3">
+                            <svg className="w-5 h-5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p className="text-zinc-300 text-xs font-bold truncate leading-none">
@@ -2367,7 +2366,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                                 href={forkUrl || `https://github.com/${githubUsername}/${selectedSandboxRepo.sandboxRepo.split('/')[1]}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="underline decoration-wavy decoration-emerald-500/55 hover:decoration-emerald-400 text-emerald-400 font-mono"
+                                className="underline decoration-accent/55 hover:decoration-accent text-accent font-mono"
                               >
                                 {githubUsername}/{selectedSandboxRepo.sandboxRepo.split('/')[1]}
                               </a>
@@ -2378,21 +2377,21 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
 
                       {/* Step 2: Git Terminals */}
                       <div className="space-y-3">
-                        <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
-                          <span className="w-5.5 h-5.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 flex items-center justify-center text-[10px] font-black shadow-inner">
+                        <h5 className="text-[13px] font-medium text-white flex items-center gap-2.5">
+                          <span className="w-5.5 h-5.5 rounded-full bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)] flex items-center justify-center text-[10px] font-black">
                             2
                           </span>
                           Step 2: Initialize Git & Commit Contributions
                         </h5>
 
-                        <div className="space-y-4 bg-[#040406] rounded-2xl border border-zinc-900 shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] p-5 font-mono text-zinc-200">
+                        <div className={cn("space-y-3 app-terminal rounded-xl font-mono text-zinc-200 overflow-y-auto custom-scrollbar", embedded ? "p-3 max-h-[210px]" : "p-5")}>
                           {/* Command clone */}
                           <div className="space-y-2 relative group">
                             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
                               A — Clone your isolated Fork locally
                             </span>
-                            <div className="flex items-center justify-between bg-black px-4 py-3 rounded-xl border border-zinc-900 font-mono text-xs">
-                              <span className="text-emerald-400 select-text truncate">
+                            <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
+                              <span className="text-accent select-text truncate">
                                 git clone https://github.com/{githubUsername}/{selectedSandboxRepo.sandboxRepo.split('/')[1]}.git
                               </span>
                               <button
@@ -2409,8 +2408,8 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
                               B — Add upstream tracking to sandbox
                             </span>
-                            <div className="flex items-center justify-between bg-black px-4 py-3 rounded-xl border border-zinc-900 font-mono text-xs">
-                              <span className="text-teal-400 select-text truncate">
+                            <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
+                              <span className="text-accent select-text truncate">
                                 git remote add upstream https://github.com/{selectedSandboxRepo.sandboxRepo}.git
                               </span>
                               <button
@@ -2427,8 +2426,8 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
                               C — Make changes, commit, and push directly to main
                             </span>
-                            <div className="flex items-center justify-between bg-black px-4 py-3 rounded-xl border border-zinc-900 font-mono text-xs">
-                              <span className="text-pink-400 select-text truncate">
+                            <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
+                              <span className="text-accent select-text truncate">
                                 git push origin main
                               </span>
                               <button
@@ -2445,23 +2444,23 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                       {/* Step 3: Verify contribution */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
+                          <h5 className="text-[13px] font-medium text-white flex items-center gap-2.5">
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
-                              devStatus.hasPR ? 'bg-emerald-400 text-black shadow-emerald-400/20' : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
+                              devStatus.hasPR ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
                               {devStatus.hasPR ? '✓' : '3'}
                             </span>
                             Step 3: Open Pull Request to Sandbox Repo
                           </h5>
                           {devStatus.hasPR && (
-                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/5 shadow-inner animate-pulse">
+                            <span className="app-badge px-2 py-1 text-accent border-accent/25 bg-accent/[0.08]">
                               PR Active
                             </span>
                           )}
                         </div>
 
-                        <div className="bg-[#070709] border border-zinc-850 p-5 rounded-2xl space-y-4 shadow-inner">
-                          <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+                        <div className={cn("app-panel space-y-4", embedded ? "p-4" : "p-5")}>
+                          <p className="text-[var(--color-text-muted)] text-xs leading-relaxed">
                             Once your sandbox code modification is pushed, open a Pull Request comparing your fork's <span className="font-mono text-zinc-200">main</span> branch to the organization's <span className="font-mono text-zinc-200">main</span> branch. 
                           </p>
 
@@ -2471,7 +2470,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                               href={`https://github.com/${selectedSandboxRepo.sandboxRepo}/compare/main...${githubUsername}:main`}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex-1 py-3.5 px-5 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black font-black text-xs tracking-wider uppercase rounded-xl transition-all duration-300 text-center shadow-lg shadow-emerald-500/5 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2 active:scale-[0.98]"
+                              className="flex-1 h-10 px-4 ui-btn-primary font-medium text-[13px] rounded-lg transition-colors text-center flex items-center justify-center gap-2"
                             >
                               Open PR Comparison Page
                               <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -2483,7 +2482,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                             <button
                               onClick={checkLiveDeveloperStatus}
                               disabled={checkingStatus}
-                              className={`py-3.5 px-6 border border-zinc-800 hover:border-zinc-700 bg-[#0d0d11] hover:bg-zinc-900 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-zinc-100 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-inner active:scale-[0.98] ${
+                              className={`h-10 px-4 ui-btn-secondary rounded-lg text-[13px] font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                                 checkingStatus ? 'opacity-60 cursor-not-allowed' : ''
                               }`}
                             >
@@ -2500,7 +2499,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
 
                           {/* Live PR details block */}
                           {devStatus.hasPR && devStatus.prDetails && (
-                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-5 flex flex-col gap-3 animate-scale-up shadow-inner relative overflow-hidden">
+                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-5 flex flex-col gap-3 animate-scale-up relative overflow-hidden">
                               <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/3 blur-2xl rounded-full pointer-events-none"></div>
                               <div className="flex items-center justify-between relative z-10">
                                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -2555,7 +2554,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                           )}
                         </div>
 
-                        <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-5 space-y-4 shadow-inner">
+                        <div className="app-panel p-5 space-y-4">
                           {!devStatus.hasPR ? (
                             <p className="text-zinc-500 text-xs font-medium">Open a Pull Request first (Step 3) to trigger the AI review pipeline.</p>
                           ) : devReviewStatus === 'verifying' ? (
@@ -2594,7 +2593,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                                 </div>
                                 <div
                                   ref={devTerminalRef}
-                                  className="w-full bg-[#040406]/98 rounded-2xl p-5 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-left max-h-[200px] min-h-[140px] overflow-y-auto custom-scrollbar relative flex flex-col justify-start select-text"
+                                  className="w-full app-terminal rounded-xl p-5 font-mono text-left max-h-[200px] min-h-[140px] overflow-y-auto custom-scrollbar relative flex flex-col justify-start select-text"
                                 >
                                   <div className="flex-1 flex flex-col">
                                     {activeReviewLogs.map((log, idx) => (
@@ -2618,7 +2617,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                                 <button
                                   onClick={fetchAIReview}
                                   disabled={loadingReview}
-                                  className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-lg shadow-violet-500/10 hover:shadow-violet-500/25 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                                  className="flex-1 h-10 rounded-lg text-[13px] font-medium ui-btn-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                                 >
                                   {loadingReview ? (
                                     <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Fetching Review...</>
@@ -2637,7 +2636,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                                 <div className="space-y-4 animate-fade-in">
                                   <button
                                     onClick={() => handleOpenComparison(selectedSandboxRepo.id, aiReview, `PR #${aiReview.prNumber}`)}
-                                    className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-400 border border-amber-500/30 hover:border-amber-500/50 shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mb-2"
+                                    className="w-full h-10 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer flex items-center justify-center gap-2 mb-2"
                                   >
                                     📊 View AI Review Report
                                   </button>
@@ -2817,8 +2816,8 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-zinc-900/10 border border-zinc-800/80 border-dashed rounded-3xl p-12 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-md h-full min-h-[400px] shadow-inner">
-                    <svg className="w-12 h-12 text-zinc-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-3 h-full min-h-[400px]">
+                    <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
                     <h4 className="font-bold text-zinc-400 text-sm tracking-wide">No sandbox repo selected</h4>
@@ -2835,9 +2834,11 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
       </main>
 
       {/* --- Global Footer --- */}
-      <footer className="border-t border-zinc-900/80 bg-zinc-950/20 py-6 text-center text-[10px] text-zinc-500 font-extrabold tracking-widest relative z-10 shrink-0 uppercase select-none">
-        Built for Forke Platform validation. Ship real code. Prove skills. Level up.
-      </footer>
+      {!embedded && (
+        <footer className="border-t border-[var(--color-border)] bg-white/[0.01] py-6 text-center text-[11px] text-[var(--color-text-muted)] font-medium relative z-10 shrink-0 select-none">
+          Built for Forke Platform validation. Ship real code. Prove skills. Level up.
+        </footer>
+      )}
 
       {/* ===== PR Comparison Modal ===== */}
       {comparisonModalOpen && comparisonPRReview && (
@@ -2846,13 +2847,13 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
           {/* Modal */}
-          <div className="relative z-10 w-full max-w-4xl bg-[#0a0a0f] border border-zinc-800/85 rounded-3xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[85vh] font-sans">
+          <div className="relative z-10 w-full max-w-4xl app-modal overflow-hidden flex flex-col max-h-[85vh] font-sans">
             {/* Modal Header */}
             <div className="flex flex-col px-7 pt-7 pb-4 border-b border-zinc-900 gap-4">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 font-mono">AI Review Report</div>
-                  <h3 className="text-xl font-black text-zinc-105 truncate max-w-[500px]">{comparisonTitle}</h3>
+                  <h3 className="text-xl font-semibold text-white truncate max-w-[500px]">{comparisonTitle}</h3>
                 </div>
                 <button onClick={() => setComparisonModalOpen(false)} className="text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 w-9 h-9 rounded-xl flex items-center justify-center transition cursor-pointer">
                   ✕
@@ -2860,46 +2861,46 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
               </div>
 
               {/* Tab Selector */}
-              <div className="flex gap-2 border-b border-zinc-900/60 pb-1 mt-1">
+              <div className="flex gap-2 border-b border-[var(--color-border)] pb-1 mt-1 overflow-x-auto">
                 <button
                   onClick={() => setComparisonTab('overview')}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
                     comparisonTab === 'overview'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                      ? 'app-tab-active'
+                      : 'app-tab'
                   }`}
                 >
-                  📊 Score & Summary
+                  Score & summary
                 </button>
                 <button
                   onClick={() => setComparisonTab('issues')}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
                     comparisonTab === 'issues'
-                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/25'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                      ? 'app-tab-active'
+                      : 'app-tab'
                   }`}
                 >
-                  ⚠️ Issues ({comparisonPRReview.issues?.length || 0})
+                  Issues ({comparisonPRReview.issues?.length || 0})
                 </button>
                 <button
                   onClick={() => setComparisonTab('risks')}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
                     comparisonTab === 'risks'
-                      ? 'bg-red-500/10 text-red-400 border border-red-500/25'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                      ? 'app-tab-active'
+                      : 'app-tab'
                   }`}
                 >
-                  🔴 Security Risks ({comparisonPRReview.risks?.length || 0})
+                  Security risks ({comparisonPRReview.risks?.length || 0})
                 </button>
                 <button
                   onClick={() => setComparisonTab('deterministic')}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition cursor-pointer ${
                     comparisonTab === 'deterministic'
-                      ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/25'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                      ? 'app-tab-active'
+                      : 'app-tab'
                   }`}
                 >
-                  🔍 Deterministic
+                  Deterministic
                 </button>
               </div>
             </div>
@@ -2924,7 +2925,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                       {/* Metric Cards */}
                       <div className="grid md:grid-cols-2 gap-4">
                         {/* Score Metric Card */}
-                        <div className="bg-[#050508]/60 rounded-2xl p-5 border border-zinc-880/80 flex flex-col justify-between gap-4">
+                        <div className="app-panel p-5 flex flex-col justify-between gap-4">
                           <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">AI Verification Score</div>
                           <div className="flex flex-col">
                             <span className="text-3xl font-black text-zinc-50 font-mono">{comparisonPRReview.score}/100</span>
@@ -2944,7 +2945,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                         </div>
 
                         {/* Req Match Card */}
-                        <div className="bg-[#050508]/60 rounded-2xl p-5 border border-zinc-800/80 flex flex-col justify-between gap-4">
+                        <div className="app-panel p-5 flex flex-col justify-between gap-4">
                           <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Task Requirements Match</div>
                           <div className="flex flex-col">
                             <span className="text-3xl font-black text-zinc-50 font-mono">{Math.round(comparisonPRReview.requirementMatch * 100)}%</span>
@@ -2965,7 +2966,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                       </div>
 
                       {/* AI Review Summary */}
-                      <div className="bg-emerald-500/3 rounded-2xl p-5 border border-emerald-500/10 text-xs leading-relaxed text-zinc-300">
+                      <div className="app-panel p-5 text-xs leading-relaxed text-zinc-300">
                         <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-2.5 font-mono">AI Review Summary</div>
                         {comparisonPRReview.summary}
                       </div>
@@ -2986,8 +2987,8 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                       )}
 
                       {/* Stats Summary Grid */}
-                      <div className="bg-[#050508]/20 border border-zinc-850 rounded-2xl p-5 space-y-3">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-zinc-450 font-mono border-b border-zinc-900 pb-2">
+                      <div className="app-panel p-5 space-y-3">
+                        <div className="text-[10px] font-semibold text-[var(--color-text-muted)] font-mono border-b border-[var(--color-border)] pb-2">
                           Review Findings Summary
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
@@ -3022,7 +3023,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                           Issues Found ({comparisonPRReview.issues?.length || 0})
                         </div>
                         {(!comparisonPRReview.issues || comparisonPRReview.issues.length === 0) ? (
-                          <div className="py-4 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-550 font-bold uppercase tracking-wider">
+                          <div className="app-empty py-4 text-center text-[11px]">
                             No issues found — clean code! Excellent work.
                           </div>
                         ) : (
@@ -3084,7 +3085,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                           Security Risks ({comparisonPRReview.risks?.length || 0})
                         </div>
                         {(!comparisonPRReview.risks || comparisonPRReview.risks.length === 0) ? (
-                          <div className="py-4 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-550 font-bold uppercase tracking-wider">
+                          <div className="app-empty py-4 text-center text-[11px]">
                             No security risks detected. Code is clean.
                           </div>
                         ) : (
@@ -3123,7 +3124,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                             Deterministic Review Report
                           </div>
                           <div
-                            className="bg-[#050508]/60 border border-zinc-800/80 rounded-2xl p-5 text-xs text-zinc-300 leading-relaxed overflow-auto max-h-[300px] custom-scrollbar prose prose-invert prose-xs"
+                            className="app-panel p-5 text-xs text-zinc-300 leading-relaxed overflow-auto max-h-[300px] custom-scrollbar prose prose-invert prose-xs"
                             dangerouslySetInnerHTML={{ __html: comparisonPRReview.reportHtml }}
                           />
                         </div>
@@ -3275,10 +3276,10 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
             </div>
 
             {/* Modal Footer */}
-            <div className="px-7 py-5 border-t border-zinc-900">
+            <div className="px-7 py-5 border-t border-[var(--color-border)]">
               <button
                 onClick={() => setComparisonModalOpen(false)}
-                className="w-full py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 text-zinc-400 hover:text-zinc-200 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                className="w-full h-10 rounded-lg ui-btn-secondary text-[13px] font-medium transition-colors cursor-pointer"
               >
                 Close Report
               </button>
@@ -3319,7 +3320,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
             <div className="flex-1 w-full overflow-y-auto custom-scrollbar select-text text-left mb-4 pr-1.5 space-y-6">
               {/* Overview grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                <div className="app-panel p-4">
                   <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1.5">Tech Stack Details</span>
                   <div className="space-y-1">
                     <div className="text-zinc-200 font-extrabold text-sm flex items-center gap-1.5">
@@ -3351,7 +3352,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                   </div>
                 </div>
 
-                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                <div className="app-panel p-4">
                   <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Commit SHA</span>
                   <span className="text-amber-400 font-mono font-bold text-sm block truncate">
                     {selectedBaselineReport.commitSha}
@@ -3361,7 +3362,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                   </span>
                 </div>
 
-                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                <div className="app-panel p-4">
                   <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Issues Count</span>
                   <span className={`font-extrabold text-sm block ${
                     (() => {
@@ -3380,7 +3381,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                   </span>
                 </div>
 
-                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                <div className="app-panel p-4">
                   <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Snapshot Generated</span>
                   <span className="text-zinc-200 font-extrabold text-sm block truncate">
                     {new Date(selectedBaselineReport.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -3412,7 +3413,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                           className={`w-full text-left p-3.5 rounded-2xl border transition-all duration-300 flex flex-col gap-1 relative overflow-hidden group/cat-btn ${
                             isSelected
                               ? 'bg-amber-500/5 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.02)]'
-                              : 'bg-[#070709]/60 border-zinc-850 hover:border-zinc-700/80 hover:bg-[#0d0d11]/80'
+                              : 'bg-white/[0.018] border-[var(--color-border)] hover:border-white/[0.14]'
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3 w-full">
@@ -3448,7 +3449,7 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                               navigator.clipboard.writeText(output);
                               alert(`Stdout for ${selectedBaselineCategoryLog} copied!`);
                             }}
-                            className="text-zinc-500 hover:text-zinc-300 font-black uppercase tracking-wider text-[9px] border border-zinc-850 px-2.5 py-1 rounded bg-[#060608] hover:bg-zinc-900 cursor-pointer"
+                            className="text-[var(--color-text-muted)] hover:text-white font-medium text-[11px] border border-[var(--color-border)] px-2.5 py-1 rounded bg-white/[0.02] hover:bg-white/[0.05] cursor-pointer"
                           >
                             Copy output
                           </button>
@@ -3459,8 +3460,8 @@ export default function SandboxHome({ presetRole }: { presetRole?: 'owner' | 'de
                         </div>
                       </div>
                     ) : (
-                      <div className="border border-zinc-850 border-dashed rounded-3xl p-12 text-center flex flex-col items-center justify-center gap-2.5 backdrop-blur-md h-full shadow-inner">
-                        <svg className="w-10 h-10 text-zinc-650 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-2.5 h-full">
+                        <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                         </svg>
                         <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Category Selected</h4>
