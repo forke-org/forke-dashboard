@@ -689,6 +689,7 @@ export default function SandboxHome({
     }
     setSavingTask(true)
     try {
+      // Step 1: Save task metadata to the sandbox repo record (existing behaviour — must not break)
       const response = await fetch('/api/owner/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -699,13 +700,33 @@ export default function SandboxHome({
         })
       })
       const data = await response.json()
-      if (response.ok) {
-        alert('Task guidelines saved successfully!')
-        setTaskFormOpen(false)
-        fetchMirrors() // refresh mirrors list to show updated task metadata
-      } else {
+      if (!response.ok) {
         alert(data.error || 'Failed to save task')
+        return
       }
+
+      // Step 2: Publish the task to the main tasks feed so it appears in /tasks
+      try {
+        await fetch('/api/owner/task/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: taskForm.taskTitle.trim(),
+            description: taskForm.taskDescription.trim(),
+            budget: Number(budget) || 500,
+            deadline: deadline || null,
+            skillTags: selectedSkills,
+          }),
+        })
+        // Note: we don't block or error on publish failure — the sandbox save already succeeded
+      } catch {
+        // Silently ignore — sandbox metadata is already saved
+      }
+
+      setTaskFormOpen(false)
+      fetchMirrors() // refresh mirrors list to show updated task metadata
+      // Navigate to the tasks feed so the new task is immediately visible
+      router.push(`/tasks?q=${encodeURIComponent(taskForm.taskTitle.trim())}`)
     } catch (err: any) {
       alert(`Network error: ${err.message}`)
     } finally {
@@ -1881,12 +1902,23 @@ export default function SandboxHome({
                             {new Date(mirror.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => openTaskForm(mirror)}
-                              className="border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 hover:border-violet-500/50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-0.5 transition-all duration-300 cursor-pointer"
-                            >
-                              Config
-                            </button>
+                            {mirror.taskTitle ? (
+                              <button
+                                onClick={() => router.push(`/tasks?q=${encodeURIComponent(mirror.taskTitle!)}`)}
+                                className="border border-emerald-500/25 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-400 hover:border-emerald-500/50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-0.5 transition-all duration-300 cursor-pointer"
+                                title="View associated task"
+                              >
+                                View Task
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="border border-zinc-800 bg-zinc-900/30 text-zinc-600 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-0.5 cursor-not-allowed opacity-40 select-none"
+                                title="No task posted yet"
+                              >
+                                View Task
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDeleteSandbox(mirror.sandboxRepo)}
                               disabled={deletingRepos[mirror.sandboxRepo]}
@@ -3296,23 +3328,34 @@ export default function SandboxHome({
           <div className="w-full max-w-5xl h-[85vh] bg-[#040406] border border-zinc-800 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] flex flex-col justify-between animate-scale-up">
             {/* Title bar */}
             <div className="flex items-center justify-between border-b border-zinc-900 pb-4 mb-4 select-none">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-amber-500/85"></span>
-                <span className="text-xs font-black uppercase tracking-widest text-zinc-400 font-mono ml-2">
-                  Baseline Snapshot Report — Commit {selectedBaselineReport.commitSha.substring(0, 7)}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                </div>
+                <span className="text-xs font-semibold text-white ml-1">
+                  Baseline Snapshot
                 </span>
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-md tracking-wider ml-3 font-mono">
-                  {selectedBaselineReport.techStack?.language} {selectedBaselineReport.techStack?.packageManager ? `(${selectedBaselineReport.techStack.packageManager})` : ''} {selectedBaselineReport.techStack?.frontend ? `+ ${selectedBaselineReport.techStack.frontend}` : ''}
+                <span className="text-[10px] px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-mono">
+                  commit {selectedBaselineReport.commitSha.substring(0, 7)}
                 </span>
+                {selectedBaselineReport.techStack?.language && (
+                  <span className="text-[10px] px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded font-mono">
+                    {selectedBaselineReport.techStack.language}
+                    {selectedBaselineReport.techStack.packageManager ? ` · ${selectedBaselineReport.techStack.packageManager}` : ''}
+                    {selectedBaselineReport.techStack.frontend ? ` · ${selectedBaselineReport.techStack.frontend}` : ''}
+                  </span>
+                )}
               </div>
               <button 
                 onClick={() => {
                   setSelectedBaselineReport(null)
                   setSelectedBaselineCategoryLog(null)
                 }}
-                className="text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 px-3 py-1.5 rounded-xl text-xs font-bold font-mono tracking-wider uppercase transition cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
               >
-                Close Report
+                ✕ Close
               </button>
             </div>
 
@@ -3321,9 +3364,9 @@ export default function SandboxHome({
               {/* Overview grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1.5">Tech Stack Details</span>
+                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Tech Stack</span>
                   <div className="space-y-1">
-                    <div className="text-zinc-200 font-extrabold text-sm flex items-center gap-1.5">
+                    <div className="text-zinc-200 font-bold text-sm flex items-center gap-1.5">
                       <span>{selectedBaselineReport.techStack?.language || 'Unknown'}</span>
                       {selectedBaselineReport.techStack?.packageManager && (
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
@@ -3331,12 +3374,12 @@ export default function SandboxHome({
                         </span>
                       )}
                     </div>
-                    <div className="text-zinc-400 font-semibold text-[10px] space-y-0.5">
+                    <div className="text-zinc-400 font-medium text-[10px] space-y-0.5">
                       {selectedBaselineReport.techStack?.frontend && (
-                        <div>Frontend: <span className="text-zinc-300 font-bold">{selectedBaselineReport.techStack.frontend}</span></div>
+                        <div>Frontend: <span className="text-zinc-300 font-semibold">{selectedBaselineReport.techStack.frontend}</span></div>
                       )}
                       {selectedBaselineReport.techStack?.backend && (
-                        <div>Backend: <span className="text-zinc-300 font-bold">{selectedBaselineReport.techStack.backend}</span></div>
+                        <div>Backend: <span className="text-zinc-300 font-semibold">{selectedBaselineReport.techStack.backend}</span></div>
                       )}
                       {!selectedBaselineReport.techStack?.frontend && !selectedBaselineReport.techStack?.backend && (
                         <div className="text-zinc-500 italic">
@@ -3345,7 +3388,7 @@ export default function SandboxHome({
                       )}
                       {selectedBaselineReport.techStack?.testFramework && (
                         <div className="text-emerald-400/90 text-[9px] mt-1 font-mono">
-                          Runner: {selectedBaselineReport.techStack.testFramework}
+                          Test runner: {selectedBaselineReport.techStack.testFramework}
                         </div>
                       )}
                     </div>
@@ -3353,7 +3396,7 @@ export default function SandboxHome({
                 </div>
 
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Commit SHA</span>
+                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1">Commit SHA</span>
                   <span className="text-amber-400 font-mono font-bold text-sm block truncate">
                     {selectedBaselineReport.commitSha}
                   </span>
@@ -3363,30 +3406,28 @@ export default function SandboxHome({
                 </div>
 
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Issues Count</span>
-                  <span className={`font-extrabold text-sm block ${
-                    (() => {
-                      if (!selectedBaselineReport.results) return 0
-                      const count = Object.values(selectedBaselineReport.results).reduce((acc: number, cat: any) => acc + (cat.issuesCount || 0), 0)
-                      return count > 0 ? 'text-red-400' : 'text-emerald-400'
-                    })()
-                  }`}>
-                    {(() => {
-                      if (!selectedBaselineReport.results) return 0
-                      return Object.values(selectedBaselineReport.results).reduce((acc: number, cat: any) => acc + (cat.issuesCount || 0), 0)
-                    })()} Issues
-                  </span>
-                  <span className="text-zinc-500 font-medium text-[10px]">
-                    across 12 categories
-                  </span>
+                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1">Issues Found</span>
+                  {(() => {
+                    const count = selectedBaselineReport.results
+                      ? Object.values(selectedBaselineReport.results).reduce((acc: number, cat: any) => acc + (cat?.issuesCount || 0), 0)
+                      : 0
+                    return (
+                      <>
+                        <span className={`font-bold text-sm block ${count > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                          {count} {count === 1 ? 'Issue' : 'Issues'}
+                        </span>
+                        <span className="text-zinc-500 font-medium text-[10px]">across 12 categories</span>
+                      </>
+                    )
+                  })()}
                 </div>
 
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Snapshot Generated</span>
-                  <span className="text-zinc-200 font-extrabold text-sm block truncate">
-                    {new Date(selectedBaselineReport.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1">Snapshot Date</span>
+                  <span className="text-zinc-200 font-bold text-sm block">
+                    {new Date(selectedBaselineReport.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
-                  <span className="text-zinc-500 font-medium text-[10px] block truncate">
+                  <span className="text-zinc-500 font-medium text-[10px] block">
                     {new Date(selectedBaselineReport.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -3402,63 +3443,160 @@ export default function SandboxHome({
                       if (!res) return null;
                       
                       const isSelected = selectedBaselineCategoryLog === catName;
+                      const status = res.status || 'skip'
                       let badgeColor = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
-                      if (res.status === 'fail') badgeColor = 'border-red-500/20 bg-red-500/5 text-red-400';
-                      else if (res.status === 'warn') badgeColor = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
+                      if (status === 'fail') badgeColor = 'border-red-500/20 bg-red-500/5 text-red-400';
+                      else if (status === 'warn') badgeColor = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
+                      else if (status === 'skip') badgeColor = 'border-zinc-700 bg-zinc-900 text-zinc-500';
+
+                      // Human-readable category name
+                      const humanName = catName
+                        .replace(/([A-Z])/g, ' $1')
+                        .replace(/^./, (s: string) => s.toUpperCase())
+                        .trim()
+
+                      // Icon per status
+                      const statusIcon = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'warn' ? '⚠' : '–'
 
                       return (
                         <button
                           key={catName}
                           onClick={() => setSelectedBaselineCategoryLog(catName)}
-                          className={`w-full text-left p-3.5 rounded-2xl border transition-all duration-300 flex flex-col gap-1 relative overflow-hidden group/cat-btn ${
+                          className={`w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between gap-2 relative overflow-hidden group/cat-btn ${
                             isSelected
-                              ? 'bg-amber-500/5 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.02)]'
+                              ? 'bg-amber-500/5 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.04)]'
                               : 'bg-white/[0.018] border-[var(--color-border)] hover:border-white/[0.14]'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-3 w-full">
-                            <span className="font-extrabold text-[11px] uppercase tracking-wider text-zinc-200 group-hover/cat-btn:text-amber-400 transition-colors">
-                              {catName.replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor} shrink-0`}>
-                              {res.status.toUpperCase()}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`text-[11px] font-bold shrink-0 ${
+                              status === 'pass' ? 'text-emerald-400' :
+                              status === 'fail' ? 'text-red-400' :
+                              status === 'warn' ? 'text-amber-400' : 'text-zinc-600'
+                            }`}>{statusIcon}</span>
+                            <span className="font-medium text-[11px] text-zinc-300 group-hover/cat-btn:text-white transition-colors truncate">
+                              {humanName}
                             </span>
                           </div>
-                          {res.issuesCount !== undefined && (
-                            <div className="text-[10px] text-zinc-500 font-semibold">
-                              {res.issuesCount} issue(s) detected
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {res.issuesCount > 0 && (
+                              <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded">
+                                {res.issuesCount}
+                              </span>
+                            )}
+                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${badgeColor}`}>
+                              {status}
+                            </span>
+                          </div>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Right panel: raw category logs/output */}
+                  {/* Right panel: structured category output */}
                   <div className="md:col-span-2 flex flex-col gap-3 h-[48vh] justify-between">
                     {selectedBaselineCategoryLog && selectedBaselineReport.results[selectedBaselineCategoryLog] ? (
-                      <div className="flex flex-col gap-3.5 h-full">
-                        <div className="flex items-center justify-between text-xs font-semibold">
-                          <span className="font-black uppercase tracking-widest text-zinc-400 font-mono">
-                            STDOUT: {selectedBaselineCategoryLog.replace(/([A-Z])/g, ' $1').trim()}
-                          </span>
-                          <button
-                            onClick={() => {
-                              const categoryRes = selectedBaselineReport.results[selectedBaselineCategoryLog!];
-                              const output = categoryRes ? (categoryRes.logs || categoryRes.output || '') : '';
-                              navigator.clipboard.writeText(output);
-                              alert(`Stdout for ${selectedBaselineCategoryLog} copied!`);
-                            }}
-                            className="text-[var(--color-text-muted)] hover:text-white font-medium text-[11px] border border-[var(--color-border)] px-2.5 py-1 rounded bg-white/[0.02] hover:bg-white/[0.05] cursor-pointer"
-                          >
-                            Copy output
-                          </button>
-                        </div>
+                      (() => {
+                        const catResult = selectedBaselineReport.results[selectedBaselineCategoryLog]
+                        const rawOutput: string = catResult?.logs || catResult?.output || ''
+                        const status: string = catResult?.status || 'skip'
+                        const issueCount: number = catResult?.issuesCount || 0
+
+                        // Parse log lines into structured entries
+                        const logLines = rawOutput.split('\n').filter((l: string) => l.trim())
                         
-                        <div className="flex-1 w-full bg-[#040406]/98 rounded-2xl p-5 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-left overflow-auto custom-scrollbar select-text text-xs md:text-sm text-zinc-300 whitespace-pre">
-                          {selectedBaselineReport.results[selectedBaselineCategoryLog].logs || selectedBaselineReport.results[selectedBaselineCategoryLog].output || 'No logs available.'}
-                        </div>
-                      </div>
+                        // Classify each line for colour coding
+                        const classifyLine = (line: string): { color: string; icon: string } => {
+                          const l = line.toLowerCase()
+                          if (l.includes('error') || l.includes('fail') || l.includes('critical') || l.startsWith('✗') || l.startsWith('×')) {
+                            return { color: 'text-red-400', icon: '✗' }
+                          }
+                          if (l.includes('warn') || l.includes('caution') || l.includes('notice')) {
+                            return { color: 'text-amber-400', icon: '⚠' }
+                          }
+                          if (l.includes('pass') || l.includes('success') || l.includes('ok') || l.startsWith('✓') || l.startsWith('✔')) {
+                            return { color: 'text-emerald-400', icon: '✓' }
+                          }
+                          if (l.startsWith('#') || l.includes('===') || l.includes('---')) {
+                            return { color: 'text-cyan-400 font-semibold', icon: '' }
+                          }
+                          return { color: 'text-zinc-300', icon: '' }
+                        }
+
+                        const statusBadge = status === 'pass'
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                          : status === 'fail'
+                          ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                          : status === 'warn'
+                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                          : 'border-zinc-700 bg-zinc-900 text-zinc-400'
+
+                        return (
+                          <div className="flex flex-col gap-3 h-full">
+                            {/* Category header row */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5">
+                                <span className="font-black uppercase tracking-widest text-zinc-200 text-xs">
+                                  {selectedBaselineCategoryLog.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${statusBadge}`}>
+                                  {status.toUpperCase()}
+                                </span>
+                                {issueCount > 0 && (
+                                  <span className="text-[9px] font-bold text-zinc-500">
+                                    {issueCount} issue{issueCount !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(rawOutput)
+                                  alert(`Output for ${selectedBaselineCategoryLog} copied!`)
+                                }}
+                                className="text-[var(--color-text-muted)] hover:text-white font-medium text-[11px] border border-[var(--color-border)] px-2.5 py-1 rounded bg-white/[0.02] hover:bg-white/[0.05] cursor-pointer transition-colors"
+                              >
+                                Copy output
+                              </button>
+                            </div>
+
+                            {/* Structured log viewer */}
+                            <div className="flex-1 w-full bg-[#040406]/98 rounded-2xl border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] overflow-auto custom-scrollbar">
+                              {rawOutput ? (
+                                <div className="p-4 space-y-0.5">
+                                  {logLines.map((line: string, idx: number) => {
+                                    const { color, icon } = classifyLine(line)
+                                    // Section headers (lines with === or --- or starting with #)
+                                    const isHeader = line.includes('===') || line.includes('---') || line.trim().startsWith('#')
+                                    if (isHeader) {
+                                      return (
+                                        <div key={idx} className="py-1.5 mt-2 mb-1 border-b border-zinc-800/60 first:mt-0">
+                                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 select-text">
+                                            {line.replace(/[=\-#]/g, '').trim() || line}
+                                          </span>
+                                        </div>
+                                      )
+                                    }
+                                    return (
+                                      <div key={idx} className="flex items-start gap-2 py-0.5 font-mono text-[11px] leading-relaxed group/line hover:bg-white/[0.02] rounded px-1 transition-colors">
+                                        {icon && (
+                                          <span className={`shrink-0 mt-0.5 text-[10px] ${color.split(' ')[0]}`}>
+                                            {icon}
+                                          </span>
+                                        )}
+                                        <span className={`select-text ${color} break-all`}>{line}</span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-zinc-600 text-xs font-medium">
+                                  No output available for this category.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })()
                     ) : (
                       <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-2.5 h-full">
                         <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -3590,18 +3728,21 @@ export default function SandboxHome({
             <div className="border-t border-zinc-900 pt-4 flex gap-3 select-none">
               <button
                 onClick={copyAllBaselineLogs}
-                className="flex-1 py-3.5 rounded-2xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 text-zinc-300 hover:text-zinc-100 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                className="flex-1 py-3 rounded-xl border border-[var(--color-border)] hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.04] text-zinc-400 hover:text-zinc-200 text-xs font-medium transition cursor-pointer flex items-center justify-center gap-2"
               >
-                Copy All Logs to Clipboard
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy All Logs
               </button>
               <button
                 onClick={() => {
                   setSelectedBaselineReport(null)
                   setSelectedBaselineCategoryLog(null)
                 }}
-                className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 cursor-pointer"
+                className="flex-1 py-3 rounded-xl ui-btn-primary text-xs font-medium transition cursor-pointer"
               >
-                Close Report View
+                Done
               </button>
             </div>
           </div>
