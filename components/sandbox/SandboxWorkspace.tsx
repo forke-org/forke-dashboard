@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
@@ -1942,12 +1942,24 @@ export default function SandboxHome({
                                   View Baseline
                                 </button>
                               ) : (
+                                // Baseline auto-generates on import. Disable while pipeline runs.
                                 <button
-                                  onClick={() => triggerBaselineSnapshot(mirror.sandboxRepo)}
-                                  disabled={triggeringBaseline[mirror.sandboxRepo]}
-                                  className="flex-1 h-9 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                  onClick={() => {
+                                    if (mirrorStatus !== 'running' && !triggeringBaseline[mirror.sandboxRepo]) {
+                                      triggerBaselineSnapshot(mirror.sandboxRepo)
+                                    }
+                                  }}
+                                  disabled={mirrorStatus === 'running' || triggeringBaseline[mirror.sandboxRepo]}
+                                  className="flex-1 h-9 rounded-lg text-[13px] font-medium border border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                                 >
-                                  {triggeringBaseline[mirror.sandboxRepo] ? 'Generating�' : 'Gen Baseline'}
+                                  {(mirrorStatus === 'running' || triggeringBaseline[mirror.sandboxRepo]) ? (
+                                    <>
+                                      <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin opacity-60" />
+                                      <span className="opacity-60">Generating&#8230;</span>
+                                    </>
+                                  ) : (
+                                    'Gen Baseline'
+                                  )}
                                 </button>
                               )}
                             </>
@@ -2051,7 +2063,7 @@ export default function SandboxHome({
                           : v === 'high_risk'
                           ? 'border-red-500/40 bg-red-500/5 text-red-400'
                           : 'border-amber-500/40 bg-amber-500/5 text-amber-400'
-                        const verdictLabel = v === 'pass' ? '?? PASS' : v === 'high_risk' ? '?? HIGH RISK' : v === 'needs_changes' ? '?? NEEDS CHANGES' : '? PENDING'
+                        const verdictLabel = v === 'pass' ? '✓ PASS' : v === 'high_risk' ? '✕ HIGH RISK' : v === 'needs_changes' ? '~ NEEDS CHANGES' : '· PENDING'
 
                         return (
                           <button
@@ -2106,7 +2118,7 @@ export default function SandboxHome({
                                 : selectedPR.review.verdict === 'high_risk' ? 'border-red-500/40 bg-red-500/10 text-red-400'
                                 : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
                               }`}>
-                                {selectedPR.review.verdict === 'pass' ? '?? PASS' : selectedPR.review.verdict === 'high_risk' ? '?? HIGH RISK' : '?? NEEDS CHANGES'}
+                                {selectedPR.review.verdict === 'pass' ? '✓ PASS' : selectedPR.review.verdict === 'high_risk' ? '✕ HIGH RISK' : '~ NEEDS CHANGES'}
                               </div>
                             </div>
 
@@ -2133,7 +2145,7 @@ export default function SandboxHome({
                               onClick={() => handleOpenComparison(selectedSandboxForPRs!.id, selectedPR.review!, `PR #${selectedPR.review!.prNumber} from @${selectedPR.fork.githubUsername}`)}
                               className="w-full h-10 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors cursor-pointer flex items-center justify-center gap-2"
                             >
-                              ?? View AI Review Report
+                              📊 View AI Review Report
                             </button>
 
                             {/* Summary */}
@@ -2160,7 +2172,7 @@ export default function SandboxHome({
                             {/* Issues */}
                             {selectedPR.review.issues.length > 0 && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider">?? Active Issues ({selectedPR.review.issues.length})</div>
+                                <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider">⚠ Active Issues ({selectedPR.review.issues.length})</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.issues.map((issue, i) => (
                                     <div key={i} className={`p-3 rounded-xl border text-[10px] leading-relaxed ${
@@ -2189,7 +2201,7 @@ export default function SandboxHome({
                             {/* Risks */}
                             {selectedPR.review.risks && selectedPR.review.risks.length > 0 && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">?? Active Security Risks ({selectedPR.review.risks.length})</div>
+                                <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">⊗ Active Security Risks ({selectedPR.review.risks.length})</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.risks.map((risk, i) => (
                                     <div key={i} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[10px] text-red-300">
@@ -2214,7 +2226,7 @@ export default function SandboxHome({
                             {((selectedPR.review.resolvedIssues && selectedPR.review.resolvedIssues.length > 0) || 
                               (selectedPR.review.resolvedRisks && selectedPR.review.resolvedRisks.length > 0)) && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">?? Corrected Items ({
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✓ Corrected Items ({
                                   (selectedPR.review.resolvedIssues?.length || 0) + (selectedPR.review.resolvedRisks?.length || 0)
                                 })</div>
                                 <div className="space-y-2">
@@ -2245,11 +2257,11 @@ export default function SandboxHome({
                             {/* Unauthorized Edits */}
                             {selectedPR.review.unauthorizedEdits && selectedPR.review.unauthorizedEdits.length > 0 && (
                               <div className="space-y-1.5">
-                                <div className="text-[10px] font-black text-red-500 uppercase tracking-wider">?? Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
+                                <div className="text-[10px] font-black text-red-500 uppercase tracking-wider">🚫 Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
                                 <div className="space-y-1">
                                   {selectedPR.review.unauthorizedEdits.map((f, i) => (
                                     <div key={i} className="font-mono text-[10px] text-red-400 bg-red-500/5 border border-red-500/15 px-3 py-1 rounded-lg">
-                                      ?? {f}
+                                      🚫 {f}
                                     </div>
                                   ))}
                                 </div>
@@ -2285,7 +2297,7 @@ export default function SandboxHome({
                                   disabled={prActionInProgress}
                                   className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                                 >
-                                  ?? Request Changes
+                                  🔄 Request Changes
                                 </button>
                                 <button
                                   onClick={() => handlePRAction('reject', selectedPR)}
@@ -2445,7 +2457,7 @@ export default function SandboxHome({
                             </button>
                             {forkRegistered && (
                               <p className="text-[10px] text-amber-500/90 font-semibold flex items-center gap-1">
-                                <span>??</span> GitHub fork page opened in a new tab! Complete the fork creation, then proceed below to clone.
+                                <span>💡</span> GitHub fork page opened in a new tab! Complete the fork creation, then proceed below to clone.
                               </p>
                             )}
                           </div>
@@ -2643,7 +2655,7 @@ export default function SandboxHome({
                               : aiReview.verdict === 'high_risk' ? 'border-red-500/30 bg-red-500/5 text-red-400'
                               : 'border-amber-500/30 bg-amber-500/5 text-amber-400 animate-pulse'
                             }`}>
-                              {aiReview.verdict === 'pass' ? '?? PASS' : aiReview.verdict === 'high_risk' ? '?? HIGH RISK' : '?? NEEDS CHANGES'}
+                              {aiReview.verdict === 'pass' ? '✓ PASS' : aiReview.verdict === 'high_risk' ? '✕ HIGH RISK' : '~ NEEDS CHANGES'}
                             </span>
                           )}
                         </div>
@@ -3190,12 +3202,12 @@ export default function SandboxHome({
                                 <div className="text-zinc-300 leading-relaxed">{diag.rootCause}</div>
                                 {diag.isFalsePositive && diag.falsePositiveReason && (
                                   <div className="mt-1.5 text-amber-400/80 text-[10px] italic bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
-                                    ?? {diag.falsePositiveReason}
+                                    ⚠️ {diag.falsePositiveReason}
                                   </div>
                                 )}
                                 {diag.suggestedFix && (
                                   <div className="mt-1.5 text-cyan-400/80 text-[10px] bg-cyan-500/5 p-2 rounded-lg border border-cyan-500/10">
-                                    ?? <span className="font-bold">Suggested Fix:</span> {diag.suggestedFix}
+                                    💡 <span className="font-bold">Suggested Fix:</span> {diag.suggestedFix}
                                   </div>
                                 )}
                               </div>
