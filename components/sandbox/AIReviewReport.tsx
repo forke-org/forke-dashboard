@@ -53,9 +53,6 @@ interface AIReviewReportProps {
   review: AIReviewData
   title?: string
   prUrl?: string
-  onRequestChanges?: () => void
-  onApprove?: () => void
-  onReject?: () => void
 }
 
 // ─── Score Ring ──────────────────────────────────────────────────────────────
@@ -108,7 +105,12 @@ function VerdictBanner({ verdict, summary }: { verdict: string; summary: string 
 
 // ─── Metrics Strip ────────────────────────────────────────────────────────────
 function MetricsStrip({ review }: { review: AIReviewData }) {
-  const results = review.results || {}
+  // deterministicResults is stored as ReviewRunnerResult { commitSha, techStack, results, durationMs }
+  // The GET route passes the whole object as review.results, so we need to unwrap
+  const rawResults = review.results || {}
+  const results: Record<string, any> = (rawResults.results && typeof rawResults.results === 'object')
+    ? rawResults.results
+    : rawResults
   const comparison = review.comparison || {}
 
   const unitTests = results['unit_tests']
@@ -127,7 +129,12 @@ function MetricsStrip({ review }: { review: AIReviewData }) {
   const lintIssues = lint?.issuesCount ?? null
   const typeErrors = types?.issuesCount ?? null
   const reqMatch = Math.round(review.requirementMatch * 100)
-  const reqDelta = comparison['unit_tests'] ? (comparison['unit_tests'].prIssues - comparison['unit_tests'].baselineIssues) : null
+  // comparison.regressions is a Record<category, issueCountDelta>
+  const reqDelta = comparison.regressions?.['unit_tests']
+    ? comparison.regressions['unit_tests']
+    : comparison.improvements?.['unit_tests']
+    ? -comparison.improvements['unit_tests']
+    : null
 
   const metrics = [
     {
@@ -185,7 +192,11 @@ function MetricsStrip({ review }: { review: AIReviewData }) {
 }
 
 // ─── Test Suite Cards ─────────────────────────────────────────────────────────
-function TestSuiteCards({ results }: { results: Record<string, any> }) {
+function TestSuiteCards({ results: rawResults }: { results: Record<string, any> }) {
+  // Unwrap ReviewRunnerResult wrapper if present
+  const results: Record<string, any> = (rawResults.results && typeof rawResults.results === 'object')
+    ? rawResults.results
+    : rawResults
   const suiteCategories = ['unit_tests', 'integration_tests', 'e2e_tests', 'build', 'lint', 'type_checks', 'security', 'sast', 'format', 'code_quality', 'dependencies', 'performance']
   const active = suiteCategories.filter(k => results[k] && results[k].status !== 'skip')
   if (active.length === 0) return null
@@ -414,70 +425,37 @@ function FilesChanged({ review }: { review: AIReviewData }) {
   )
 }
 
-// ─── Action Buttons ───────────────────────────────────────────────────────────
-function ActionButtons({ review, onApprove, onReject, onRequestChanges, prUrl }: {
+// ─── Action Buttons — replaced by informational guidance; only keep GitHub link ──
+function ActionButtons({ review, prUrl }: {
   review: AIReviewData
-  onApprove?: () => void
-  onReject?: () => void
-  onRequestChanges?: () => void
   prUrl?: string
 }) {
+  if (!prUrl) return null
   return (
-    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--color-border)]">
-      {onApprove && (
-        <button
-          onClick={onApprove}
-          disabled={review.verdict === 'high_risk'}
-          className="h-9 px-4 rounded-lg text-[13px] font-medium bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1.5"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          Approve & Merge
-        </button>
-      )}
-      {onRequestChanges && (
-        <button
-          onClick={onRequestChanges}
-          className="h-9 px-4 rounded-lg text-[13px] font-medium bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer flex items-center gap-1.5"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 12H18.21" />
-          </svg>
-          Request Changes
-        </button>
-      )}
-      {onReject && (
-        <button
-          onClick={onReject}
-          className="h-9 px-4 rounded-lg text-[13px] font-medium bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer flex items-center gap-1.5"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          Reject
-        </button>
-      )}
-      {prUrl && (
-        <a
-          href={prUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="h-9 px-4 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors flex items-center gap-1.5 ml-auto"
-        >
-          View PR on GitHub
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
-      )}
+    <div className="pt-2 border-t border-[var(--color-border)]">
+      <a
+        href={prUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center justify-center gap-2 w-full h-10 rounded-lg border border-[var(--color-border)] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 text-[13px] font-medium text-white transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+        View PR on GitHub
+      </a>
     </div>
   )
 }
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
-export default function AIReviewReport({ review, title, prUrl, onApprove, onReject, onRequestChanges }: AIReviewReportProps) {
-  const hasResults = review.results && Object.keys(review.results).length > 0
+export default function AIReviewReport({ review, title, prUrl }: AIReviewReportProps) {
+  const rawResults = review.results
+  const hasResults = rawResults && (
+    Object.keys(rawResults).length > 0 &&
+    // handle both flat and nested ReviewRunnerResult
+    (rawResults.results ? Object.keys(rawResults.results).length > 0 : true)
+  )
 
   return (
     <div className="space-y-5 text-left">
@@ -511,16 +489,8 @@ export default function AIReviewReport({ review, title, prUrl, onApprove, onReje
       {/* Files changed */}
       <FilesChanged review={review} />
 
-      {/* Action buttons */}
-      {(onApprove || onReject || onRequestChanges || prUrl) && (
-        <ActionButtons
-          review={review}
-          onApprove={onApprove}
-          onReject={onReject}
-          onRequestChanges={onRequestChanges}
-          prUrl={prUrl}
-        />
-      )}
+      {/* Action buttons — GitHub link only */}
+      {prUrl && <ActionButtons review={review} prUrl={prUrl} />}
     </div>
   )
 }

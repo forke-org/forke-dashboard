@@ -624,6 +624,12 @@ export default function SandboxHome({
           message += `� Cleaned up ${ghCount} fork repository/repositories from GitHub (best effort).`
         }
         alert(message)
+        // Clear PR dashboard state if the deleted sandbox was open
+        if (selectedSandboxForPRs?.sandboxRepo === sandboxRepoName) {
+          setSelectedSandboxForPRs(null)
+          setSelectedPR(null)
+          setSandboxPRs([])
+        }
         fetchMirrors()
       } else {
         alert(data.error || 'Failed to delete sandbox repository')
@@ -1306,7 +1312,7 @@ export default function SandboxHome({
                         <details className="group">
                           <summary className="text-[11px] text-[var(--color-text-muted)] hover:text-white cursor-pointer select-none font-medium flex items-center gap-1 mt-2">
                             <span>View Pipeline Logs</span>
-                            <span className="transition-transform group-open:rotate-180">?</span>
+                            <span className="transition-transform group-open:rotate-180">▼</span>
                           </summary>
                           <div ref={terminalRef} className="w-full bg-[#040406]/98 rounded-xl p-4 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-[11px] text-zinc-300 leading-normal max-h-[165px] overflow-y-auto mt-2 custom-scrollbar">
                             {mirrorLogs.map((log, idx) => (
@@ -2157,11 +2163,11 @@ export default function SandboxHome({
                             {/* Strengths */}
                             {selectedPR.review.strengths && selectedPR.review.strengths.length > 0 && (
                               <div className="space-y-1.5">
-                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">? Strengths ({selectedPR.review.strengths.length})</div>
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✓ Strengths ({selectedPR.review.strengths.length})</div>
                                 <div className="space-y-1 pl-1">
                                   {selectedPR.review.strengths.map((s, i) => (
                                     <div key={i} className="flex items-start gap-2 text-[10px] text-zinc-300">
-                                      <span className="text-emerald-500 shrink-0 mt-0.5">�</span>
+                                      <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
                                       {s}
                                     </div>
                                   ))}
@@ -2191,7 +2197,7 @@ export default function SandboxHome({
                                         )}
                                       </div>
                                       <div>{issue.message}</div>
-                                      {issue.suggestion && <div className="mt-1 text-zinc-500 italic">? {issue.suggestion}</div>}
+                                      {issue.suggestion && <div className="mt-1 text-zinc-500 italic">→ {issue.suggestion}</div>}
                                     </div>
                                   ))}
                                 </div>
@@ -2237,7 +2243,7 @@ export default function SandboxHome({
                                         <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
                                       </div>
                                       <div className="line-through text-zinc-500">{issue.message}</div>
-                                      {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">? Fixed: {issue.resolution}</div>}
+                                      {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {issue.resolution}</div>}
                                     </div>
                                   ))}
                                   {selectedPR.review.resolvedRisks?.map((risk, i) => (
@@ -2247,7 +2253,7 @@ export default function SandboxHome({
                                         <span>[{risk.severity.toUpperCase()}] Category: {risk.category}</span>
                                       </div>
                                       <div className="line-through text-zinc-500">{risk.message}</div>
-                                      {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">? Fixed: {risk.resolution}</div>}
+                                      {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {risk.resolution}</div>}
                                     </div>
                                   ))}
                                 </div>
@@ -2270,42 +2276,35 @@ export default function SandboxHome({
 
                             {/* Links */}
                             {selectedPR.fork.prUrl && (
-                              <a href={selectedPR.fork.prUrl} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-1.5 text-xs font-bold text-violet-400 hover:text-violet-300 transition">
-                                View PR on GitHub ?
+                              <a
+                                href={selectedPR.fork.prUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center justify-center gap-2 w-full h-10 rounded-lg border border-[var(--color-border)] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 text-[13px] font-medium text-white transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                View PR on GitHub
                               </a>
                             )}
 
-                            {/* Owner action buttons */}
-                            <div className="border-t border-zinc-800/60 pt-4 space-y-3">
-                              <textarea
-                                value={prActionMessage}
-                                onChange={e => setPrActionMessage(e.target.value)}
-                                placeholder="Optional message to leave on the PR..."
-                                className="w-full app-field px-3 py-2.5 text-xs placeholder:text-white/25 resize-none h-16"
-                              />
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handlePRAction('merge', selectedPR)}
-                                  disabled={prActionInProgress || selectedPR.review.verdict === 'high_risk'}
-                                  className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                >
-                                  ? Approve & Merge
-                                </button>
-                                <button
-                                  onClick={() => handlePRAction('request_changes', selectedPR)}
-                                  disabled={prActionInProgress}
-                                  className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                >
-                                  🔄 Request Changes
-                                </button>
-                                <button
-                                  onClick={() => handlePRAction('reject', selectedPR)}
-                                  disabled={prActionInProgress}
-                                  className="py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                >
-                                  ? Reject
-                                </button>
+                            {/* Owner guidance — informational, no action buttons */}
+                            <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.015] p-4 space-y-2.5">
+                              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">What to do next</p>
+                              <div className="space-y-2 text-[12px] text-[var(--color-text-muted)] leading-relaxed">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-emerald-400 shrink-0 mt-0.5 font-bold">↑</span>
+                                  <span><span className="text-white font-medium">Approve &amp; Merge</span> — if the code looks good, merge the PR directly on GitHub.</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-amber-400 shrink-0 mt-0.5 font-bold">↺</span>
+                                  <span><span className="text-white font-medium">Request Changes</span> — leave a review comment on GitHub asking the developer to address the issues above.</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-red-400 shrink-0 mt-0.5 font-bold">✕</span>
+                                  <span><span className="text-white font-medium">Reject</span> — close the PR on GitHub if the submission does not meet requirements.</span>
+                                </div>
                               </div>
                             </div>
                           </>
@@ -2428,7 +2427,7 @@ export default function SandboxHome({
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
                               devStatus.hasFork ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
-                              {devStatus.hasFork ? '?' : '1'}
+                              {devStatus.hasFork ? '✓' : '1'}
                             </span>
                             Step 1: Create Isolated Workspace (GitHub Fork)
                           </h5>
@@ -2554,7 +2553,7 @@ export default function SandboxHome({
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
                               devStatus.hasPR ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
-                              {devStatus.hasPR ? '?' : '3'}
+                              {devStatus.hasPR ? '✓' : '3'}
                             </span>
                             Step 3: Open Pull Request to Sandbox Repo
                           </h5>
@@ -2645,7 +2644,7 @@ export default function SandboxHome({
                             <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
                               aiReview ? (aiReview.verdict === 'pass' ? 'bg-emerald-400 text-black' : aiReview.verdict === 'high_risk' ? 'bg-red-500 text-white' : 'bg-amber-500 text-black') : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
                             }`}>
-                              {aiReview ? (aiReview.verdict === 'pass' ? '?' : aiReview.verdict === 'high_risk' ? '!' : '~') : '4'}
+                              {aiReview ? (aiReview.verdict === 'pass' ? '✓' : aiReview.verdict === 'high_risk' ? '!' : '~') : '4'}
                             </span>
                             Step 4: AI Review Report
                           </h5>
@@ -2719,6 +2718,7 @@ export default function SandboxHome({
                             </div>
                           ) : (
                             <>
+                              {!aiReview && (
                               <div className="flex gap-3">
                                 <button
                                   onClick={fetchAIReview}
@@ -2737,6 +2737,7 @@ export default function SandboxHome({
                                   )}
                                 </button>
                               </div>
+                              )}
 
                               {aiReview && (
                                 <div className="animate-fade-in mt-4">
@@ -2953,7 +2954,7 @@ export default function SandboxHome({
                         .trim()
 
                       // Icon per status
-                      const statusIcon = status === 'pass' ? '?' : status === 'fail' ? '?' : status === 'warn' ? '?' : '�'
+                      const statusIcon = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'warn' ? '⚠' : '–'
 
                       return (
                         <button
@@ -3005,14 +3006,14 @@ export default function SandboxHome({
                         // Classify each line for colour coding
                         const classifyLine = (line: string): { color: string; icon: string } => {
                           const l = line.toLowerCase()
-                          if (l.includes('error') || l.includes('fail') || l.includes('critical') || l.startsWith('?') || l.startsWith('�')) {
-                            return { color: 'text-red-400', icon: '?' }
+                          if (l.includes('error') || l.includes('fail') || l.includes('critical') || l.startsWith('✗') || l.startsWith('×')) {
+                            return { color: 'text-red-400', icon: '✗' }
                           }
                           if (l.includes('warn') || l.includes('caution') || l.includes('notice')) {
-                            return { color: 'text-amber-400', icon: '?' }
+                            return { color: 'text-amber-400', icon: '⚠' }
                           }
-                          if (l.includes('pass') || l.includes('success') || l.includes('ok') || l.startsWith('?') || l.startsWith('?')) {
-                            return { color: 'text-emerald-400', icon: '?' }
+                          if (l.includes('pass') || l.includes('success') || l.includes('ok') || l.startsWith('✗') || l.startsWith('×')) {
+                            return { color: 'text-emerald-400', icon: '✓' }
                           }
                           if (l.startsWith('#') || l.includes('===') || l.includes('---')) {
                             return { color: 'text-cyan-400 font-semibold', icon: '' }
@@ -3142,7 +3143,7 @@ export default function SandboxHome({
                             ? 'bg-red-500/10 border border-red-500/25 text-red-400'
                             : 'bg-amber-500/10 border border-amber-500/25 text-amber-400'
                         }`}>
-                          {selectedBaselineReport.aiSummary.overallHealth === 'healthy' ? '?' : selectedBaselineReport.aiSummary.overallHealth === 'critical' ? '!' : '~'}
+                          {selectedBaselineReport.aiSummary.overallHealth === 'healthy' ? '✓' : selectedBaselineReport.aiSummary.overallHealth === 'critical' ? '!' : '~'}
                         </div>
                         <div>
                           <div className="text-sm font-black text-zinc-100">Repository Health Assessment</div>
