@@ -1,13 +1,3 @@
-/**
- * @fileoverview Forke Platform
- * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
- *
- * Source-Available License (Non-Commercial / Fair Source).
- * This source code is open for inspection, learning, and personal development.
- * Commercial use, hosting, or resale as a paid service without an explicit
- * commercial license from Forke Inc. is strictly prohibited.
- */
-
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
@@ -16,7 +6,7 @@ import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { users, accounts, sessions, developers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { processLoginStreak } from '@/lib/login-streak'
+import { processLoginStreak } from '@/lib/actions/auth-actions'
 import { recordAuthEvent } from '@/lib/actions/auth-events'
 import { authConfig } from './auth.config'
 
@@ -292,8 +282,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               where: eq(developers.userId, token.id as string),
             })
             token.isGithubConnected = !!devProfile?.isGithubConnected
-          } else {
-            // User does not exist in the database (e.g. database reset/wiped) -> destroy the JWT session
+          }
+          else{
             return null
           }
         } catch (error) {
