@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 // ─── Types (mirror SandboxWorkspace.tsx AIReview interface) ──────────────────
@@ -193,6 +194,8 @@ function MetricsStrip({ review }: { review: AIReviewData }) {
 
 // ─── Test Suite Cards ─────────────────────────────────────────────────────────
 function TestSuiteCards({ results: rawResults }: { results: Record<string, any> }) {
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
+
   // Unwrap ReviewRunnerResult wrapper if present
   const results: Record<string, any> = (rawResults.results && typeof rawResults.results === 'object')
     ? rawResults.results
@@ -228,26 +231,49 @@ function TestSuiteCards({ results: rawResults }: { results: Record<string, any> 
           const barColor = cat.status === 'pass' ? 'bg-emerald-500' : cat.status === 'fail' ? 'bg-red-500' : 'bg-amber-500'
           const total = nums ? (nums.passed + nums.failed + nums.skipped) : null
           const passRatio = total && total > 0 ? (nums!.passed / total) * 100 : cat.status === 'pass' ? 100 : 0
+          const isExpanded = expandedCategory === k
 
           return (
-            <div key={k} className={cn('rounded-lg border p-3 space-y-2', statusColor)}>
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-medium text-white">{humanName(k)}</span>
-                <span className="text-[10px] font-bold uppercase">{cat.status}</span>
-              </div>
-              <div className="h-1 w-full rounded-full bg-white/10">
-                <div className={cn('h-full rounded-full transition-all duration-500', barColor)} style={{ width: `${passRatio}%` }} />
-              </div>
-              {nums && (
-                <div className="flex items-center gap-3 text-[10px]">
-                  <span className="text-emerald-400">{nums.passed} passed</span>
-                  {nums.skipped > 0 && <span className="text-zinc-500">{nums.skipped} skipped</span>}
-                  {nums.failed > 0 && <span className="text-red-400">{nums.failed} failed</span>}
-                  {nums.duration && <span className="text-zinc-500 ml-auto">{nums.duration}s</span>}
+            <div key={k} className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setExpandedCategory(isExpanded ? null : k)}
+                className={cn(
+                  'w-full text-left rounded-lg border p-3 space-y-2 transition-all hover:bg-white/[0.02]',
+                  statusColor,
+                  isExpanded ? 'border-zinc-500' : ''
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-white">{humanName(k)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase">{cat.status}</span>
+                    <span className="text-[10px] opacity-50">{isExpanded ? '▼' : '▶'}</span>
+                  </div>
                 </div>
-              )}
-              {!nums && cat.issuesCount > 0 && (
-                <p className="text-[10px]">{cat.issuesCount} issue{cat.issuesCount !== 1 ? 's' : ''} detected</p>
+                <div className="h-1 w-full rounded-full bg-white/10">
+                  <div className={cn('h-full rounded-full transition-all duration-500', barColor)} style={{ width: `${passRatio}%` }} />
+                </div>
+                {nums && (
+                  <div className="flex items-center gap-3 text-[10px]">
+                    <span className="text-emerald-400">{nums.passed} passed</span>
+                    {nums.skipped > 0 && <span className="text-zinc-500">{nums.skipped} skipped</span>}
+                    {nums.failed > 0 && <span className="text-red-400">{nums.failed} failed</span>}
+                    {nums.duration && <span className="text-zinc-500 ml-auto">{nums.duration}s</span>}
+                  </div>
+                )}
+                {!nums && cat.issuesCount > 0 && (
+                  <p className="text-[10px]">{cat.issuesCount} issue{cat.issuesCount !== 1 ? 's' : ''} detected (click to view logs)</p>
+                )}
+                {!nums && cat.issuesCount === 0 && (
+                  <p className="text-[10px] opacity-75">Click to view execution logs</p>
+                )}
+              </button>
+              
+              {isExpanded && cat.logs && (
+                <div className="rounded-lg border border-zinc-800 bg-black/60 p-3 mt-0.5 max-h-60 overflow-y-auto font-mono text-[10px] text-zinc-300 whitespace-pre-wrap break-all leading-normal">
+                  {cat.logs}
+                </div>
               )}
             </div>
           )
@@ -264,14 +290,14 @@ function FindingsTable({ review }: { review: AIReviewData }) {
 
   // Strengths (good)
   for (const s of review.strengths || []) {
-    rows.push({ severity: 'good', label: s.slice(0, 60), detail: s, location: '', isGood: true })
+    rows.push({ severity: 'good', label: 'Best Practice', detail: s, location: '', isGood: true })
   }
   // Active issues
   for (const issue of review.issues || []) {
     rows.push({
       severity: issue.severity,
-      label: issue.message.slice(0, 60),
-      detail: issue.suggestion ? `${issue.message} → ${issue.suggestion}` : issue.message,
+      label: issue.message,
+      detail: issue.suggestion || 'No suggestion available',
       location: `${issue.file}${issue.line ? `:${issue.line}` : ''}`,
     })
   }
@@ -279,14 +305,24 @@ function FindingsTable({ review }: { review: AIReviewData }) {
   for (const risk of review.risks || []) {
     rows.push({
       severity: risk.severity === 'high' ? 'critical' : risk.severity,
-      label: risk.message.slice(0, 60),
+      label: `${risk.category.toUpperCase()} Risk`,
       detail: risk.message,
-      location: `${risk.category}`,
+      location: risk.category,
     })
   }
-  // Resolved
+  // Resolved Issues
   for (const r of review.resolvedIssues || []) {
-    rows.push({ severity: 'resolved', label: r.message.slice(0, 60), detail: r.resolution, location: `${r.file}${r.line ? `:${r.line}` : ''}`, isGood: true })
+    rows.push({ severity: 'resolved', label: r.message, detail: r.resolution, location: `${r.file}${r.line ? `:${r.line}` : ''}`, isGood: true })
+  }
+  // Resolved Risks
+  for (const r of review.resolvedRisks || []) {
+    rows.push({
+      severity: 'resolved',
+      label: `${r.category.toUpperCase()} Risk Resolved`,
+      detail: r.resolution,
+      location: r.category,
+      isGood: true
+    })
   }
 
   if (rows.length === 0) return null
@@ -319,7 +355,7 @@ function FindingsTable({ review }: { review: AIReviewData }) {
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
               <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-20">Severity</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-40">Finding</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-48">Finding</th>
               <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Detail</th>
               <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-36">Location</th>
             </tr>
@@ -335,14 +371,14 @@ function FindingsTable({ review }: { review: AIReviewData }) {
                     {severityLabel(row.severity)}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 font-medium text-white max-w-[160px]">
-                  <span className="line-clamp-2">{row.label}</span>
+                <td className="px-3 py-2.5 font-medium text-white text-[11px] whitespace-normal break-words">
+                  {row.label}
                 </td>
-                <td className="px-3 py-2.5 text-[var(--color-text-muted)] leading-relaxed max-w-xs">
-                  <span className="line-clamp-3">{row.detail}</span>
+                <td className="px-3 py-2.5 text-[var(--color-text-muted)] leading-relaxed whitespace-normal break-words">
+                  {row.detail}
                 </td>
-                <td className="px-3 py-2.5 font-mono text-[var(--color-text-muted)] text-[10px]">
-                  <span className="truncate block max-w-[140px]">{row.location}</span>
+                <td className="px-3 py-2.5 font-mono text-[var(--color-text-muted)] text-[10px] whitespace-normal break-all">
+                  {row.location || '—'}
                 </td>
               </tr>
             ))}
@@ -448,6 +484,97 @@ function ActionButtons({ review, prUrl }: {
   )
 }
 
+// ─── Scorecard Breakdown ──────────────────────────────────────────────────────
+function ScorecardBreakdown({ results }: { results: any }) {
+  const breakdown = results?.scoreBreakdown
+  if (!breakdown) return null
+
+  const categories = [
+    {
+      key: 'requirementFulfillment',
+      label: 'Requirement Fulfillment',
+      max: 40,
+      data: breakdown.requirementFulfillment,
+      color: 'border-emerald-500/10 hover:border-emerald-500/20 bg-emerald-500/[0.005]',
+      icon: '✓'
+    },
+    {
+      key: 'techStackAdherence',
+      label: 'Tech Stack Adherence',
+      max: 20,
+      data: breakdown.techStackAdherence,
+      color: 'border-blue-500/10 hover:border-blue-500/20 bg-blue-500/[0.005]',
+      icon: '⚓'
+    },
+    {
+      key: 'codeCleanliness',
+      label: 'Code Cleanliness',
+      max: 15,
+      data: breakdown.codeCleanliness,
+      color: 'border-amber-500/10 hover:border-amber-500/20 bg-amber-500/[0.005]',
+      icon: '✦'
+    },
+    {
+      key: 'executionSafety',
+      label: 'Execution Safety',
+      max: 25,
+      data: breakdown.executionSafety,
+      color: 'border-red-500/10 hover:border-red-500/20 bg-red-500/[0.005]',
+      icon: '⚡'
+    }
+  ]
+
+  return (
+    <div className="space-y-2.5">
+      <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Scorecard Rubric & Deductions</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        {categories.map(c => {
+          const score = c.data?.score ?? c.max
+          const deductions = c.data?.deductions ?? []
+          const hasDeductions = deductions.length > 0
+          const lostPoints = deductions.reduce((sum: number, d: any) => sum + (d.points || 0), 0)
+
+          return (
+            <div key={c.key} className={cn("rounded-xl border p-3.5 transition-all flex flex-col justify-between", c.color)}>
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] opacity-75">{c.icon}</span>
+                    <span className="text-[11px] font-bold text-white/90">{c.label}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className={cn("text-[12px] font-black", lostPoints > 0 ? "text-amber-400" : "text-emerald-400")}>
+                      {score}
+                    </span>
+                    <span className="text-[9px] text-[var(--color-text-muted)]"> / {c.max}</span>
+                  </div>
+                </div>
+
+                {hasDeductions ? (
+                  <div className="mt-2.5 pl-3 border-l border-zinc-800 space-y-1.5">
+                    {deductions.map((d: any, idx: number) => (
+                      <div key={idx} className="text-[11px] leading-relaxed">
+                        <div className="flex items-start gap-2">
+                          <span className="text-red-400 font-bold shrink-0">-{d.points} pts</span>
+                          <span className="text-[var(--color-text-muted)]">{d.reason}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-2 pl-3 text-[10px] text-zinc-500 italic">
+                    No deductions. Perfect score!
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Export ──────────────────────────────────────────────────────────────
 export default function AIReviewReport({ review, title, prUrl }: AIReviewReportProps) {
   const rawResults = review.results
@@ -479,6 +606,9 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
 
       {/* Metrics strip */}
       <MetricsStrip review={review} />
+
+      {/* Scorecard breakdown */}
+      <ScorecardBreakdown results={review.results} />
 
       {/* Test suite cards */}
       {hasResults && <TestSuiteCards results={review.results!} />}
