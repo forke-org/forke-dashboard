@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
@@ -6,6 +6,7 @@ import { IndianRupee, Calendar, Tag, AlertCircle, CheckCircle2, Search, X, Plus 
 import { cn } from '@/lib/utils/cn'
 import FileTree from '@/components/sandbox/FileTree'
 import AIReviewReport from '@/components/sandbox/AIReviewReport'
+import DotPatternBackground from '@/components/shared/DotPatternBackground'
 
 interface Repository {
   id: number
@@ -131,6 +132,8 @@ export default function SandboxHome({
   const [role, setRole] = useState<'owner' | 'developer' | null>(presetRole || null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loadingSession, setLoadingSession] = useState(true)
+  const [needsGithubAuth, setNeedsGithubAuth] = useState(true)
+  const hasJustLoggedInRef = useRef(false)
 
   // --- Owner Dashboard State ---
   const [organizations, setOrganizations] = useState<Organization[]>([])
@@ -157,6 +160,8 @@ export default function SandboxHome({
   const [selectedBaselineCategoryLog, setSelectedBaselineCategoryLog] = useState<string | null>(null)
 
   // --- Owner Task Form State ---
+  const [forceShowTaskForm, setForceShowTaskForm] = useState(false)
+  const [hasFetchedMirrorAfterClone, setHasFetchedMirrorAfterClone] = useState(false)
   const [taskFormSandbox, setTaskFormSandbox] = useState<SandboxRepo | null>(null)
   const [taskFormOpen, setTaskFormOpen] = useState(false)
   const [savingTask, setSavingTask] = useState(false)
@@ -291,39 +296,88 @@ export default function SandboxHome({
     const githubIdParam = searchParams.get('github_id')
     const roleParam = searchParams.get('role') as 'owner' | 'developer' | null
 
+    const activeRole = presetRole || roleParam || (typeof window !== 'undefined' ? localStorage.getItem('forke_role') : null)
+
+    if (activeRole === 'owner') {
+      if (successParam && githubIdParam) {
+        // Just returned from GitHub OAuth redirect
+        setGithubUsername(githubIdParam)
+        setRole('owner')
+        setIsLoggedIn(true)
+        localStorage.setItem('forke_github_username', githubIdParam)
+        localStorage.setItem('forke_role', 'owner')
+        setNeedsGithubAuth(false)
+        hasJustLoggedInRef.current = true
+        
+        // Clean up URL params after storing session, keeping current pathname
+        if (typeof window !== 'undefined') {
+          router.replace(window.location.pathname)
+        } else {
+          router.replace('/owner')
+        }
+      } else {
+        // If they did not just log in via OAuth in the current active session, clear data.
+        if (!hasJustLoggedInRef.current) {
+          setGithubUsername(null)
+          setRole('owner')
+          setIsLoggedIn(true) // remain in owner dashboard space
+          setNeedsGithubAuth(true)
+          setOwnerRepos([])
+          try {
+            localStorage.removeItem('forke_github_username')
+          } catch (e) {}
+          
+          // Clear server cookies as well
+          fetch('/api/auth/logout', { method: 'POST' }).catch((e) => {
+            console.error('Failed to log out from server:', e)
+          })
+        }
+      }
+      setLoadingSession(false)
+      return
+    }
+
+    // Default flow for developer
     if (successParam && githubIdParam && roleParam) {
       setGithubUsername(githubIdParam)
       setRole(roleParam)
       setIsLoggedIn(true)
       localStorage.setItem('forke_github_username', githubIdParam)
       localStorage.setItem('forke_role', roleParam)
-      // Clean up URL params after storing session
       router.replace(roleParam === 'owner' ? '/owner' : '/developer')
     } else {
       const savedUsername = localStorage.getItem('forke_github_username')
       const savedRole = localStorage.getItem('forke_role') as 'owner' | 'developer' | null
-      const activeRole = presetRole || savedRole
-      if (savedUsername && activeRole) {
+      const resolvedRole = presetRole || savedRole
+      if (savedUsername && resolvedRole) {
         setGithubUsername(savedUsername)
-        setRole(activeRole)
+        setRole(resolvedRole)
         setIsLoggedIn(true)
       }
     }
     setLoadingSession(false)
   }, [searchParams, router, presetRole])
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     localStorage.removeItem('forke_github_username')
     localStorage.removeItem('forke_role')
+    try {
+      sessionStorage.removeItem('forke_owner_github_auth')
+    } catch (e) {}
     setGithubUsername(null)
     setRole(presetRole || null)
     setIsLoggedIn(false)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (e) {
+      console.error('Failed to log out from server:', e)
+    }
     router.push(presetRole === 'owner' ? '/owner' : presetRole === 'developer' ? '/developer' : '/')
   }
 
   // --- API Fetches: Owner ---
   const fetchOwnerReposAndOrgs = async (scope: string) => {
-    if (!githubUsername) return
+    if (!githubUsername || needsGithubAuth) return
     setLoadingRepos(true)
     try {
       const orgParam = scope === 'personal' ? '' : `&org=${scope}`
@@ -336,6 +390,9 @@ export default function SandboxHome({
         }
       } else {
         console.error('Error fetching repos:', data.error)
+        if (response.status === 401) {
+          setNeedsGithubAuth(true)
+        }
       }
     } catch (err) {
       console.error('Network error fetching repos:', err)
@@ -423,10 +480,12 @@ export default function SandboxHome({
 
   useEffect(() => {
     if (isLoggedIn && role === 'owner' && githubUsername) {
-      fetchOwnerReposAndOrgs(selectedScope)
+      if (!needsGithubAuth) {
+        fetchOwnerReposAndOrgs(selectedScope)
+      }
       fetchMirrors()
     }
-  }, [isLoggedIn, role, githubUsername, selectedScope])
+  }, [isLoggedIn, role, githubUsername, selectedScope, needsGithubAuth])
 
   // --- API Fetches: Developer ---
   useEffect(() => {
@@ -508,6 +567,13 @@ export default function SandboxHome({
           if (res.ok) {
             setMirrorLogs(data.logs || [])
             setMirrorProgress(data.progress || 0)
+
+            // Mirroring/Cloning phase is completed at >= 90% progress
+            if ((data.progress || 0) >= 90 && !hasFetchedMirrorAfterClone) {
+              setHasFetchedMirrorAfterClone(true)
+              fetchMirrors() // refresh active mirrors to unlock FileTree immediately!
+            }
+
             if (data.status === 'success' || data.status === 'failed') {
               setMirrorStatus(data.status)
               setActiveJobId(null)
@@ -520,7 +586,7 @@ export default function SandboxHome({
       }, 800)
     }
     return () => clearInterval(intervalId)
-  }, [activeJobId, mirrorStatus])
+  }, [activeJobId, mirrorStatus, hasFetchedMirrorAfterClone])
 
   // --- Poll for Verification Status updates ---
   useEffect(() => {
@@ -551,43 +617,10 @@ export default function SandboxHome({
   }, [activeReviewLogs])
 
   const executeMirrorPipeline = async () => {
-    if (!githubUsername || !selectedOwnerRepo) return
-
-    setMirrorStatus('running')
-    setMirrorProgress(0)
-    setMirrorLogs(['INIT Triggering mirroring request...'])
-    
-    try {
-      const response = await fetch('/api/owner/mirror', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username: githubUsername,
-          sourceRepo: selectedOwnerRepo.full_name,
-          targetOrg: selectedScope,
-          taskTitle: '',
-          taskDescription: '',
-          frontendStack: '',
-          backendStack: '',
-          allowedPaths: '',
-          restrictedPaths: '',
-          acceptanceCriteria: '',
-        })
-      })
-
-      const data = await response.json()
-      if (response.ok && data.jobId) {
-        setActiveJobId(data.jobId)
-      } else {
-        setMirrorStatus('failed')
-        setMirrorLogs(prev => [...prev, `FAILED ${data.error || 'Failed to start mirroring pipeline'}`])
-      }
-    } catch (err: any) {
-      setMirrorStatus('failed')
-      setMirrorLogs(prev => [...prev, `FAILED Connection error: ${err.message}`])
-    }
+    if (!selectedOwnerRepo) return
+    // In the new flow, clicking "Add Task Details" just shows the form.
+    // The actual mirroring happens in the background after the task is submitted.
+    setForceShowTaskForm(true)
   };
 
   const handleDeleteSandbox = async (sandboxRepoName: string) => {
@@ -712,52 +745,55 @@ export default function SandboxHome({
   };
 
   const saveTaskForm = async () => {
-    const activeSandbox = taskFormSandbox || selectedRepoMirror
-    if (!githubUsername || !activeSandbox) return
+    if (!githubUsername || !selectedOwnerRepo) return
     if (!taskForm.taskTitle.trim() || !taskForm.taskDescription.trim() || !taskForm.frontendStack || !taskForm.backendStack) {
       alert('Please fill out all required task configuration fields (Title, Description, and Required Skills) before saving.')
       return
     }
     setSavingTask(true)
     try {
-      // Step 1: Save task metadata to the sandbox repo record (existing behaviour � must not break)
-      const response = await fetch('/api/owner/task', {
+      // Single unified publish call — creates task (status='processing') and
+      // fires the mirror pipeline in the background. No need for a separate
+      // /api/owner/task save call since we don't have a sandbox repo yet.
+      const response = await fetch('/api/owner/task/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...taskForm,
-          sandboxRepo: activeSandbox.sandboxRepo,
+          title: taskForm.taskTitle.trim(),
+          description: taskForm.taskDescription.trim(),
+          budget: Number(budget) || 500,
+          deadline: deadline || null,
+          skillTags: selectedSkills,
+          sourceRepo: selectedOwnerRepo.full_name,
           username: githubUsername,
-        })
+          allowedPaths: taskForm.allowedPaths,
+          restrictedPaths: taskForm.restrictedPaths,
+          acceptanceCriteria: taskForm.acceptanceCriteria,
+          frontendStack: taskForm.frontendStack,
+          backendStack: taskForm.backendStack,
+          selectedScope,
+        }),
       })
+
       const data = await response.json()
       if (!response.ok) {
-        alert(data.error || 'Failed to save task')
+        alert(data.error || 'Failed to publish task')
         return
       }
 
-      // Step 2: Publish the task to the main tasks feed so it appears in /tasks
-      try {
-        await fetch('/api/owner/task/publish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: taskForm.taskTitle.trim(),
-            description: taskForm.taskDescription.trim(),
-            budget: Number(budget) || 500,
-            deadline: deadline || null,
-            skillTags: selectedSkills,
-          }),
-        })
-        // Note: we don't block or error on publish failure � the sandbox save already succeeded
-      } catch {
-        // Silently ignore � sandbox metadata is already saved
-      }
-
       setTaskFormOpen(false)
-      fetchMirrors() // refresh mirrors list to show updated task metadata
-      // Show success panel � do NOT auto-navigate; user clicks "View task" to go there
+      // Show success panel
       setTaskSubmitted(taskForm.taskTitle.trim())
+
+      // Auto-logout of GitHub when the task has been successfully posted
+      try {
+        sessionStorage.removeItem('forke_owner_github_auth')
+      } catch (e) {}
+      setNeedsGithubAuth(true)
+      hasJustLoggedInRef.current = false
+      fetch('/api/auth/logout', { method: 'POST' }).catch((e) => {
+        console.error('Failed to log out from server:', e)
+      })
     } catch (err: any) {
       alert(`Network error: ${err.message}`)
     } finally {
@@ -1034,9 +1070,7 @@ export default function SandboxHome({
       "app-page-shell relative overflow-hidden flex flex-col w-full",
       embedded ? "min-h-0" : "min-h-screen bg-[var(--color-bg-surface)] theme-ember"
     )}>
-      {!embedded && (
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-      )}
+      {!embedded && <DotPatternBackground />}
       {/* --- Logged In Navbar --- */}
 
 
@@ -1136,192 +1170,213 @@ export default function SandboxHome({
               <div className="lg:col-span-2 space-y-6 text-left">
                 
                 {/* Case 1: Selected repo has NOT been imported yet */}
-                {selectedRepoMirror === null ? (
+                {selectedRepoMirror === null && !forceShowTaskForm ? (
                   <>
                     {/* Repository Selection */}
-                    <div className="space-y-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
-                        <div>
-                          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Repository</h3>
-                          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Choose a repository to start the review</p>
+                    {needsGithubAuth ? (
+                      <div className="space-y-6 app-panel p-6 border border-[var(--color-border)] rounded-xl bg-white/[0.01] text-left">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                          Import a Git repository
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {/* GitHub Button */}
+                          <a
+                            href={`/api/auth/login?role=owner&callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/owner')}`}
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)] bg-[#0a0a0c] hover:bg-white/[0.04] hover:border-white/20 text-[13px] font-semibold text-white transition-all cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+                          >
+                            <svg className="w-4.5 h-4.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                            </svg>
+                            <span>GitHub</span>
+                          </a>
+
+                          {/* GitLab Button */}
+                          <button
+                            type="button"
+                            onClick={() => alert('GitLab integration is coming soon!')}
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#0a0a0c]/50 hover:bg-[#0a0a0c]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
+                          >
+                            <svg className="w-4.5 h-4.5 opacity-55 text-[#fc6d26]" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M23.953 13.07a.485.485 0 00-.175-.54l-9.61-6.98 3.52-10.8a.485.485 0 00-.918-.3L12 10.686 7.23 1.45a.485.485 0 00-.917.3l3.52 10.8-9.61 6.98a.485.485 0 00-.175.54L4.82 22.56a.485.485 0 00.457.34h13.446a.485.485 0 00.457-.34l4.773-9.49z" />
+                            </svg>
+                            <span>GitLab</span>
+                          </button>
+
+                          {/* Bitbucket Button */}
+                          <button
+                            type="button"
+                            onClick={() => alert('Bitbucket integration is coming soon!')}
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#0a0a0c]/50 hover:bg-[#0a0a0c]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
+                          >
+                            <svg className="w-4.5 h-4.5 opacity-55 text-[#0052cc]" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M22.33 3.023a.987.987 0 00-.796-.388H2.467c-.367 0-.702.203-.872.53a.994.994 0 00.038 1.03L5.43 19.82c.162.296.471.48.81.48h11.518c.34 0 .649-.184.81-.48l3.799-15.626a1.002 1.002 0 00-.038-1.171zM15.42 14.93H8.58l-1.39-5.75h9.62l-1.39 5.75z" />
+                            </svg>
+                            <span>Bitbucket</span>
+                          </button>
+
+                          {/* Azure DevOps Button */}
+                          <button
+                            type="button"
+                            onClick={() => alert('Azure DevOps integration is coming soon!')}
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#0a0a0c]/50 hover:bg-[#0a0a0c]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
+                          >
+                            <svg className="w-4.5 h-4.5 opacity-55 text-[#0078d4]" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                            </svg>
+                            <span>Azure DevOps</span>
+                          </button>
                         </div>
-                        
-                        {/* Search & Scope Selector */}
-                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-                          <div className="relative group">
-                            <select
-                              value={selectedScope}
-                              onChange={(e) => setSelectedScope(e.target.value)}
-                              className="bg-[#070709] border border-[var(--color-border)] hover:border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-accent cursor-pointer transition appearance-none pr-8 min-w-[150px]"
-                            >
-                              <option value="personal">Personal Profile</option>
-                              {organizations.map(org => (
-                                <option key={org.id} value={org.login}>
-                                  Org: {org.login}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-                              ?
+                      </div>
+                    ) : (
+                      <>
+                        {/* Repository Selection */}
+                        <div className="space-y-4">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
+                            <div>
+                              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Repository</h3>
+                              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Choose a repository to start the review</p>
+                            </div>
+                            
+                            {/* Search & Scope Selector */}
+                            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                              <div className="relative group">
+                                <select
+                                  value={selectedScope}
+                                  onChange={(e) => setSelectedScope(e.target.value)}
+                                  className="bg-[#070709] border border-[var(--color-border)] hover:border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-accent cursor-pointer transition appearance-none pr-8 min-w-[150px]"
+                                >
+                                  <option value="personal">Personal Profile</option>
+                                  {organizations.map(org => (
+                                    <option key={org.id} value={org.login}>
+                                      Org: {org.login}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                                  ?
+                                </div>
+                              </div>
+
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  placeholder="Search repositories..."
+                                  value={repoSearch}
+                                  onChange={(e) => setRepoSearch(e.target.value)}
+                                  className="bg-white/[0.02] border border-[var(--color-border)] focus:border-accent rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-white/20 focus:outline-none transition min-w-[180px]"
+                                />
+                                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500">
+                                  <Search className="w-3.5 h-3.5" />
+                                </div>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="Search repositories..."
-                              value={repoSearch}
-                              onChange={(e) => setRepoSearch(e.target.value)}
-                              className="bg-white/[0.02] border border-[var(--color-border)] focus:border-accent rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-white/20 focus:outline-none transition min-w-[180px]"
-                            />
-                            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                              <Search className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                          {/* Repository Cards Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[290px] overflow-y-auto pr-2 custom-scrollbar">
+                            {loadingRepos ? (
+                              <div className="col-span-full flex flex-col items-center justify-center py-12 gap-2 bg-white/[0.01] border border-[var(--color-border)] rounded-xl">
+                                <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-[11px] text-[var(--color-text-muted)] font-medium">Scanning repositories...</span>
+                              </div>
+                            ) : filteredRepos.length === 0 ? (
+                              <div className="col-span-full py-12 text-center text-[var(--color-text-muted)] text-xs border border-dashed border-[var(--color-border)] rounded-xl bg-white/[0.01]">
+                                No matching repositories found.
+                              </div>
+                            ) : (
+                              filteredRepos.map(repo => {
+                                const isSelected = selectedOwnerRepo?.id === repo.id
+                                return (
+                                  <button
+                                    key={repo.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedOwnerRepo(repo);
+                                      // Maintain clean form fields on switch
+                                      setTaskForm(prev => ({
+                                        ...prev,
+                                        taskTitle: prev.taskTitle || '',
+                                        taskDescription: prev.taskDescription || '',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      "w-full text-left p-4 rounded-xl border flex flex-col gap-2 relative overflow-hidden transition-all duration-300 cursor-pointer",
+                                      isSelected
+                                        ? "bg-accent/[0.04] border-accent shadow-[0_0_15px_rgba(245,158,11,0.08)]"
+                                        : "bg-white/[0.02] border-[var(--color-border)] hover:border-white/20"
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between gap-3 w-full">
+                                      <span className="font-bold text-[13px] text-white truncate max-w-[70%]">
+                                        {repo.name}
+                                      </span>
+                                      <span className={cn(
+                                        "text-[9px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0",
+                                        repo.private
+                                          ? "border-accent/20 bg-accent/5 text-accent"
+                                          : "border-zinc-800 bg-zinc-900 text-zinc-400"
+                                      )}>
+                                        {repo.private ? 'Private' : 'Public'}
+                                      </span>
+                                    </div>
+                                    
+                                    {repo.description && (
+                                      <p className="text-[var(--color-text-muted)] text-xs line-clamp-2 leading-relaxed">
+                                        {repo.description}
+                                      </p>
+                                    )}
 
-                      {/* Repository Cards Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[290px] overflow-y-auto pr-2 custom-scrollbar">
-                        {loadingRepos ? (
-                          <div className="col-span-full flex flex-col items-center justify-center py-12 gap-2 bg-white/[0.01] border border-[var(--color-border)] rounded-xl">
-                            <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-[11px] text-[var(--color-text-muted)] font-medium">Scanning repositories...</span>
-                          </div>
-                        ) : filteredRepos.length === 0 ? (
-                          <div className="col-span-full py-12 text-center text-[var(--color-text-muted)] text-xs border border-dashed border-[var(--color-border)] rounded-xl bg-white/[0.01]">
-                            No matching repositories found.
-                          </div>
-                        ) : (
-                          filteredRepos.map(repo => {
-                            const isSelected = selectedOwnerRepo?.id === repo.id
-                            return (
-                              <button
-                                key={repo.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedOwnerRepo(repo);
-                                  // Maintain clean form fields on switch
-                                  setTaskForm(prev => ({
-                                    ...prev,
-                                    taskTitle: prev.taskTitle || '',
-                                    taskDescription: prev.taskDescription || '',
-                                  }));
-                                }}
-                                className={cn(
-                                  "w-full text-left p-4 rounded-xl border flex flex-col gap-2 relative overflow-hidden transition-all duration-300 cursor-pointer",
-                                  isSelected
-                                    ? "bg-accent/[0.04] border-accent shadow-[0_0_15px_rgba(245,158,11,0.08)]"
-                                    : "bg-white/[0.02] border-[var(--color-border)] hover:border-white/20"
-                                )}
-                              >
-                                <div className="flex items-center justify-between gap-3 w-full">
-                                  <span className="font-bold text-[13px] text-white truncate max-w-[70%]">
-                                    {repo.name}
-                                  </span>
-                                  <span className={cn(
-                                    "text-[9px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0",
-                                    repo.private
-                                      ? "border-accent/20 bg-accent/5 text-accent"
-                                      : "border-zinc-800 bg-zinc-900 text-zinc-400"
-                                  )}>
-                                    {repo.private ? 'Private' : 'Public'}
-                                  </span>
-                                </div>
-                                
-                                {repo.description && (
-                                  <p className="text-[var(--color-text-muted)] text-xs line-clamp-2 leading-relaxed">
-                                    {repo.description}
-                                  </p>
-                                )}
-
-                                <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] border-t border-white/[0.04] pt-2 mt-1">
-                                  <span className="font-mono text-white/30 truncate max-w-[65%]">{repo.full_name}</span>
-                                  {repo.language && (
-                                    <span className="flex items-center gap-1.5 text-[var(--color-text-muted)] shrink-0">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm shadow-accent/50"></span>
-                                      {repo.language}
-                                    </span>
-                                  )}
-                                </div>
-                              </button>
-                            )
-                          })
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Import Callout & Action Button */}
-                    <div className="pt-6 border-t border-[var(--color-border)] space-y-4">
-                      {selectedOwnerRepo ? (
-                        <div className="p-4 rounded-xl border border-white/[0.05] bg-white/[0.01] text-xs text-[var(--color-text-muted)] leading-relaxed">
-                          Repository <span className="text-white font-semibold">{selectedOwnerRepo.name}</span> will be cloned and imported into the private Forke sandbox environment. Once imported, you will be able to configure tasks, requirements, and review guidelines.
-                        </div>
-                      ) : (
-                        <div className="p-4 rounded-xl border border-dashed border-[var(--color-border)] bg-white/[0.005] text-center text-xs text-[var(--color-text-muted)]">
-                          Select a repository from the list above to begin the import process.
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={executeMirrorPipeline}
-                        disabled={mirrorStatus === 'running' || !selectedOwnerRepo}
-                        className={cn(
-                          "w-full md:w-auto min-w-[220px] h-10 text-[13px] font-medium ui-btn-primary rounded-lg cursor-pointer transition-colors flex items-center gap-2 justify-center",
-                          (mirrorStatus === 'running' || !selectedOwnerRepo) && "opacity-60 cursor-not-allowed"
-                        )}
-                      >
-                        {mirrorStatus === 'running' ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                            Ingesting...
-                          </>
-                        ) : (
-                          'Import Repository & Start Review'
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Logging output */}
-                    {mirrorStatus !== 'idle' && (
-                      <div className="p-4 rounded-xl border border-[var(--color-border)] bg-white/[0.01] space-y-3 mt-4 animate-in fade-in duration-300">
-                        <div className="flex items-center justify-between text-xs font-medium">
-                          <span className="text-[var(--color-text-muted)] uppercase tracking-wider">Verification Pipeline Status</span>
-                          <span className={cn(
-                            "font-semibold",
-                            mirrorStatus === 'success' ? 'text-emerald-400' :
-                            mirrorStatus === 'failed' ? 'text-red-400' : 'text-amber-500'
-                          )}>
-                            {mirrorStatus === 'success' ? 'Import Complete' :
-                             mirrorStatus === 'failed' ? 'Pipeline Failed' : `Processing... ${mirrorProgress}%`}
-                          </span>
-                        </div>
-                        
-                        <div className="h-1.5 bg-white/[0.03] border border-white/[0.05] rounded-full overflow-hidden">
-                          <div
-                            className={cn(
-                              "h-full transition-all duration-500 rounded-full",
-                              mirrorStatus === 'success' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' :
-                              mirrorStatus === 'failed' ? 'bg-red-500' : 'bg-amber-500'
+                                    <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] border-t border-white/[0.04] pt-2 mt-1">
+                                      <span className="font-mono text-white/30 truncate max-w-[65%]">{repo.full_name}</span>
+                                      {repo.language && (
+                                        <span className="flex items-center gap-1.5 text-[var(--color-text-muted)] shrink-0">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm shadow-accent/50"></span>
+                                          {repo.language}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                )
+                              })
                             )}
-                            style={{ width: `${mirrorProgress}%` }}
-                          />
+                          </div>
                         </div>
 
-                        <details className="group">
-                          <summary className="text-[11px] text-[var(--color-text-muted)] hover:text-white cursor-pointer select-none font-medium flex items-center gap-1 mt-2">
-                            <span>View Pipeline Logs</span>
-                            <span className="transition-transform group-open:rotate-180">▼</span>
-                          </summary>
-                          <div ref={terminalRef} className="w-full bg-[#040406]/98 rounded-xl p-4 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-[11px] text-zinc-300 leading-normal max-h-[165px] overflow-y-auto mt-2 custom-scrollbar">
-                            {mirrorLogs.map((log, idx) => (
-                              <div key={idx}>{formatTerminalLog(log)}</div>
-                            ))}
-                          </div>
-                        </details>
-                      </div>
+                        {/* Import Callout & Action Button */}
+                        <div className="pt-6 border-t border-[var(--color-border)] space-y-4">
+                          {selectedOwnerRepo ? (
+                            <div className="p-4 rounded-xl border border-white/[0.05] bg-white/[0.01] text-xs text-[var(--color-text-muted)] leading-relaxed">
+                              Repository <span className="text-white font-semibold">{selectedOwnerRepo.name}</span> will be cloned and imported into the private Forke sandbox environment. Once imported, you will be able to configure tasks, requirements, and review guidelines.
+                            </div>
+                          ) : (
+                            <div className="p-4 rounded-xl border border-dashed border-[var(--color-border)] bg-white/[0.005] text-center text-xs text-[var(--color-text-muted)]">
+                              Select a repository from the list above to begin the import process.
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={executeMirrorPipeline}
+                            disabled={mirrorStatus === 'running' || !selectedOwnerRepo}
+                            className={cn(
+                              "w-full md:w-auto min-w-[220px] h-10 text-[13px] font-medium ui-btn-primary rounded-lg cursor-pointer transition-colors flex items-center gap-2 justify-center",
+                              (mirrorStatus === 'running' || !selectedOwnerRepo) && "opacity-60 cursor-not-allowed"
+                            )}
+                          >
+                            {mirrorStatus === 'running' ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                Ingesting...
+                              </>
+                            ) : (
+                              'Add Task Details'
+                            )}
+                          </button>
+                        </div>
+                      </>
                     )}
+
+                    {/* Import progress removed — mirroring now happens after task submission */}
                   </>
                 ) : (
                   <>
@@ -1329,7 +1384,9 @@ export default function SandboxHome({
                     <div className="p-4 rounded-xl border border-accent bg-accent/[0.03] space-y-3 relative overflow-hidden">
                       <div className="flex items-center justify-between gap-3 w-full">
                         <div>
-                          <div className="text-[10px] font-black uppercase tracking-wider text-accent">Selected Repository (Imported)</div>
+                          <div className="text-[10px] font-black uppercase tracking-wider text-accent">
+                            Selected Repository
+                          </div>
                           <h4 className="font-bold text-[14px] text-white mt-1">
                             {selectedOwnerRepo?.name}
                           </h4>
@@ -1338,6 +1395,8 @@ export default function SandboxHome({
                           type="button"
                           onClick={() => {
                             setSelectedOwnerRepo(null);
+                            setForceShowTaskForm(false);
+                            setHasFetchedMirrorAfterClone(false);
                             setTaskSubmitted(null);
                             setCheckedPaths(new Set());
                             treeAllFilesRef.current = [];
@@ -1351,6 +1410,13 @@ export default function SandboxHome({
                               acceptanceCriteria: '',
                             });
                             setSelectedSkills([]);
+                            
+                            // Clear GitHub auth state to force re-login on switch repo
+                            setNeedsGithubAuth(true);
+                            hasJustLoggedInRef.current = false;
+                            fetch('/api/auth/logout', { method: 'POST' }).catch((e) => {
+                              console.error('Failed to log out from server:', e)
+                            });
                           }}
                           className="px-2.5 py-1 text-[11px] font-medium border border-white/10 hover:border-white/20 text-[var(--color-text-muted)] hover:text-white rounded-lg transition-colors cursor-pointer"
                         >
@@ -1398,15 +1464,15 @@ export default function SandboxHome({
                           <div className="space-y-1">
                             <p className="text-base font-semibold text-white">Task posted</p>
                             <p className="text-[13px] text-[var(--color-text-muted)] max-w-xs">
-                              "{taskSubmitted}" is now live and visible to developers on the platform.
+                            "{taskSubmitted}" has been submitted and is being set up in the background. It will appear to developers once the repository is fully imported.
                             </p>
                           </div>
                           <button
                             type="button"
-                            onClick={() => router.push(`/tasks?q=${encodeURIComponent(taskSubmitted)}`)}
+                            onClick={() => router.push('/tasks')}
                             className="h-9 px-5 rounded-lg text-[13px] font-medium ui-btn-primary transition-colors cursor-pointer"
                           >
-                            View task
+                            View all tasks
                           </button>
                         </div>
                       ) : (
@@ -1702,7 +1768,7 @@ export default function SandboxHome({
               {/* Right Column (lg:col-span-1) - Preview & Tip cards */}
               <div className="lg:col-span-1 text-left">
                 <div className="sticky top-20 space-y-4">
-                  {selectedRepoMirror === null ? (
+                  {selectedRepoMirror === null && !forceShowTaskForm ? (
                     /* Step 1: Repository Preview during import */
                     <div>
                       <h3 className="text-xs font-medium text-[var(--color-text-muted)] pl-0.5 mb-1.5">Repository Preview</h3>
@@ -1819,8 +1885,9 @@ export default function SandboxHome({
             </div>
 
             {/* Active Sandbox Mirrors Grid section */}
-            <div className="space-y-5 border-t border-[var(--color-border)] pt-8">
-              <div className="flex items-center justify-between">
+            {!embedded && (
+              <div className="space-y-5 border-t border-[var(--color-border)] pt-8">
+                <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
                     Active Sandbox Mirrors
@@ -2026,6 +2093,7 @@ export default function SandboxHome({
                 </div>
               )}
             </div>
+            )}
 
             {/* ===== Owner PR Review Dashboard ===== */}
             {selectedSandboxForPRs && (
@@ -2860,7 +2928,28 @@ export default function SandboxHome({
             {/* Report Content */}
             <div className="flex-1 w-full overflow-y-auto custom-scrollbar select-text text-left mb-4 pr-1.5 space-y-6">
               {/* Overview grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {/* Score */}
+                <div className="app-panel p-4">
+                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Baseline Score</span>
+                  {(() => {
+                    const ts = selectedBaselineReport.results?.testScoreResult
+                    if (!ts) {
+                      return <span className="text-zinc-500 font-mono font-bold text-sm block">N/A</span>
+                    }
+                    const score = ts.testScore
+                    return (
+                      <>
+                        <span className={`font-black text-sm block ${score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                          {score} / 100
+                        </span>
+                        <span className="text-zinc-500 font-medium text-[10px] block">
+                          execution base quality
+                        </span>
+                      </>
+                    )
+                  })()}
+                </div>
                 <div className="app-panel p-4">
                   <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Tech Stack</span>
                   <div className="space-y-1">
@@ -3096,16 +3185,113 @@ export default function SandboxHome({
                         )
                       })()
                     ) : (
-                      <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-2.5 h-full">
-                        <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                        </svg>
-                        <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Category Selected</h4>
-                        <p className="text-zinc-600 text-[10px] max-w-xs leading-relaxed font-semibold">
-                          Select one of the 12 deterministic test categories on the left to review the raw system outputs and issues found.
-                        </p>
-                      </div>
-                    )}
+                      (() => {
+                        const ts = selectedBaselineReport.results?.testScoreResult
+                        if (!ts) {
+                          return (
+                            <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-2.5 h-full">
+                              <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                              </svg>
+                              <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Score Available</h4>
+                              <p className="text-zinc-600 text-[10px] max-w-xs leading-relaxed font-semibold">
+                                Select a category on the left to view logs, or generate a new baseline snapshot to compute starting quality scores.
+                              </p>
+                            </div>
+                          )
+                        }
+
+                        const { testScore, rawScore, buildFailed, categories } = ts
+                        const possibleWeight = (categories as any[]).reduce((sum, c) => sum + (c.weight || 0), 0)
+
+                        const categoryDeductions = (categories as any[])
+                          .filter(c => c.quality < 1)
+                          .map(c => {
+                            const rawLoss = possibleWeight > 0 ? (c.weight * (1 - c.quality) / possibleWeight) * 100 : 0
+                            const count = typeof c.issuesCount === 'number' ? c.issuesCount : 0
+                            return {
+                              name: String(c.name).replace(/_/g, ' '),
+                              detail: `Status is ${c.status.toUpperCase()} (${count} issue${count === 1 ? '' : 's'} detected)`,
+                              rawLoss: Math.round(rawLoss * 10) / 10,
+                            }
+                          })
+
+                        return (
+                          <div className="flex flex-col gap-3 h-full overflow-y-auto pr-1.5 custom-scrollbar text-left">
+                            <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-1">
+                              <span className="font-black uppercase tracking-widest text-zinc-200 text-xs">
+                                Baseline Scorecard Breakdown
+                              </span>
+                              <div className="text-right">
+                                <span className="text-[10px] text-zinc-400 font-semibold">Score: </span>
+                                <span className="text-sm font-black text-amber-400">{testScore}</span>
+                                <span className="text-[10px] text-zinc-500"> / 100</span>
+                              </div>
+                            </div>
+
+                            {buildFailed && (
+                              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-[10px]">
+                                <span className="text-red-400 leading-none">🔴</span>
+                                <div>
+                                  <p className="font-bold text-red-400">Baseline Build Failure</p>
+                                  <p className="text-red-400/70 mt-0.5">The repository code does not compile in its baseline state.</p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="rounded-xl border border-zinc-900 bg-white/[0.01] overflow-hidden text-[10px]">
+                              <table className="w-full">
+                                <thead>
+                                  <tr className="border-b border-zinc-900 bg-white/[0.02]">
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider">Category</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-16">Status</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-12">Weight</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-12">Quality</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(categories as any[]).map((c: any, i: number) => {
+                                    const statusColor = c.status === 'pass'
+                                      ? 'text-emerald-400'
+                                      : c.status === 'fail'
+                                      ? 'text-red-400'
+                                      : 'text-amber-400'
+                                    return (
+                                      <tr key={i} className="border-b border-zinc-900/60 last:border-0 hover:bg-white/[0.01]">
+                                        <td className="px-3 py-2 font-bold text-zinc-300 capitalize">{c.name.replace(/_/g, ' ')}</td>
+                                        <td className={`px-3 py-2 font-mono ${statusColor}`}>{c.status.toUpperCase()}</td>
+                                        <td className="px-3 py-2 text-zinc-400 font-mono">{c.weight}</td>
+                                        <td className="px-3 py-2 text-zinc-400 font-mono">{Math.round(c.quality * 100)}%</td>
+                                      </tr>
+                                    )
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {categoryDeductions.length > 0 && (
+                              <div className="space-y-2 mt-2">
+                                <span className="font-bold text-[9px] text-zinc-500 uppercase tracking-widest block">
+                                  Deduction Details
+                                </span>
+                                <div className="space-y-1.5">
+                                  {categoryDeductions.map((d, i) => (
+                                    <div key={i} className="flex items-start justify-between p-2 rounded-lg border border-zinc-900 bg-white/[0.01]">
+                                      <div className="text-[10px]">
+                                        <p className="font-bold text-zinc-300 capitalize">{d.name}</p>
+                                        <p className="text-[9px] text-zinc-500 font-medium mt-0.5">{d.detail}</p>
+                                      </div>
+                                      <div className="text-right text-[10px] shrink-0 font-bold text-red-400/90 ml-3">
+                                        -{d.rawLoss} pts (raw)
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )})()
+                      )}
                   </div>
                 </div>
               )}
