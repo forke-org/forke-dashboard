@@ -500,10 +500,11 @@ function ScorecardBreakdown({ results, requirementMatch }: { results: any; requi
     .map(c => {
       const rawLoss = possibleWeight > 0 ? (c.weight * (1 - c.quality) / possibleWeight) * 100 : 0
       const finalLoss = rawLoss * 0.7
+      const count = typeof c.issuesCount === 'number' ? c.issuesCount : 0
       return {
         type: 'test_category',
         name: String(c.name).replace(/_/g, ' '),
-        detail: `Status is ${c.status.toUpperCase()} (${c.issuesCount} issue${c.issuesCount === 1 ? '' : 's'} detected)`,
+        detail: `Status is ${c.status.toUpperCase()} (${count} issue${count === 1 ? '' : 's'} detected)`,
         rawLoss: Math.round(rawLoss * 10) / 10,
         finalLoss: Math.round(finalLoss * 10) / 10,
       }
