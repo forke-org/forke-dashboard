@@ -485,11 +485,55 @@ function ActionButtons({ review, prUrl }: {
 }
 
 // ─── Scorecard Breakdown ──────────────────────────────────────────────────────
-function ScorecardBreakdown({ results }: { results: any }) {
+function ScorecardBreakdown({ results, requirementMatch }: { results: any; requirementMatch: number }) {
   const ts = results?.testScoreResult
   if (!ts) return null
 
   const { testScore, rawScore, buildFailed, categories, penalties } = ts
+
+  // Calculate sum of weights for ran categories to determine exact raw loss contribution
+  const possibleWeight = (categories as any[]).reduce((sum, c) => sum + (c.weight || 0), 0)
+
+  // Compute detailed deductions list
+  const categoryDeductions = (categories as any[])
+    .filter(c => c.quality < 1)
+    .map(c => {
+      const rawLoss = possibleWeight > 0 ? (c.weight * (1 - c.quality) / possibleWeight) * 100 : 0
+      const finalLoss = rawLoss * 0.7
+      return {
+        type: 'test_category',
+        name: String(c.name).replace(/_/g, ' '),
+        detail: `Status is ${c.status.toUpperCase()} (${c.issuesCount} issue${c.issuesCount === 1 ? '' : 's'} detected)`,
+        rawLoss: Math.round(rawLoss * 10) / 10,
+        finalLoss: Math.round(finalLoss * 10) / 10,
+      }
+    })
+
+  const penaltyDeductions = (penalties as any[] || []).map((p: any) => {
+    const rawLoss = p.points
+    const finalLoss = p.points * 0.7
+    return {
+      type: 'penalty',
+      name: p.reason,
+      detail: 'Deterministic policy penalty',
+      rawLoss: Math.round(rawLoss * 10) / 10,
+      finalLoss: Math.round(finalLoss * 10) / 10,
+    }
+  })
+
+  const reqDeductions = []
+  if (requirementMatch < 1.0) {
+    const finalLoss = (1 - requirementMatch) * 30
+    reqDeductions.push({
+      type: 'requirement',
+      name: 'Requirement Fulfillment',
+      detail: `AI assessed requirement completion at ${Math.round(requirementMatch * 100)}%`,
+      rawLoss: 0,
+      finalLoss: Math.round(finalLoss * 10) / 10,
+    })
+  }
+
+  const allDeductions = [...categoryDeductions, ...penaltyDeductions, ...reqDeductions]
 
   // Build failure alert
   const buildAlert = buildFailed ? (
@@ -503,7 +547,7 @@ function ScorecardBreakdown({ results }: { results: any }) {
   ) : null
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Execution Score Breakdown</p>
         <div className="text-right">
@@ -574,17 +618,43 @@ function ScorecardBreakdown({ results }: { results: any }) {
         </table>
       </div>
 
-      {penalties && (penalties as any[]).length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Penalties</p>
-          {(penalties as any[]).map((p: any, i: number) => (
-            <div key={i} className="flex items-start gap-2 rounded-lg border border-red-500/15 bg-red-500/5 px-3 py-2">
-              <span className="text-red-400 font-bold text-[11px] shrink-0">−{p.points} pts</span>
-              <span className="text-[11px] text-red-400/80">{p.reason}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Score Deductions Audit Trail */}
+      <div className="space-y-2">
+        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Score Deductions (Final Score Impact)</p>
+        {allDeductions.length > 0 ? (
+          <div className="space-y-1.5">
+            {allDeductions.map((d, idx) => (
+              <div key={idx} className="flex items-start justify-between gap-4 p-3 rounded-lg border border-red-500/10 bg-red-500/[0.015] hover:border-red-500/15 transition-all">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-extrabold uppercase px-1 py-0.5 rounded border border-red-500/20 bg-red-500/5 text-red-400 shrink-0">
+                      {d.type.replace('_', ' ')}
+                    </span>
+                    <p className="text-[11px] font-semibold text-white/95 capitalize truncate">{d.name}</p>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">{d.detail}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[12px] font-black text-red-400">−{d.finalLoss} pts</p>
+                  {d.type === 'test_category' && d.rawLoss > 0 && (
+                    <p className="text-[9px] text-zinc-600 mt-0.5">−{d.rawLoss} raw quality pts (scaled ×0.7)</p>
+                  )}
+                  {d.type === 'penalty' && (
+                    <p className="text-[9px] text-zinc-600 mt-0.5">penalty points (scaled ×0.7)</p>
+                  )}
+                  {d.type === 'requirement' && (
+                    <p className="text-[9px] text-zinc-600 mt-0.5">requirement score impact (scaled ×0.3)</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-lg border border-emerald-500/10 bg-emerald-500/[0.01] text-[11px] text-emerald-400/80 italic">
+            No deductions. Perfect score!
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -622,7 +692,7 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
       <MetricsStrip review={review} />
 
       {/* Scorecard breakdown */}
-      <ScorecardBreakdown results={review.results} />
+      <ScorecardBreakdown results={review.results} requirementMatch={review.requirementMatch} />
 
       {/* Test suite cards */}
       {hasResults && <TestSuiteCards results={review.results!} />}
@@ -638,3 +708,4 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
     </div>
   )
 }
+
