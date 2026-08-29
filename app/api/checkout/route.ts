@@ -40,17 +40,22 @@ export async function POST(request: Request) {
     }
 
     const cookieStore = await cookies()
+    const isProd = process.env.NODE_ENV === 'production'
+    const domainOption = isProd ? { domain: '.forke.space' } : {}
+
     cookieStore.set('site_access', 'granted', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'lax',
       path: '/',
+      ...domainOption,
     })
     cookieStore.set('site_access_public', 'true', {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'lax',
       path: '/',
+      ...domainOption,
     })
 
     return NextResponse.json({ success: true })
