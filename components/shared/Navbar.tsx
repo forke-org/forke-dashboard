@@ -11,21 +11,21 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
-import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 import { useSession } from 'next-auth/react'
 
 export default function Navbar() {
-  const router = useRouter()
   const { data: session } = useSession()
   const isLoggedIn = !!session?.user
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [hasSiteAccess, setHasSiteAccess] = useState(false)
   const [waitlistActive, setWaitlistActive] = useState(true)
+
+  const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://www.forke.space'
+  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://dashboard.forke.space'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,14 +55,29 @@ export default function Navbar() {
     }
   }, [])
 
-  const showWaitlisterView = waitlistActive && !hasSiteAccess
+  // Gating evaluation:
+  // 1. Authenticated -> Show "Dashboard"
+  // 2. Not logged in + waitlist enabled + NO checkout pass -> Show "Join the waitlist" -> /waitlist
+  // 3. Not logged in + (waitlist disabled OR has checkout pass) -> Show "Get Started" -> /signin
+  const showJoinWaitlist = !isLoggedIn && waitlistActive && !hasSiteAccess
 
   const navLinks = [
-    { name: "What's Forke?", href: '/whats-forke' },
-    { name: 'Levels', href: '/levels' },
-    { name: 'Blogs', href: '/blogs' },
-    { name: 'Contact Us', href: '/contact' },
+    { name: "What's Forke?", href: `${marketingUrl}/whats-forke` },
+    { name: 'Levels', href: `${marketingUrl}/levels` },
+    { name: 'Blogs', href: `${marketingUrl}/blogs` },
+    { name: 'Contact Us', href: `${marketingUrl}/contact` },
   ]
+
+  const handleCtaClick = () => {
+    setIsMobileMenuOpen(false)
+    if (isLoggedIn) {
+      window.location.href = `${dashboardUrl}/dashboard`
+    } else if (showJoinWaitlist) {
+      window.location.href = `${marketingUrl}/waitlist`
+    } else {
+      window.location.href = `${marketingUrl}/signin`
+    }
+  }
 
   return (
     <nav className="fixed left-0 right-0 top-6 z-50 px-4 transition-all duration-300">
@@ -74,9 +89,10 @@ export default function Navbar() {
              : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
           isMobileMenuOpen ? "rounded-[28px]" : "rounded-[28px] lg:rounded-full"
         )}>
-          {/* Main header row (always visible) */}
+          {/* Main header row */}
           <div className="flex justify-between items-center h-16 sm:h-[4.25rem] px-4 sm:px-7">
-            <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
+            {/* Always redirect to main www.forke.space on Logo Click */}
+            <a href={marketingUrl} className="flex items-center gap-2 group shrink-0 relative pt-2 cursor-pointer">
               <div className="absolute -top-[20px] sm:-top-[26px] -left-3 sm:-left-4 w-[120px] sm:w-[150px] h-[72px] sm:h-[92px] z-20 pointer-events-none">
                 <Image
                   src="/forke-assets/nav_peeking_forky.png"
@@ -85,58 +101,44 @@ export default function Navbar() {
                   className="object-contain"
                 />
               </div>
-              <div className="w-[100px] sm:w-[130px] h-[40px] " /> {/* Spacer for the absolute mascot */}
+              <div className="w-[100px] sm:w-[130px] h-[40px]" /> {/* Spacer for the absolute mascot */}
               <span className="text-2xl sm:text-[1.75rem] font-semibold tracking-[-0.04em] text-white -ml-4 sm:-ml-6 relative z-10">
                 forke<span className="text-accent">*</span>
               </span>
-            </Link>
+            </a>
 
             {/* Center: Navigation Links */}
             <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
               {navLinks.map((link) => (
-                <Link
+                <a
                   key={link.name}
                   href={link.href}
-                  className="group/link font-mono text-[12.5px] lowercase text-white/55 hover:text-white transition-colors"
+                  className="group/link font-mono text-[12.5px] lowercase text-white/55 hover:text-white transition-colors cursor-pointer"
                 >
                   <span className="text-accent/0 group-hover/link:text-accent/80 transition-colors">/</span>{link.name.replace(/[?'’]/g, '').replace(/\s+/g, '-').toLowerCase()}
-                </Link>
+                </a>
               ))}
             </div>
             
             {/* Right: CTA Section */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-              {showWaitlisterView ? (
-                <Button 
-                  variant="primary" 
-                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors"
-                  onClick={() => router.push('/waitlist')}
-                >
-                  Join the waitlist
-                </Button>
-              ) : isLoggedIn ? (
-                <Button 
-                  variant="primary" 
-                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                  onClick={() => router.push('/dashboard')}
-                >
-                  Dashboard
-                </Button>
-              ) : (
-                <Button 
-                  variant="primary" 
-                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                  onClick={() => router.push('/signin')}
-                >
-                  Get Started
-                </Button>
-              )}
+              <Button 
+                variant="primary" 
+                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors cursor-pointer"
+                onClick={handleCtaClick}
+              >
+                {isLoggedIn 
+                  ? 'Dashboard' 
+                  : showJoinWaitlist 
+                    ? 'Join the waitlist' 
+                    : 'Get Started'}
+              </Button>
 
               {/* Mobile Menu Button */}
               <div className="lg:hidden flex items-center">
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="relative w-10 h-10 flex flex-col items-center justify-center gap-[5px] rounded-lg hover:bg-white/5 transition-colors"
+                  className="relative w-10 h-10 flex flex-col items-center justify-center gap-[5px] rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
                   aria-label="Menu"
                 >
                   <span
@@ -153,7 +155,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile menu expanded content (Design 5: Capsule Expand) */}
+          {/* Mobile menu expanded content */}
           <div className={cn(
             "lg:hidden grid transition-all duration-300",
             isMobileMenuOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
@@ -161,41 +163,27 @@ export default function Navbar() {
             <div className="overflow-hidden">
               <div className="px-5 pb-5 pt-2 flex flex-col gap-2">
                 {navLinks.map((link) => (
-                  <Link
+                  <a
                     key={link.name}
                     href={link.href}
-                    className="block rounded-xl px-3 py-2.5 text-[15px] text-white/70 hover:bg-white/[0.05] hover:text-white transition-colors"
+                    className="block rounded-xl px-3 py-2.5 text-[15px] text-white/70 hover:bg-white/[0.05] hover:text-white transition-colors cursor-pointer"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.name}
-                  </Link>
+                  </a>
                 ))}
                 <div className="px-1 pt-2">
-                  {showWaitlisterView ? (
-                    <Button 
-                      variant="primary" 
-                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors"
-                      onClick={() => { setIsMobileMenuOpen(false); router.push('/waitlist'); }}
-                    >
-                      Join the waitlist
-                    </Button>
-                  ) : isLoggedIn ? (
-                    <Button 
-                      variant="primary" 
-                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
-                      onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}
-                    >
-                      Dashboard
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="primary" 
-                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
-                      onClick={() => { setIsMobileMenuOpen(false); router.push('/signin'); }}
-                    >
-                      Get Started
-                    </Button>
-                  )}
+                  <Button 
+                    variant="primary" 
+                    className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors cursor-pointer"
+                    onClick={handleCtaClick}
+                  >
+                    {isLoggedIn 
+                      ? 'Dashboard' 
+                      : showJoinWaitlist 
+                        ? 'Join the waitlist' 
+                        : 'Get Started'}
+                  </Button>
                 </div>
               </div>
             </div>
