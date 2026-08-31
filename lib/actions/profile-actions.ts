@@ -21,19 +21,9 @@ import { encryptUrl } from '@/lib/utils/encrypt'
 import { revalidatePath } from 'next/cache'
 import { isR2Configured, uploadToR2, deleteFileByUrl } from '@/lib/r2'
 
-// Runtime migration for the profile fields (mirrors ensureTelemetrySettingsColumns).
+// Runtime migration for the profile fields. Columns are already permanently present in PostgreSQL.
 export async function ensureProfileColumns() {
-  try {
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "headline" text;`)
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "location" text;`)
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "college" text;`)
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "website_url" text;`)
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "linkedin_url" text;`)
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "github_avatar_url" text;`)
-    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "google_avatar_url" text;`)
-  } catch (error) {
-    console.error('Failed to add profile columns to users table:', error)
-  }
+  return
 }
 
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']

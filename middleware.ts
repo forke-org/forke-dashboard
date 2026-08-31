@@ -6,6 +6,8 @@ const PROTECTED_ROUTES = [
   '/tasks',
   '/messages',
   '/settings',
+  '/profile',
+  '/developers',
   '/earnings',
   '/submissions',
   '/escrow',

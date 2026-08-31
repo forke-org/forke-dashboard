@@ -198,7 +198,7 @@ export default async function ProfilePage() {
     xpRemaining,
     nextLevel: nextLevelXp ? level + 1 : null,
     currentStreak: dbUser.currentStreak || 0,
-    joinedAt: dbUser.createdAt.toISOString(),
+    joinedAt: dbUser.createdAt ? new Date(dbUser.createdAt).toISOString() : new Date().toISOString(),
     githubUrl: dbUser.githubUrl ?? null,
     linkedinUrl: dbUser.linkedinUrl ?? null,
     websiteUrl: dbUser.websiteUrl ?? null,
