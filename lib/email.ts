@@ -198,6 +198,7 @@ function emailShell(opts: {
   `
 
   const combinedStyle = `
+    .social-icon-img { display: block !important; margin: 0 auto !important; width: 18px !important; height: 18px !important; max-width: 18px !important; max-height: 18px !important; }
     @media only screen and (max-width: 480px) {
       .nrow { direction: ltr !important; }
       .nrow .ncol { display: block !important; width: 100% !important; min-width: 0 !important; }
@@ -608,7 +609,23 @@ function blogRecentRow(r: BlogEmailRecent, imgRight: boolean): string {
 /** Footer-style social row: Instagram · LinkedIn · GitHub bordered icon tiles. */
 function blogSocials(): string {
   const tile = (href: string, imgSrc: string, alt: string) => {
-    return `<td style="padding:0 5px;"><a href="${href}" target="_blank" style="display:inline-block;width:42px;height:42px;border:1px solid ${BRAND.hairline};border-radius:11px;background:rgba(255,255,255,0.02);text-align:center;line-height:42px;text-decoration:none;"><img src="${imgSrc}" width="18" height="18" alt="${alt}" style="vertical-align:middle;border:0;display:inline-block;" /></a></td>`
+    return `<td style="padding:0 5px 0 0;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="38" height="38" style="width:38px;height:38px;border:1px solid ${BRAND.hairline};border-radius:10px;background:rgba(255,255,255,0.02);border-collapse:separate;">
+        <tr>
+          <td align="center" valign="middle" width="38" height="38" style="width:38px;height:38px;padding:0;text-align:center;vertical-align:middle;line-height:0;">
+            <a href="${href}" target="_blank" style="display:block;width:38px;height:38px;text-align:center;text-decoration:none;line-height:38px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" height="100%" style="width:100%;height:100%;">
+                <tr>
+                  <td align="center" valign="middle" style="padding:0;text-align:center;vertical-align:middle;line-height:0;">
+                    <img src="${imgSrc}" width="18" height="18" alt="${alt}" class="social-icon-img" style="display:block;margin:0 auto;border:0;width:18px;height:18px;max-width:18px;max-height:18px;outline:none;text-decoration:none;" />
+                  </td>
+                </tr>
+              </table>
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>`
   }
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
