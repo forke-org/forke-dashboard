@@ -925,8 +925,8 @@ export async function sendBlogPublishedBroadcast(blog: {
     // 4) Send it now — with retries.
     //
     // Resend can return a transient error if /send is called in the same instant
-    // the broadcast is created (it hasn't finished provisioning yet). On Vercel's
-    // serverless timing this race is easy to hit, and a failed send silently
+    // the broadcast is created (it hasn't finished provisioning yet). On high-speed
+    // asynchronous timing this race is easy to hit, and a failed send silently
     // leaves the broadcast stuck in "draft". So we retry a few times with a short
     // backoff before giving up, and we KEEP the real error text so the caller can
     // surface it instead of a generic failure.

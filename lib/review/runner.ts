@@ -262,7 +262,7 @@ export async function runReviewPipeline(
       const combinedLogs = logsToPrint.join('\n')
       const combinedLower = combinedLogs.toLowerCase()
 
-      // Vercel-compatible build assessment
+      // Production build assessment
       const buildCompiledOk =
         category === 'build' && combinedLower.includes('compiled successfully')
 
@@ -271,7 +271,7 @@ export async function runReviewPipeline(
         const exportErrors = (combinedLogs.match(/Export encountered an error/gi) || []).length
         const totalPrerenderIssues = prerenderErrors + exportErrors
 
-        onLog?.('SUCCESS', `Build compilation succeeded (Vercel-compatible).`)
+        onLog?.('SUCCESS', `Build compilation succeeded.`)
         if (totalPrerenderIssues > 0) {
           onLog?.('CHECKING', `${prerenderErrors} page(s) had prerender issues (non-blocking).`)
         }
