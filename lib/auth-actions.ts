@@ -121,6 +121,7 @@ export async function registerDeveloperWithCredentials(formData: any) {
       campaign: attribution.campaign,
       referrer: attribution.referrer,
       landingPage: attribution.landingPage,
+      country: attribution.country,
       signupRole: 'developer' as const,
       sessionId, // joins this conversion back to the originating click in page_visits
     }
