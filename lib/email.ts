@@ -652,21 +652,8 @@ export function buildBlogEmail(data: BlogEmailData): string {
 
   const metaLine = [dateStr, `${minutes} min read`].filter(Boolean).join(' · ')
   const excerptLine = data.excerpt?.trim()
-    ? `<p class="fx fx-3" style="font-family:${BRAND.sans};font-size:15px;line-height:1.7;color:${BRAND.textBody};margin:0 0 12px;">${clampText(data.excerpt, 150)}</p>`
+    ? `<p style="font-family:${BRAND.sans};font-size:15px;line-height:1.7;color:${BRAND.textBody};margin:0 0 12px;">${clampText(data.excerpt, 150)}</p>`
     : ''
-
-  // Staggered fade-in (Apple Mail) for the featured post.
-  const headStyle = `
-    @media (prefers-reduced-motion: no-preference) {
-      .fx { opacity: 0; animation: forkeFade 0.9s ease-out forwards; }
-      .fx-1 { animation-delay: 0.05s; }
-      .fx-2 { animation-delay: 0.35s; }
-      .fx-3 { animation-delay: 0.65s; }
-      .fx-cta { opacity: 0; animation: forkeRise 1s ease-out 1.15s forwards; }
-    }
-    @keyframes forkeFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes forkeRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-  `
 
   // Broadcasts require an unsubscribe link; Resend swaps the token at send time.
   const footerExtra = data.unsubscribe
@@ -681,21 +668,20 @@ export function buildBlogEmail(data: BlogEmailData): string {
     title: data.title,
     preheader: data.excerpt?.trim() || `New on the Forke blog: ${data.title}`,
     footerLabel: 'New Blog Post',
-    headStyle,
     footerExtra,
     fullBleedBody: true,
     recentPosts: data.recentPosts,
     bodyHtml: `
       <!-- Featured (Apple-Newsroom) -->
       <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:34px 44px 24px;text-align:center;">
-        <p class="fx fx-1" style="font-family:${BRAND.mono};font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${BRAND.accent};margin:0 0 16px;">From the Forke blog</p>
-        <h1 class="fx fx-1" style="font-family:${BRAND.sans};font-size:29px;font-weight:600;letter-spacing:-0.035em;line-height:1.2;color:${BRAND.textHigh};margin:0;"><a href="${data.url}" target="_blank" style="color:${BRAND.textHigh};text-decoration:none;">${data.title}</a></h1>
+        <p style="font-family:${BRAND.mono};font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${BRAND.accent};margin:0 0 16px;">From the Forke blog</p>
+        <h1 style="font-family:${BRAND.sans};font-size:29px;font-weight:600;letter-spacing:-0.035em;line-height:1.2;color:${BRAND.textHigh};margin:0;"><a href="${data.url}" target="_blank" style="color:${BRAND.textHigh};text-decoration:none;">${data.title}</a></h1>
       </td></tr>
-      <tr><td style="padding:0 24px;line-height:0;font-size:0;"><div class="fx fx-2">${blogImg(data.coverImage, data.title, data.url, 14)}</div></td></tr>
+      <tr><td style="padding:0 24px;line-height:0;font-size:0;"><div>${blogImg(data.coverImage, data.title, data.url, 14)}</div></td></tr>
       <tr><td style="padding:24px 44px 34px;text-align:center;">
         ${excerptLine}
-        <p class="fx fx-3" style="font-family:${BRAND.mono};font-size:11px;color:${BRAND.textFaint};margin:0 0 22px;">${metaLine}</p>
-        <div class="fx-cta">${buttonPrimary(data.url, 'Read more')}</div>
+        <p style="font-family:${BRAND.mono};font-size:11px;color:${BRAND.textFaint};margin:0 0 22px;">${metaLine}</p>
+        <div>${buttonPrimary(data.url, 'Read more')}</div>
       </td></tr>
       </table>
     `,
