@@ -84,6 +84,30 @@ export const authConfig = {
         return { ...token, ...session }
       }
       return token
+    },
+    async redirect({ url, baseUrl }) {
+      const isProd = process.env.NODE_ENV === 'production'
+      const defaultDashboard = `${baseUrl}/dashboard`
+
+      if (!url || url === '/' || url === baseUrl || url === `${baseUrl}/`) {
+        return defaultDashboard
+      }
+
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`
+      }
+
+      try {
+        const parsed = new URL(url)
+        if (parsed.hostname.endsWith('forke.space') || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+          if (parsed.pathname === '/' && (parsed.hostname === 'forke.space' || parsed.hostname === 'www.forke.space')) {
+            return defaultDashboard
+          }
+          return url
+        }
+      } catch {}
+
+      return defaultDashboard
     }
   }
 } satisfies NextAuthConfig

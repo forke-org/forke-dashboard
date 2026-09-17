@@ -9,11 +9,12 @@
  */
 
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import SignInContent from '@/components/auth/SignInContent'
 import { isWaitlistEnabled } from '@/lib/db/settings'
 import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
+import { auth } from '@/auth'
 
 // While the waitlist lock is on, sign-in is closed — this route 404s. EXCEPT for
 // visitors who unlocked the site via /checkout (site_access cookie), so the bypass
@@ -36,6 +37,11 @@ export const metadata: Metadata = {
 }
 
 export default async function SignInPage() {
+  const session = await auth()
+  if (session?.user) {
+    redirect('/dashboard')
+  }
+
   const hasSiteAccess = (await cookies()).get('site_access')?.value === 'granted'
   if (await isWaitlistEnabled() && !hasSiteAccess) {
     notFound()

@@ -59,7 +59,7 @@ export function r2Client(creds: R2Credentials): AwsClient {
 // Same key sanitization used everywhere below so keys stay consistent across
 // upload/presign/delete paths.
 function sanitizeKey(key: string): string {
-  return key.replace(/[^a-zA-Z0-9.-_/]/g, '_')
+  return key.replace(/[^a-zA-Z0-9._\/-]/g, '_')
 }
 
 // Encode each path segment individually so slashes stay as folder separators.
