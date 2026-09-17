@@ -229,8 +229,8 @@ export default function SettingsForm({
       const res = await scheduleAccountDeletionAction(userId)
       if (res.success) {
         toast('Account scheduled for deletion. Signing out...', 'success')
-        setTimeout(async () => {
-          await signOut({ callbackUrl: '/?toast=deletion_scheduled' })
+        setTimeout(() => {
+          window.location.href = '/api/auth/logout?callbackUrl=' + encodeURIComponent('/?toast=deletion_scheduled')
         }, 1500)
       } else {
         toast(res.error || 'Failed to schedule deletion', 'error')

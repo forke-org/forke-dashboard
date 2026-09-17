@@ -444,7 +444,7 @@ function RegisterContentInner() {
                     </p>
                     <button 
                       type="button" 
-                      onClick={() => signOut({ callbackUrl: '/register?role=owner' })} 
+                      onClick={() => { window.location.href = '/api/auth/logout?callbackUrl=' + encodeURIComponent('/register?role=owner') }} 
                       className="text-[10px] text-red-400 font-bold hover:underline"
                     >
                       Sign out & switch account
@@ -470,7 +470,7 @@ function RegisterContentInner() {
                         type="button" 
                         onClick={async () => {
                           await deleteCurrentUser()
-                          signOut({ callbackUrl: '/register?role=owner' })
+                          window.location.href = '/api/auth/logout?callbackUrl=' + encodeURIComponent('/register?role=owner')
                         }} 
                         className="text-[9px] text-white/20 hover:text-white transition-colors uppercase font-black hover:underline"
                       >

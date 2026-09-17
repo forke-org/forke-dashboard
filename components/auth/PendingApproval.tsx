@@ -70,7 +70,7 @@ export default function PendingApproval({ userEmail }: { userEmail?: string | nu
 
         <div className="pt-8 flex flex-col items-center gap-4">
           <Button 
-            onClick={() => signOutAction()}
+            onClick={() => { window.location.href = '/api/auth/logout' }}
             variant="outline" 
             className="rounded-full px-8 py-3 border-white/10 text-white/40 hover:text-white transition-all uppercase tracking-widest text-[10px] font-black flex items-center gap-2"
           >

@@ -224,7 +224,7 @@ function ErrorContent() {
 
       <button 
         type="button" 
-        onClick={() => signOut({ callbackUrl: '/' })} 
+        onClick={() => { window.location.href = '/api/auth/logout' }} 
         className="w-full h-11 border border-white/5 bg-transparent hover:bg-white/[0.03] text-white/40 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all mt-2 relative z-10 flex items-center justify-center gap-2"
       >
         <ArrowLeft className="w-3 h-3" /> Return Home
@@ -241,7 +241,7 @@ function ErrorContent() {
       </div>
       <h2 className="text-xl font-serif text-white tracking-tight">Message Received</h2>
       <p className="text-xs text-white/50 leading-relaxed max-w-[320px] mx-auto">We have received your enquiry and will get back to you shortly via the provided email.</p>
-      <Button onClick={() => signOut({ callbackUrl: '/' })} className="w-full h-12 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest active:scale-[0.98] transition-all">
+      <Button onClick={() => { window.location.href = '/api/auth/logout' }} className="w-full h-12 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest active:scale-[0.98] transition-all">
         Return to Home
       </Button>
     </div>
@@ -269,7 +269,7 @@ function ErrorContent() {
         {/* Top section: Back to Home button at top left of left panel */}
         <div className="w-full flex justify-start pl-4 md:pl-8 relative z-10">
           <button 
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={() => { window.location.href = '/api/auth/logout' }}
             className={`flex items-center gap-2 text-[10px] text-white/40 ${theme === 'accent' ? 'hover:text-accent' : 'hover:text-red-500'} font-black uppercase tracking-[0.2em] transition-all group`}
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
