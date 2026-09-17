@@ -166,6 +166,23 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Try delegating to high-performance Go review queue on forke-backend
+    const goBackendUrl = process.env.FORKE_BACKEND_URL || 'http://127.0.0.1:8080'
+    try {
+      const goResp = await fetch(`${goBackendUrl}/api/v1/reviews/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, sandboxRepo, prNumber }),
+        signal: AbortSignal.timeout(2000),
+      })
+      if (goResp.ok) {
+        const goData = await goResp.json()
+        return NextResponse.json(goData, { status: 202 })
+      }
+    } catch {
+      // Go backend offline or unreachable; proceed with in-process execution fallback
+    }
+
     // Set commit status to pending immediately on GitHub
     await updateCommitStatus({
       repoFullName: sandboxRepo,
