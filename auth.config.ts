@@ -12,6 +12,10 @@ import type { NextAuthConfig } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import GitHub from 'next-auth/providers/github'
 
+const isProd = process.env.NODE_ENV === 'production'
+const cookiePrefix = isProd ? '__Secure-' : ''
+const cookieDomain = isProd ? '.forke.space' : undefined
+
 export const authConfig = {
   providers: [
     Google({
@@ -32,6 +36,18 @@ export const authConfig = {
   ],
   session: { strategy: 'jwt' },
   trustHost: true,
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: isProd,
+        domain: cookieDomain,
+      },
+    },
+  },
   pages: {
     error: '/auth-error',
   },

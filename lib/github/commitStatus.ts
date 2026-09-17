@@ -70,7 +70,8 @@ function buildStatusPayload(
   repoFullName: string,
   prNumber: number | undefined
 ): CommitStatusPayload {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const isProd = process.env.NODE_ENV === 'production'
+  const baseUrl = process.env.NEXTAUTH_URL || (isProd ? 'https://dashboard.forke.space' : 'http://localhost:3000')
   const reviewUrl = prNumber
     ? `${baseUrl}/reviews/${repoFullName}/pr/${prNumber}`
     : baseUrl

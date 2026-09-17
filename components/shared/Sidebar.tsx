@@ -272,7 +272,11 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
           
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.04]">
             <button 
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => {
+                const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('forke.space')
+                const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || (isProd ? 'https://forke.space' : '/')
+                signOut({ callbackUrl: marketingUrl })
+              }}
               className={cn(
                 "flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-widest text-white/30 hover:text-red-400 transition-colors cursor-pointer",
                 isCollapsed ? "justify-center w-full" : "justify-start"

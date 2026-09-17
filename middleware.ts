@@ -34,7 +34,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://www.forke.space'
+  const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://forke.space'
 
   // If hitting username profile directly on dashboard subdomain -> redirect to www.forke.space/[username]
   const isUsernameRoute = !PROTECTED_ROUTES.some(p => pathname.startsWith(p)) && 
