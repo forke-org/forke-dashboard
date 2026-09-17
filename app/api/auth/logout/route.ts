@@ -58,18 +58,18 @@ function handleLogout(request: Request) {
     'forke_username',
   ]
 
-  const domains = isProd ? ['.forke.space', undefined] : [undefined]
+  const domains: (string | undefined)[] = isProd ? ['.forke.space', undefined] : [undefined]
 
   for (const name of cookieNames) {
     for (const domain of domains) {
-      response.cookies.set(name, '', {
-        path: '/',
-        domain,
-        maxAge: 0,
-        expires: new Date(0),
-        secure: isProd,
-        sameSite: 'lax',
-      })
+      if (name.startsWith('__Host-') && domain) continue
+
+      let cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax`
+      if (domain) cookie += `; Domain=${domain}`
+      if (isProd) cookie += '; Secure'
+      if (name.includes('session-token')) cookie += '; HttpOnly'
+
+      response.headers.append('Set-Cookie', cookie)
     }
   }
 
