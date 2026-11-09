@@ -281,18 +281,18 @@ function emailShell(opts: {
 }
 
 // ----------------------------------------------------------------------------
-// Resend transport helpers (quote-stripping kept identical to before)
+// Forke Mail transport helpers (quote-stripping kept identical to before)
 // ----------------------------------------------------------------------------
 
-function resolveResendApiKey(): string {
-  let apiKey = process.env.RESEND_API_KEY || ''
+function resolveMailApiKey(): string {
+  let apiKey = process.env.FORKE_MAIL_API_KEY || ''
   if (apiKey.startsWith('"') && apiKey.endsWith('"')) apiKey = apiKey.slice(1, -1)
   if (apiKey.startsWith("'") && apiKey.endsWith("'")) apiKey = apiKey.slice(1, -1)
   return apiKey
 }
 
 function resolveFromEmail(): string {
-  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
+  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <hello@forke.space>'
   if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) fromEmail = fromEmail.slice(1, -1)
   if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) fromEmail = fromEmail.slice(1, -1)
   return fromEmail
@@ -306,27 +306,27 @@ function resolveBaseUrl(): string {
 }
 
 /**
- * Posts an email through Resend. Fail-soft: logs and returns false, never throws,
- * so a Resend outage can never block the underlying action.
+ * Posts an email through Forke Mail. Fail-soft: logs and returns false, never throws,
+ * so a Forke Mail outage can never block the underlying action.
  */
 /**
  * Low-level single send. Returns a structured result so callers can tell a
  * transient failure (429 / 5xx — worth retrying) from a permanent one.
  */
-async function sendResendEmailResult(
+async function sendMailResult(
   toEmail: string,
   subject: string,
   html: string,
   label: string,
   fromEmail?: string
 ): Promise<{ ok: boolean; retryable: boolean; retryAfterMs?: number }> {
-  const apiKey = resolveResendApiKey()
+  const apiKey = resolveMailApiKey()
   if (!apiKey) {
-    console.warn(`⚠️ RESEND_API_KEY is not configured. Skipping ${label} email.`)
+    console.warn(`⚠️ FORKE_MAIL_API_KEY is not configured. Skipping ${label} email.`)
     return { ok: false, retryable: false }
   }
   try {
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch(`${MAIL_API}/emails`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -342,7 +342,7 @@ async function sendResendEmailResult(
     })
     if (!res.ok) {
       const errText = await res.text()
-      console.error(`Failed to send ${label} email via Resend (${res.status}):`, errText)
+      console.error(`Failed to send ${label} email via Forke Mail (${res.status}):`, errText)
       // 429 (rate limit) and 5xx are transient — safe to retry.
       const retryable = res.status === 429 || res.status >= 500
       const retryHeader = res.headers.get('retry-after')
@@ -357,14 +357,14 @@ async function sendResendEmailResult(
   }
 }
 
-async function sendResendEmail(
+async function sendMail(
   toEmail: string,
   subject: string,
   html: string,
   label: string,
   fromEmail?: string
 ): Promise<boolean> {
-  const { ok } = await sendResendEmailResult(toEmail, subject, html, label, fromEmail)
+  const { ok } = await sendMailResult(toEmail, subject, html, label, fromEmail)
   return ok
 }
 
@@ -547,7 +547,7 @@ export interface BlogEmailData {
   /** Card max-width override (preview only). Real sends use 600. */
   maxWidth?: number
   /**
-   * When true, append an unsubscribe footer. Resend's Broadcasts API REQUIRES an
+   * When true, append an unsubscribe footer. Forke Mail's Broadcasts API REQUIRES an
    * unsubscribe link and substitutes the {{{RESEND_UNSUBSCRIBE_URL}}} token at
    * send time. Off for the preview page / any 1:1 use.
    */
@@ -655,7 +655,7 @@ export function buildBlogEmail(data: BlogEmailData): string {
     ? `<p style="font-family:${BRAND.sans};font-size:15px;line-height:1.7;color:${BRAND.textBody};margin:0 0 12px;">${clampText(data.excerpt, 150)}</p>`
     : ''
 
-  // Broadcasts require an unsubscribe link; Resend swaps the token at send time.
+  // Broadcasts require an unsubscribe link; Forke Mail swaps the token at send time.
   const footerExtra = data.unsubscribe
     ? `<p style="font-family:${BRAND.sans};font-size:11px;line-height:1.6;color:${BRAND.textFaint};margin:14px 0 0 0;">
          You're receiving this because you subscribed to Forke updates.
@@ -693,27 +693,27 @@ export function buildBlogEmail(data: BlogEmailData): string {
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
-// Resend Broadcasts API — for BULK subscriber sends (e.g. blog announcements).
+// Forke Mail Broadcasts API — for BULK subscriber sends (e.g. blog announcements).
 // Unlike the per-recipient /emails endpoint (metered against the daily quota),
 // a broadcast goes to a whole audience in one operation, shows up under the
 // "Broadcasts" tab, and is the right tool for newsletters. Subscribers live in
-// our Postgres `subscribers` table — NOT in Resend — so before sending we sync
-// the DB emails into a Resend audience as contacts.
+// our Postgres `subscribers` table — NOT in Forke Mail — so before sending we sync
+// the DB emails into a Forke Mail audience as contacts.
 // ----------------------------------------------------------------------------
 
-const RESEND_API = 'https://api.resend.com'
+// All email goes through Forke Mail's Resend-compatible API.
+const MAIL_API = (process.env.EMAIL_API_URL || 'https://mail.forke.space/api/resend').replace(/\/+$/, '')
 
 function resolveAudienceId(): string {
-  let id = process.env.RESEND_AUDIENCE_ID || ''
+  let id = process.env.FORKE_MAIL_AUDIENCE_ID || ''
   if (id.startsWith('"') && id.endsWith('"')) id = id.slice(1, -1)
   if (id.startsWith("'") && id.endsWith("'")) id = id.slice(1, -1)
   id = id.trim()
-  if (id === 'your_resend_audience_id_here') return ''
   return id
 }
 
-async function resendFetch(path: string, init: RequestInit, apiKey: string) {
-  return fetch(`${RESEND_API}${path}`, {
+async function mailApiFetch(path: string, init: RequestInit, apiKey: string) {
+  return fetch(`${MAIL_API}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -725,7 +725,7 @@ async function resendFetch(path: string, init: RequestInit, apiKey: string) {
 
 async function findAudienceByName(name: string, apiKey: string): Promise<string | null> {
   try {
-    const res = await resendFetch('/audiences', { method: 'GET' }, apiKey)
+    const res = await mailApiFetch('/audiences', { method: 'GET' }, apiKey)
     if (!res.ok) return null
     const json = (await res.json()) as { data?: { id: string; name: string }[] }
     const match = json.data?.find((a) => a.name === name)
@@ -735,7 +735,7 @@ async function findAudienceByName(name: string, apiKey: string): Promise<string 
   }
 }
 
-/** Ensure an audience exists; returns its id. Uses RESEND_AUDIENCE_ID if set. */
+/** Ensure an audience exists; returns its id. Uses FORKE_MAIL_AUDIENCE_ID if set. */
 async function ensureAudience(apiKey: string): Promise<string | null> {
   const configured = resolveAudienceId()
   if (configured) return configured
@@ -746,33 +746,33 @@ async function ensureAudience(apiKey: string): Promise<string | null> {
 
   // No id configured — create a default audience so the flow still works.
   try {
-    const res = await resendFetch('/audiences', {
+    const res = await mailApiFetch('/audiences', {
       method: 'POST',
       body: JSON.stringify({ name: 'Forke Subscribers' }),
     }, apiKey)
     if (!res.ok) {
-      console.error('Failed to create Resend audience:', await res.text())
+      console.error('Failed to create Forke Mail audience:', await res.text())
       return null
     }
     const json = (await res.json()) as { id?: string }
-    console.warn(`Created Resend audience ${json.id}. Set RESEND_AUDIENCE_ID=${json.id} to reuse it.`)
+    console.warn(`Created Forke Mail audience ${json.id}. Set FORKE_MAIL_AUDIENCE_ID=${json.id} to reuse it.`)
     return json.id ?? null
   } catch (err) {
-    console.error('Error creating Resend audience:', err)
+    console.error('Error creating Forke Mail audience:', err)
     return null
   }
 }
 
 /**
- * Sync DB subscriber emails into a Resend audience as contacts. Idempotent:
- * Resend treats re-adding an existing contact as a no-op (we ignore 409/already
+ * Sync DB subscriber emails into a Forke Mail audience as contacts. Idempotent:
+ * Forke Mail treats re-adding an existing contact as a no-op (we ignore 409/already
  * exists). Paced lightly to be polite to the API.
  */
 async function syncContactsToAudience(audienceId: string, emails: string[], apiKey: string): Promise<number> {
   let synced = 0
   for (const email of emails) {
     try {
-      const res = await resendFetch(`/audiences/${audienceId}/contacts`, {
+      const res = await mailApiFetch(`/audiences/${audienceId}/contacts`, {
         method: 'POST',
         body: JSON.stringify({ email, unsubscribed: false }),
       }, apiKey)
@@ -788,9 +788,9 @@ async function syncContactsToAudience(audienceId: string, emails: string[], apiK
 }
 
 /**
- * Announce a newly-published blog to every subscriber via Resend's Broadcasts
+ * Announce a newly-published blog to every subscriber via Forke Mail's Broadcasts
  * API (one audience send — does NOT burn the per-recipient daily quota). Fully
- * fail-soft: a missing key/audience or a Resend hiccup logs and returns a zero
+ * fail-soft: a missing key/audience or a Forke Mail hiccup logs and returns a zero
  * result; it must never block or throw into the blog-publish action.
  *
  * The DB import is lazy so this module stays importable in non-DB contexts
@@ -806,9 +806,9 @@ export async function sendBlogPublishedBroadcast(blog: {
   readingMinutes?: number | null
   publishedAt?: Date | string | null
 }): Promise<{ success: boolean; sentCount: number; broadcastId?: string; error?: string }> {
-  const apiKey = resolveResendApiKey()
+  const apiKey = resolveMailApiKey()
   if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping blog broadcast.')
+    console.warn('⚠️ FORKE_MAIL_API_KEY is not configured. Skipping blog broadcast.')
     return { success: false, sentCount: 0 }
   }
 
@@ -890,7 +890,7 @@ export async function sendBlogPublishedBroadcast(blog: {
 
   try {
     // 3) Create the broadcast against the audience.
-    const createRes = await resendFetch('/broadcasts', {
+    const createRes = await mailApiFetch('/broadcasts', {
       method: 'POST',
       body: JSON.stringify({
         audience_id: audienceId,
@@ -902,7 +902,7 @@ export async function sendBlogPublishedBroadcast(blog: {
       }),
     }, apiKey)
     if (!createRes.ok) {
-      console.error('Failed to create Resend broadcast:', await createRes.text())
+      console.error('Failed to create Forke Mail broadcast:', await createRes.text())
       return { success: false, sentCount: 0 }
     }
     const broadcast = (await createRes.json()) as { id: string }
@@ -910,7 +910,7 @@ export async function sendBlogPublishedBroadcast(blog: {
 
     // 4) Send it now — with retries.
     //
-    // Resend can return a transient error if /send is called in the same instant
+    // Forke Mail can return a transient error if /send is called in the same instant
     // the broadcast is created (it hasn't finished provisioning yet). On high-speed
     // asynchronous timing this race is easy to hit, and a failed send silently
     // leaves the broadcast stuck in "draft". So we retry a few times with a short
@@ -918,7 +918,7 @@ export async function sendBlogPublishedBroadcast(blog: {
     // surface it instead of a generic failure.
     let lastError = ''
     for (let attempt = 1; attempt <= 4; attempt++) {
-      const sendRes = await resendFetch(`/broadcasts/${broadcastId}/send`, {
+      const sendRes = await mailApiFetch(`/broadcasts/${broadcastId}/send`, {
         method: 'POST',
         body: JSON.stringify({}),
       }, apiKey)
@@ -938,7 +938,7 @@ export async function sendBlogPublishedBroadcast(blog: {
       await sleep(attempt * 800) // 0.8s, 1.6s, 2.4s backoff
     }
 
-    console.error('Failed to send Resend broadcast after retries:', lastError)
+    console.error('Failed to send Forke Mail broadcast after retries:', lastError)
     return { success: false, sentCount: 0, broadcastId, error: lastError }
   } catch (err) {
     console.error('Error dispatching blog broadcast:', err)
@@ -979,7 +979,7 @@ export async function getRecentPostsForEmail(): Promise<BlogEmailRecent[]> {
 
 export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
   const recentPosts = await getRecentPostsForEmail()
-  return sendResendEmail(
+  return sendMail(
     toEmail,
     'Welcome to the Forke Waitlist!',
     buildWelcomeEmail(recentPosts),
@@ -989,9 +989,9 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
 }
 
 export async function sendSiteLiveBroadcast(): Promise<{ success: boolean; sentCount: number; broadcastId?: string }> {
-  const apiKey = resolveResendApiKey()
+  const apiKey = resolveMailApiKey()
   if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping site-live broadcast.')
+    console.warn('⚠️ FORKE_MAIL_API_KEY is not configured. Skipping site-live broadcast.')
     return { success: false, sentCount: 0 }
   }
 
@@ -1032,7 +1032,7 @@ export async function sendSiteLiveBroadcast(): Promise<{ success: boolean; sentC
 
   try {
     // 3) Create the broadcast against the audience.
-    const createRes = await resendFetch('/broadcasts', {
+    const createRes = await mailApiFetch('/broadcasts', {
       method: 'POST',
       body: JSON.stringify({
         audience_id: audienceId,
@@ -1044,19 +1044,19 @@ export async function sendSiteLiveBroadcast(): Promise<{ success: boolean; sentC
       }),
     }, apiKey)
     if (!createRes.ok) {
-      console.error('Failed to create Resend broadcast:', await createRes.text())
+      console.error('Failed to create Forke Mail broadcast:', await createRes.text())
       return { success: false, sentCount: 0 }
     }
     const broadcast = (await createRes.json()) as { id: string }
     const broadcastId = broadcast.id
 
     // 4) Send it now.
-    const sendRes = await resendFetch(`/broadcasts/${broadcastId}/send`, {
+    const sendRes = await mailApiFetch(`/broadcasts/${broadcastId}/send`, {
       method: 'POST',
       body: JSON.stringify({}),
     }, apiKey)
     if (!sendRes.ok) {
-      console.error('Failed to send Resend broadcast:', await sendRes.text())
+      console.error('Failed to send Forke Mail broadcast:', await sendRes.text())
       return { success: false, sentCount: 0, broadcastId }
     }
 
@@ -1074,7 +1074,7 @@ export async function sendAdminInvitation(
   inviteLink: string
 ): Promise<boolean> {
   const recentPosts = await getRecentPostsForEmail()
-  return sendResendEmail(
+  return sendMail(
     toEmail,
     'Action Required: Complete your Forke Admin Setup',
     buildAdminInvitationEmail(name, inviteLink, recentPosts),
@@ -1085,7 +1085,7 @@ export async function sendAdminInvitation(
 
 export async function sendAccountDeletionScheduledEmail(toEmail: string): Promise<boolean> {
   const recentPosts = await getRecentPostsForEmail()
-  return sendResendEmail(
+  return sendMail(
     toEmail,
     'Forke: Your account deletion has been scheduled',
     buildAccountDeletionScheduledEmail(recentPosts),
@@ -1097,7 +1097,7 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
 export async function sendOwnerApprovedEmail(toEmail: string, name: string): Promise<boolean> {
   const signInLink = `${resolveBaseUrl()}/signin`
   const recentPosts = await getRecentPostsForEmail()
-  return sendResendEmail(
+  return sendMail(
     toEmail,
     'Your Forke owner account is approved',
     buildOwnerApprovedEmail(name, signInLink, recentPosts),
@@ -1109,7 +1109,7 @@ export async function sendOwnerApprovedEmail(toEmail: string, name: string): Pro
 export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reason: string): Promise<boolean> {
   const applyLink = `${resolveBaseUrl()}/signin`
   const recentPosts = await getRecentPostsForEmail()
-  return sendResendEmail(
+  return sendMail(
     toEmail,
     'Update on your Forke owner application',
     buildOwnerDeclinedEmail(name, reason, applyLink, recentPosts),
@@ -1121,7 +1121,7 @@ export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reas
 async function sendBannedEmail(toEmail: string, name: string, accountKind: 'owner' | 'developer'): Promise<boolean> {
   const reviewLink = `${resolveBaseUrl()}/auth-error?error=AccessDenied`
   const recentPosts = await getRecentPostsForEmail()
-  return sendResendEmail(
+  return sendMail(
     toEmail,
     'Your Forke account has been suspended',
     buildBannedEmail(name, accountKind, reviewLink, recentPosts),
@@ -1139,36 +1139,36 @@ export async function sendDeveloperBannedEmail(toEmail: string, name: string): P
 }
 
 /**
- * Dynamic helper to ensure an audience exists in Resend by name.
+ * Dynamic helper to ensure an audience exists in Forke Mail by name.
  */
 async function ensureAudienceByName(name: string, apiKey: string): Promise<string | null> {
   const existingId = await findAudienceByName(name, apiKey)
   if (existingId) return existingId
 
   try {
-    const res = await resendFetch('/audiences', {
+    const res = await mailApiFetch('/audiences', {
       method: 'POST',
       body: JSON.stringify({ name }),
     }, apiKey)
     if (!res.ok) {
-      console.error(`Failed to create Resend audience "${name}":`, await res.text())
+      console.error(`Failed to create Forke Mail audience "${name}":`, await res.text())
       return null
     }
     const json = (await res.json()) as { id?: string }
     return json.id ?? null
   } catch (err) {
-    console.error(`Error creating Resend audience "${name}":`, err)
+    console.error(`Error creating Forke Mail audience "${name}":`, err)
     return null
   }
 }
 
 /**
- * Sync active database administrators to the "Forke Admins" Resend audience.
+ * Sync active database administrators to the "Forke Admins" Forke Mail audience.
  */
-export async function syncAdminsToResend(): Promise<{ success: boolean; syncedCount: number }> {
-  const apiKey = resolveResendApiKey()
+export async function syncAdminsToForkeMail(): Promise<{ success: boolean; syncedCount: number }> {
+  const apiKey = resolveMailApiKey()
   if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping admin sync.')
+    console.warn('⚠️ FORKE_MAIL_API_KEY is not configured. Skipping admin sync.')
     return { success: false, syncedCount: 0 }
   }
 
@@ -1195,7 +1195,7 @@ export async function syncAdminsToResend(): Promise<{ success: boolean; syncedCo
     const syncedCount = await syncContactsToAudience(audienceId, emails, apiKey)
     return { success: true, syncedCount }
   } catch (err) {
-    console.error('Error syncing admins to Resend:', err)
+    console.error('Error syncing admins to Forke Mail:', err)
     return { success: false, syncedCount: 0 }
   }
 }
@@ -1238,7 +1238,7 @@ export async function sendDatabaseBackupNotification(
   expiryTime: string
 ): Promise<boolean> {
   // Try to sync admins first
-  await syncAdminsToResend()
+  await syncAdminsToForkeMail()
 
   try {
     const { db } = await import('./db')
@@ -1260,7 +1260,7 @@ export async function sendDatabaseBackupNotification(
 
     let allSent = true
     for (const admin of activeAdmins) {
-      const success = await sendResendEmail(
+      const success = await sendMail(
         admin.email,
         'Forke: Your database backup is ready',
         emailBody,
@@ -1326,7 +1326,7 @@ export async function sendBackupReportNotification(
   tier: string,
   sizeBytes?: number
 ): Promise<boolean> {
-  await syncAdminsToResend()
+  await syncAdminsToForkeMail()
 
   try {
     const { db } = await import('./db')
@@ -1348,7 +1348,7 @@ export async function sendBackupReportNotification(
 
     let allSent = true
     for (const admin of activeAdmins) {
-      const success = await sendResendEmail(
+      const success = await sendMail(
         admin.email,
         `Forke: ${tierLabel} database backup is ready`,
         emailBody,
@@ -1385,7 +1385,7 @@ export function buildBackupFailureEmail(tier: string, errorMessage: string, maxW
  * Alerts all active admins that a scheduled production database backup failed.
  */
 export async function sendBackupFailureAlert(tier: string, errorMessage: string): Promise<boolean> {
-  await syncAdminsToResend()
+  await syncAdminsToForkeMail()
 
   try {
     const { db } = await import('./db')
@@ -1406,7 +1406,7 @@ export async function sendBackupFailureAlert(tier: string, errorMessage: string)
 
     let allSent = true
     for (const admin of activeAdmins) {
-      const success = await sendResendEmail(
+      const success = await sendMail(
         admin.email,
         `Forke: ${tier} database backup FAILED`,
         emailBody,
