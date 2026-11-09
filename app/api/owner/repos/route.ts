@@ -10,53 +10,39 @@
 
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { sandboxUsers } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { upsertSandboxUser } from '@/lib/sandbox-auth'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const username = searchParams.get('username')
   const org = searchParams.get('org')
 
   const cookieStore = await cookies()
   const token = cookieStore.get('forke_access_token')?.value
+  // The username always comes from GitHub for this token, never from the query.
+  let username: string | null = null
 
-  // Auto-heal if token is present in cookie but owner is not registered in the database
-  if (token && username) {
+  if (token) {
     try {
-      const existing = await db
-        .select()
-        .from(sandboxUsers)
-        .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
-      if (existing.length === 0) {
-        const userRes = await fetch('https://api.github.com/user', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'User-Agent': 'Forke-Sandbox-AutoHeal/1.0',
-            Accept: 'application/vnd.github+json',
-          },
-        })
-        if (userRes.ok) {
-          const userData = await userRes.json()
-          if (userData && userData.id && userData.login && userData.login.toLowerCase() === username.toLowerCase()) {
-            await db
-              .insert(sandboxUsers)
-              .values({
-                githubId: userData.id,
-                username: userData.login,
-                accessToken: token,
-                role: 'owner',
-              })
-          }
+      const userRes = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'User-Agent': 'Forke-Sandbox/1.0',
+          Accept: 'application/vnd.github+json',
+        },
+      })
+      if (userRes.ok) {
+        const userData = await userRes.json()
+        if (userData?.id && userData?.login) {
+          username = userData.login
+          await upsertSandboxUser({ githubId: userData.id, username: userData.login, token, role: 'owner' })
         }
       }
-    } catch (dbError) {
-      console.error('Failed to auto-heal owner in repos fetch:', dbError)
+    } catch (err) {
+      console.error('Failed to resolve GitHub owner in repos fetch:', err)
     }
   }
 
-  if (!token) {
+  if (!token || !username) {
     return NextResponse.json({ error: 'GitHub access token not found. Please log in again.' }, { status: 401 })
   }
 
@@ -111,6 +97,6 @@ export async function GET(request: Request) {
     })
   } catch (err: any) {
     console.error('Owner repos fetch error:', err)
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

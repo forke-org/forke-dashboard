@@ -79,22 +79,16 @@ async function handleSandboxCallback(request: NextRequest, state: string) {
 
     // 3. Save to DB — non-blocking, never fails the login
     try {
-      const { db } = await import('@/lib/db')
-      const { sandboxUsers } = await import('@/lib/db/schema')
-      const { eq } = await import('drizzle-orm')
-
-      const existing = await db.select().from(sandboxUsers).where(eq(sandboxUsers.githubId, githubId))
-      if (existing.length > 0) {
-        await db.update(sandboxUsers).set({ username: githubUsername, accessToken, role }).where(eq(sandboxUsers.githubId, githubId))
-      } else {
-        await db.insert(sandboxUsers).values({ githubId, username: githubUsername, accessToken, role })
-      }
+      const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
+      await upsertSandboxUser({ githubId, username: githubUsername, token: accessToken, role })
     } catch (dbErr) {
       console.warn('[Sandbox OAuth] DB save skipped (DB unavailable):', dbErr)
     }
 
     // 4. Redirect to workspace page with session info in URL params
-    const targetPath = callbackUrl || (role === 'owner' ? '/owner' : '/developer')
+    // Only same-site paths; "//evil.com" or "/\\evil.com" would leave the site.
+    const safeCallback = callbackUrl && /^\/(?![\/\\])/.test(callbackUrl) ? callbackUrl : null
+    const targetPath = safeCallback || (role === 'owner' ? '/owner' : '/developer')
     const targetUrl = new URL(targetPath, request.url)
     targetUrl.searchParams.set('success', 'true')
     targetUrl.searchParams.set('github_id', githubUsername)

@@ -13,6 +13,7 @@ import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { developers, sandboxRepos, sandboxUsers } from '@/lib/db/schema'
+import { decryptToken } from '@/lib/token-crypto'
 import { eq } from 'drizzle-orm'
 import { Workspace } from './workspace'
 
@@ -98,7 +99,7 @@ export default async function IdePage({ params }: PageProps) {
   const checkUrl = `https://api.github.com/repos/${repoPath}/collaborators/${devUsername}`
   const checkResponse = await fetch(checkUrl, {
     headers: {
-      Authorization: `Bearer ${devProfile.accessToken}`,
+      Authorization: `Bearer ${decryptToken(devProfile.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
     },
@@ -119,7 +120,7 @@ export default async function IdePage({ params }: PageProps) {
     const inviteResponse = await fetch(inviteUrl, {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${ownerResult.accessToken}`,
+        Authorization: `Bearer ${decryptToken(ownerResult.accessToken)}`,
         Accept: 'application/vnd.github+json',
         'User-Agent': 'Forke-IDE/1.0',
         'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ export default async function IdePage({ params }: PageProps) {
   
   const checkDevRepoRes = await fetch(checkDevRepoUrl, {
     headers: {
-      Authorization: `Bearer ${devProfile.accessToken}`,
+      Authorization: `Bearer ${decryptToken(devProfile.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
     },
@@ -156,7 +157,7 @@ export default async function IdePage({ params }: PageProps) {
     const generateResponse = await fetch(generateUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${devProfile.accessToken}`,
+        Authorization: `Bearer ${decryptToken(devProfile.accessToken)}`,
         Accept: 'application/vnd.github+json',
         'User-Agent': 'Forke-IDE/1.0',
         'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ export default async function IdePage({ params }: PageProps) {
       const forkResponse = await fetch(forkUrl, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${devProfile.accessToken}`,
+          Authorization: `Bearer ${decryptToken(devProfile.accessToken)}`,
           Accept: 'application/vnd.github+json',
           'User-Agent': 'Forke-IDE/1.0',
           'Content-Type': 'application/json',

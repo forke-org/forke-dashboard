@@ -392,7 +392,8 @@ export const sandboxUsers = pgTable('sandbox_users', {
   id: uuid('id').primaryKey().defaultRandom(),
   githubId: integer('github_id').notNull().unique(),
   username: text('username').notNull(),
-  accessToken: text('access_token').notNull(),
+  accessToken: text('access_token').notNull(), // encrypted, see lib/token-crypto.ts
+  accessTokenHash: text('access_token_hash'), // sha256 of the token, for cookie lookups
   role: text('role').notNull(), // 'owner' | 'developer'
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

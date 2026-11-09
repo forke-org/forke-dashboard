@@ -25,7 +25,7 @@ import {
 } from '@/lib/utils/xp'
 import { XP_CLAIM_TASK } from '@/constants'
 import { z } from 'zod'
-import { createNotification } from '@/app/(app)/notifications/actions'
+import { createNotification } from '@/lib/notifications'
 import { logAudit } from './audit-actions'
 
 export type CreateTaskState = {

@@ -22,12 +22,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
-import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { tasks, sandboxUsers, sandboxRepos } from '@/lib/db/schema'
+import { tasks, sandboxRepos } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { activeJobs } from '@/lib/jobs'
 import { runMirrorJob } from '@/lib/github/mirror'
+import { requireOwnerFromCookie } from '@/lib/sandbox-auth'
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
       deadline,
       skillTags,
       sourceRepo,
-      username,
       allowedPaths,
       restrictedPaths,
       acceptanceCriteria,
@@ -62,9 +61,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!sourceRepo || !username) {
+    if (!sourceRepo || !/^[\w.-]+\/[\w.-]+$/.test(sourceRepo)) {
       return NextResponse.json(
-        { error: 'Missing required fields: sourceRepo, username' },
+        { error: 'Missing or invalid field: sourceRepo' },
         { status: 400 }
       )
     }
@@ -101,54 +100,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create task record' }, { status: 500 })
     }
 
-    // 2. Resolve GitHub access token and ownerId for the mirror pipeline
-    const cookieStore = await cookies()
-    let token = cookieStore.get('forke_access_token')?.value
-
+    // 2. Resolve GitHub access token and ownerId from the signed-in GitHub
+    //    cookie only (never a username from the request body).
+    let token: string | null = null
     let ownerId: string | null = null
-
-    const existing = await db
-      .select()
-      .from(sandboxUsers)
-      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
-
-    if (existing.length > 0) {
-      ownerId = existing[0].id
-      if (!token) {
-        token = existing[0].accessToken
-      }
-    }
-
-    // Auto-heal if database was reset but user session is still alive in cookies
-    if (!ownerId && token) {
-      try {
-        const userRes = await fetch('https://api.github.com/user', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'User-Agent': 'Forke-Sandbox-AutoHeal/1.0',
-            Accept: 'application/vnd.github+json',
-          },
-        })
-        if (userRes.ok) {
-          const userData = await userRes.json()
-          if (userData?.id && userData?.login?.toLowerCase() === username.toLowerCase()) {
-            const ins = await db
-              .insert(sandboxUsers)
-              .values({
-                githubId: userData.id,
-                username: userData.login,
-                accessToken: token,
-                role: 'owner',
-              })
-              .returning()
-            if (ins.length > 0) {
-              ownerId = ins[0].id
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to auto-heal owner session in DB:', err)
-      }
+    let username = ''
+    try {
+      const owner = await requireOwnerFromCookie()
+      token = owner.token
+      ownerId = owner.id
+      username = owner.username
+    } catch (err) {
+      console.error('[Publish] GitHub owner session not available:', err)
     }
 
     if (!token || !ownerId) {

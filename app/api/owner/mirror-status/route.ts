@@ -10,10 +10,15 @@
 
 import { NextResponse } from 'next/server'
 import { activeJobs } from '@/lib/jobs'
+import { getSandboxUser } from '@/lib/sandbox-auth'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const jobId = searchParams.get('jobId')
+
+  if (!(await getSandboxUser())) {
+    return NextResponse.json({ error: 'Please sign in with GitHub again.' }, { status: 401 })
+  }
 
   if (!jobId) {
     return NextResponse.json({ error: 'Missing jobId parameter' }, { status: 400 })

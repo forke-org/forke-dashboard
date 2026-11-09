@@ -19,40 +19,10 @@ import bcrypt from 'bcryptjs'
 import { logAudit } from './actions/audit-actions'
 import { readAttributionCookie, readSessionId } from './utils/attribution'
 import { recordAuthEvent } from './actions/auth-events'
+import { isWaitlistEnabled } from './db/settings'
+import { hasSiteAccess } from './site-access'
 import { isConsecutiveDay, isAlreadyLoggedInToday } from './utils/streak'
 import { getStreakXp, getLevelFromXp } from './utils/xp'
-
-export async function processLoginStreak(userId: string) {
-  const user = await db.query.users.findFirst({ where: eq(users.id, userId) })
-  if (!user) return
-
-  const now = new Date()
-
-  // Already logged in today — do nothing
-  if (user.lastLoginAt && isAlreadyLoggedInToday(user.lastLoginAt, now)) return
-
-  let newStreak = 1
-  if (user.lastLoginAt && isConsecutiveDay(user.lastLoginAt, now)) {
-    newStreak = (user.currentStreak ?? 0) + 1
-  }
-
-  const xpGained = getStreakXp(newStreak)
-  const newTotalXp = (user.xp ?? 0) + xpGained
-  const newLevel = getLevelFromXp(newTotalXp)
-
-  await db
-    .update(users)
-    .set({
-      lastLoginAt: now,
-      currentStreak: newStreak,
-      xp: newTotalXp,
-      level: newLevel,
-    })
-    .where(eq(users.id, userId))
-
-  // Return metadata so the client can show a streak toast if needed
-  return { xpGained, newStreak, leveledUp: newLevel > (user.level ?? 1), newLevel }
-}
 
 export async function signInWithGoogle(role?: 'developer' | 'owner', redirectTo?: string) {
   const cookieStore = await cookies()
@@ -105,6 +75,12 @@ export async function signOutAction() {
 }
 
 export async function registerDeveloperWithCredentials(formData: any) {
+  // Sign-up is closed while the waitlist lock is on, unless the visitor holds
+  // a valid (signed) bypass cookie. Enforced here too, not only on the page.
+  if (process.env.NODE_ENV !== 'development' && (await isWaitlistEnabled()) && !(await hasSiteAccess())) {
+    return { success: false, error: 'Sign-up is not open yet. Join the waitlist instead.' }
+  }
+
   const { firstName, lastName, email, password, confirmPassword, username, receivePromotions } = formData
 
   if (!firstName || !lastName || !email || !password || !confirmPassword || !username) {

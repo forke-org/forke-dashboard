@@ -12,11 +12,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sandboxRepos, developerForks, codeReviews } from '@/lib/db/schema'
 import { eq, and, desc, isNull } from 'drizzle-orm'
+import { getSandboxUser } from '@/lib/sandbox-auth'
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const username = searchParams.get('username')
+    const me = await getSandboxUser()
+    if (!me) {
+      return NextResponse.json({ error: 'Please sign in with GitHub again.' }, { status: 401 })
+    }
+    // Developers only ever see their own reviews; owners may filter by developer.
+    const username = me.role === 'developer' ? me.username : searchParams.get('username')
     const sandboxRepo = searchParams.get('sandboxRepo')
     const prNumberStr = searchParams.get('prNumber')
     const sandboxRepoId = searchParams.get('sandboxRepoId')

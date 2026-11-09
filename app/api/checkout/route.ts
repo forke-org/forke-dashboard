@@ -12,13 +12,23 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import { getWaitlistBypassPassword } from '@/lib/db/settings'
+import { allowBypassAttempt, issueSiteAccessToken, SITE_ACCESS_DAYS } from '@/lib/site-access'
+import { timingSafeEqual } from 'crypto'
 
 const DEFAULT_BYPASS_HASH = '$2b$10$JEQiYsDtj2tUN2SXWMsYBu6g/cXZfWa5fDcYg0t32TSUx5NQklJpy'
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (!allowBypassAttempt(ip)) {
+      return NextResponse.json(
+        { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
-    const { password } = body
+    const password = typeof body?.password === 'string' ? body.password : ''
 
     // Fetch bypass password from DB (set by Admin in dashboard)
     const dbBypass = await getWaitlistBypassPassword()
@@ -29,7 +39,7 @@ export async function POST(request: Request) {
       customBypass = customBypass.slice(1, -1)
     }
     const isMatch = customBypass 
-      ? (password === customBypass)
+      ? (Buffer.byteLength(password) === Buffer.byteLength(customBypass) && timingSafeEqual(Buffer.from(password), Buffer.from(customBypass)))
       : (await bcrypt.compare(password, DEFAULT_BYPASS_HASH))
 
     if (!isMatch) {
@@ -43,11 +53,12 @@ export async function POST(request: Request) {
     const isProd = process.env.NODE_ENV === 'production'
     const domainOption = isProd ? { domain: '.forke.space' } : {}
 
-    cookieStore.set('site_access', 'granted', {
+    cookieStore.set('site_access', issueSiteAccessToken(), {
       httpOnly: true,
       secure: isProd,
       sameSite: 'lax',
       path: '/',
+      maxAge: SITE_ACCESS_DAYS * 86400,
       ...domainOption,
     })
     cookieStore.set('site_access_public', 'true', {
@@ -55,6 +66,7 @@ export async function POST(request: Request) {
       secure: isProd,
       sameSite: 'lax',
       path: '/',
+      maxAge: SITE_ACCESS_DAYS * 86400,
       ...domainOption,
     })
 

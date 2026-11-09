@@ -9,43 +9,26 @@
  */
 
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { developerForks, sandboxUsers } from '@/lib/db/schema'
+import { developerForks } from '@/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
+import { getSandboxUser } from '@/lib/sandbox-auth'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const username = searchParams.get('username')
   const sandboxRepo = searchParams.get('sandboxRepo')
 
-  if (!username || !sandboxRepo) {
-    return NextResponse.json({ error: 'Missing required parameters: username, sandboxRepo' }, { status: 400 })
+  if (!sandboxRepo) {
+    return NextResponse.json({ error: 'Missing required parameter: sandboxRepo' }, { status: 400 })
   }
 
-  const cookieStore = await cookies()
-  let token = cookieStore.get('forke_access_token')?.value
-
-  if (!token) {
-    // Attempt database lookup in sandboxUsers table (developer role first, fallback to owner)
-    try {
-      const devData = await db.select().from(sandboxUsers).where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'developer')))
-      if (devData.length > 0) {
-        token = devData[0].accessToken
-      } else {
-        const ownerData = await db.select().from(sandboxUsers).where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
-        if (ownerData.length > 0) {
-          token = ownerData[0].accessToken
-        }
-      }
-    } catch (dbErr) {
-      console.error('Failed DB lookup for developer token:', dbErr)
-    }
-  }
-
-  if (!token) {
+  // Status is always for the signed-in user, using their own token.
+  const me = await getSandboxUser()
+  if (!me) {
     return NextResponse.json({ error: 'GitHub access token not found. Please log in again.' }, { status: 401 })
   }
+  const username = me.username
+  const token = me.token
 
   const repoName = sandboxRepo.split('/')[1] || sandboxRepo
   const forkPath = `${username}/${repoName}`

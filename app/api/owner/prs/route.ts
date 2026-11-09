@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, developerForks, codeReviews, sandboxRepos } from '@/lib/db'
 import { eq, desc, and } from 'drizzle-orm'
+import { requireOwnedSandbox, requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,6 +29,9 @@ export async function GET(req: NextRequest) {
     if (!sandboxRepo) {
       return NextResponse.json({ error: 'Missing sandboxRepo parameter' }, { status: 400 })
     }
+
+    const owner = await requireSandboxUser('owner')
+    await requireOwnedSandbox(owner, sandboxRepo)
 
     // Get all developer forks for this sandbox
     const forks = await db
@@ -99,9 +103,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ prs: prsWithReviews, total: prsWithReviews.length })
   } catch (err: unknown) {
+    const denied = sandboxAuthResponse(err)
+    if (denied) return denied
     console.error('[API /owner/prs GET] Error:', err)
     return NextResponse.json(
-      { error: 'Failed to fetch PRs', details: String(err) },
+      { error: 'Failed to fetch PRs' },
       { status: 500 }
     )
   }

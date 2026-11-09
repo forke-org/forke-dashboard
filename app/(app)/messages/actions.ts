@@ -10,6 +10,7 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
+import { requireSelf, sessionUserId } from '@/lib/session-guard'
 import { db } from '@/lib/db'
 import { messages, users } from '@/lib/db/schema'
 import { eq, and, or, asc, sql } from 'drizzle-orm'
@@ -40,6 +41,7 @@ export async function ensureMessagesTable() {
 }
 
 export async function uploadChatFile(formData: FormData) {
+  await sessionUserId()
   try {
     const file = formData.get('file') as File
     if (!file) {
@@ -75,6 +77,8 @@ export async function uploadChatFile(formData: FormData) {
 
 
 export async function getMessagesBetweenUsers(userId1: string, userId2: string) {
+  const me = await sessionUserId()
+  if (me !== userId1) return { success: false, messages: [], isOnline: false, error: 'Not authorized' }
   await ensureMessagesTable()
   try {
     // 1. Update userId1's lastActiveAt to now
@@ -148,6 +152,7 @@ export async function sendMessageAction(
   fileUrl?: string,
   fileName?: string
 ) {
+  senderId = await requireSelf(senderId)
   await ensureMessagesTable()
   if ((!content || !content.trim()) && !fileUrl) {
     return { success: false, error: 'Message content cannot be empty.' }

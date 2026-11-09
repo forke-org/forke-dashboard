@@ -10,8 +10,10 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
+import { requireSelf } from '@/lib/session-guard'
 import { db } from '@/lib/db'
 import { tasks, sandboxRepos, sandboxUsers, developers } from '@/lib/db/schema'
+import { decryptToken } from '@/lib/token-crypto'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@/auth'
 
@@ -19,6 +21,7 @@ import { auth } from '@/auth'
  * Invites the developer to the private mirror repository of a task.
  */
 export async function inviteDeveloperToMirror(taskId: string, developerUserId: string) {
+  developerUserId = await requireSelf(developerUserId)
   // Developer lookup only depends on developerUserId, not on the task/repo/
   // owner chain below — kick it off now so it resolves in parallel with that
   // chain instead of only starting once the chain finishes.
@@ -63,7 +66,7 @@ export async function inviteDeveloperToMirror(taskId: string, developerUserId: s
   const response = await fetch(inviteUrl, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${ownerResult.accessToken}`,
+      Authorization: `Bearer ${decryptToken(ownerResult.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
       'Content-Type': 'application/json',
@@ -96,6 +99,7 @@ export async function inviteDeveloperToMirror(taskId: string, developerUserId: s
  * Checks if the developer has accepted the collaborator invite for the mirror repository.
  */
 export async function checkInvitationStatus(taskId: string, developerUserId: string) {
+  developerUserId = await requireSelf(developerUserId)
   // Independent of the task/repo chain below — kick off in parallel.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
@@ -118,7 +122,7 @@ export async function checkInvitationStatus(taskId: string, developerUserId: str
   const checkUrl = `https://api.github.com/repos/${repoResult.sandboxRepo}/collaborators/${devResult.username}`
   const response = await fetch(checkUrl, {
     headers: {
-      Authorization: `Bearer ${devResult.accessToken}`,
+      Authorization: `Bearer ${decryptToken(devResult.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
     },
@@ -131,6 +135,7 @@ export async function checkInvitationStatus(taskId: string, developerUserId: str
  * Creates the developer workspace branch and spins up the GitHub Codespace.
  */
 export async function createWorkspaceBranchAndCodespace(taskId: string, developerUserId: string) {
+  developerUserId = await requireSelf(developerUserId)
   // Independent of the task/repo chain below — kick off in parallel.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
@@ -165,7 +170,7 @@ export async function createWorkspaceBranchAndCodespace(taskId: string, develope
   const checkRepoUrl = `https://api.github.com/repos/${devRepoPath}`
   const checkRepoRes = await fetch(checkRepoUrl, {
     headers: {
-      Authorization: `Bearer ${devResult.accessToken}`,
+      Authorization: `Bearer ${decryptToken(devResult.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
     },
@@ -178,7 +183,7 @@ export async function createWorkspaceBranchAndCodespace(taskId: string, develope
     const generateResponse = await fetch(generateUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${devResult.accessToken}`,
+        Authorization: `Bearer ${decryptToken(devResult.accessToken)}`,
         Accept: 'application/vnd.github+json',
         'User-Agent': 'Forke-IDE/1.0',
         'Content-Type': 'application/json',
@@ -206,7 +211,7 @@ export async function createWorkspaceBranchAndCodespace(taskId: string, develope
   const codespaceResponse = await fetch(codespaceUrl, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${devResult.accessToken}`,
+      Authorization: `Bearer ${decryptToken(devResult.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
       'Content-Type': 'application/json',
@@ -240,6 +245,7 @@ export async function createWorkspaceBranchAndCodespace(taskId: string, develope
  * Deletes the Codespace and removes the developer from the repo collaborators when complete or abandoned.
  */
 export async function cleanupWorkspace(taskId: string, developerUserId: string) {
+  developerUserId = await requireSelf(developerUserId)
   // Independent of the task/repo chain below — kick off in parallel.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
@@ -273,7 +279,7 @@ export async function cleanupWorkspace(taskId: string, developerUserId: string) 
     await fetch(deleteUrl, {
       method: 'DELETE',
       headers: {
-        Authorization: `Bearer ${devResult.accessToken}`,
+        Authorization: `Bearer ${decryptToken(devResult.accessToken)}`,
         Accept: 'application/vnd.github+json',
         'User-Agent': 'Forke-IDE/1.0',
       },
@@ -290,7 +296,7 @@ export async function cleanupWorkspace(taskId: string, developerUserId: string) 
   await fetch(deleteRepoUrl, {
     method: 'DELETE',
     headers: {
-      Authorization: `Bearer ${devResult.accessToken}`,
+      Authorization: `Bearer ${decryptToken(devResult.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
     },
@@ -306,7 +312,7 @@ export async function cleanupWorkspace(taskId: string, developerUserId: string) 
   await fetch(collabUrl, {
     method: 'DELETE',
     headers: {
-      Authorization: `Bearer ${ownerResult.accessToken}`,
+      Authorization: `Bearer ${decryptToken(ownerResult.accessToken)}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Forke-IDE/1.0',
     },

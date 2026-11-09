@@ -8,8 +8,7 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
-import { exec } from 'child_process'
-import { promisify } from 'util'
+import { authenticatedUrl, git, gitHttpOpts, gitPushOpts } from '@/lib/git'
 import path from 'path'
 import fs from 'fs'
 import { db } from '../db'
@@ -19,7 +18,6 @@ import { runReviewPipeline } from '../review/runner'
 import { analyzeBaselineWithAI } from '../review/gemini'
 import { eq } from 'drizzle-orm'
 
-const execPromise = promisify(exec)
 
 export interface MirrorParams {
   jobId: string
@@ -47,14 +45,14 @@ async function pushMirrorIncrementally(
   authenticatedPushUrl: string,
   addLog: (tag: string, message: string) => void
 ): Promise<void> {
-  const { stdout: refsOut } = await execPromise(`git -C "${tempDir}" for-each-ref --format="%(refname)" refs/heads/`)
+  const { stdout: refsOut } = await git(['-C', tempDir, 'for-each-ref', '--format=%(refname)', 'refs/heads/'])
   const branches = refsOut.trim().split('\n').filter(Boolean)
   
   addLog('GIT_PUSH', `Incremental Push: Detected ${branches.length} branches to mirror: ${branches.join(', ')}`)
   
   for (const branch of branches) {
     addLog('GIT_PUSH', `Pushing branch ${branch} incrementally...`)
-    const { stdout: commitsOut } = await execPromise(`git -C "${tempDir}" rev-list --reverse "${branch}"`)
+    const { stdout: commitsOut } = await git(['-C', tempDir, 'rev-list', '--reverse', branch, '--'])
     const commits = commitsOut.trim().split('\n').filter(Boolean)
     const totalCommits = commits.length
     
@@ -79,8 +77,7 @@ async function pushMirrorIncrementally(
       while (attempt < 3 && !success) {
         attempt++
         try {
-          const pushCmd = `git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 -c http.lowSpeedLimit=0 -c http.lowSpeedTime=999999 -C "${tempDir}" push -f "${authenticatedPushUrl}" "${targetSha}:${branch}"`
-          await execPromise(pushCmd)
+          await git([...gitPushOpts, '-C', tempDir, 'push', '-f', authenticatedPushUrl, `${targetSha}:${branch}`])
           success = true
         } catch (err: any) {
           lastError = err
@@ -108,7 +105,7 @@ async function pushMirrorIncrementally(
   
   try {
     addLog('GIT_PUSH', 'Mirroring tags...')
-    await execPromise(`git -C "${tempDir}" push -f "${authenticatedPushUrl}" "+refs/tags/*:refs/tags/*"`)
+    await git(['-C', tempDir, 'push', '-f', authenticatedPushUrl, '+refs/tags/*:refs/tags/*'])
     addLog('GIT_PUSH_SUCCESS', 'Tags mirrored successfully.')
   } catch (tagErr: any) {
     addLog('GIT_PUSH_WARNING', `Failed to mirror tags: ${tagErr.message}`)
@@ -217,8 +214,8 @@ export async function runMirrorJob(params: MirrorParams): Promise<void> {
     // Step C: Clone original repo as bare mirror
     addLog('GIT_CLONE', `Cloning original repository (${sourceRepo}) as bare mirror.`)
     
-    const authenticatedCloneUrl = `https://x-access-token:${token}@github.com/${sourceRepo}.git`
-    await execPromise(`git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 clone --mirror "${authenticatedCloneUrl}" "${tempDir}"`)
+    const authenticatedCloneUrl = authenticatedUrl(token, sourceRepo)
+    await git([...gitHttpOpts, 'clone', '--mirror', authenticatedCloneUrl, tempDir])
     
     addLog('GIT_CLONE_SUCCESS', 'Original repository cloned successfully.')
     updateProgress(70)
@@ -226,14 +223,14 @@ export async function runMirrorJob(params: MirrorParams): Promise<void> {
     // Step D: Push bare mirror branches and tags
     addLog('GIT_PUSH', `Pushing branches and tags to sandbox repository ${fullTargetRepoPath}.`)
     
-    const authenticatedPushUrl = `https://x-access-token:${token}@github.com/${fullTargetRepoPath}.git`
-    let pushCommand = `git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 -c http.lowSpeedLimit=0 -c http.lowSpeedTime=999999 -C "${tempDir}" push --prune "${authenticatedPushUrl}" "+refs/heads/*:refs/heads/*"`
+    const authenticatedPushUrl = authenticatedUrl(token, fullTargetRepoPath)
+    const pushArgs = [...gitPushOpts, '-C', tempDir, 'push', '--prune', authenticatedPushUrl, '+refs/heads/*:refs/heads/*']
     
     // Check tags safely
     try {
-      const { stdout: tagOutput } = await execPromise(`git -C "${tempDir}" tag`)
+      const { stdout: tagOutput } = await git(['-C', tempDir, 'tag'])
       if (tagOutput.trim()) {
-        pushCommand += ` "+refs/tags/*:refs/tags/*"`
+        pushArgs.push('+refs/tags/*:refs/tags/*')
         addLog('GIT_PUSH', 'Detected repository tags. Mirroring branches and tags.')
       } else {
         addLog('GIT_PUSH', 'No tags detected. Mirroring branches only.')
@@ -243,7 +240,7 @@ export async function runMirrorJob(params: MirrorParams): Promise<void> {
     }
 
     try {
-      await execPromise(pushCommand)
+      await git(pushArgs)
       addLog('GIT_PUSH_SUCCESS', 'Bare mirror pushed successfully.')
     } catch (pushErr: any) {
       addLog('GIT_PUSH_WARNING', 'Full history push timed out or failed. Attempting incremental mirror push to bypass connection constraints...')
@@ -298,11 +295,11 @@ export async function runMirrorJob(params: MirrorParams): Promise<void> {
     
     try {
       addLog('GIT_CLONE', `Cloning mirrored sandbox repository for baseline analysis.`)
-      const authenticatedCloneUrl = `https://x-access-token:${token}@github.com/${fullTargetRepoPath}.git`
-      await execPromise(`git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 clone --depth 1 "${authenticatedCloneUrl}" "${tempReviewDir}"`)
+      const authenticatedCloneUrl = authenticatedUrl(token, fullTargetRepoPath)
+      await git([...gitHttpOpts, 'clone', '--depth', '1', authenticatedCloneUrl, tempReviewDir])
 
       // Retrieve commit SHA
-      const { stdout: commitShaOut } = await execPromise(`git -C "${tempReviewDir}" rev-parse HEAD`)
+      const { stdout: commitShaOut } = await git(['-C', tempReviewDir, 'rev-parse', 'HEAD'])
       const commitSha = commitShaOut.trim()
 
       // Execute Review Pipeline using the live logs callback!

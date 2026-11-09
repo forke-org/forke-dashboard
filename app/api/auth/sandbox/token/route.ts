@@ -45,17 +45,10 @@ export async function POST(request: Request) {
 
     // Save to database (non-blocking — sandbox still works if DB is down)
     try {
-      const { db } = await import('@/lib/db')
-      const { sandboxUsers } = await import('@/lib/db/schema')
-      const { eq } = await import('drizzle-orm')
+      const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
 
       if (role === 'owner' || role === 'developer') {
-        const existing = await db.select().from(sandboxUsers).where(eq(sandboxUsers.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxUsers).set({ username: githubUsername, accessToken: token, role }).where(eq(sandboxUsers.githubId, githubId))
-        } else {
-          await db.insert(sandboxUsers).values({ githubId, username: githubUsername, accessToken: token, role })
-        }
+        await upsertSandboxUser({ githubId, username: githubUsername, token, role })
       }
     } catch (dbErr) {
       console.warn('[Sandbox PAT] DB save skipped:', dbErr)

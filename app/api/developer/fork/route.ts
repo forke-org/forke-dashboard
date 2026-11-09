@@ -9,17 +9,25 @@
  */
 
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { developerForks, sandboxUsers, sandboxRepos } from '@/lib/db/schema'
+import { developerForks, sandboxRepos } from '@/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
+import { ownerTokenFor, requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
 
 export async function POST(request: Request) {
   try {
-    const { username, sandboxRepo } = await request.json()
+    const { sandboxRepo } = await request.json()
 
-    if (!username || !sandboxRepo) {
-      return NextResponse.json({ error: 'Missing required parameters: username, sandboxRepo' }, { status: 400 })
+    if (!sandboxRepo) {
+      return NextResponse.json({ error: 'Missing required parameter: sandboxRepo' }, { status: 400 })
+    }
+
+    // The developer is whoever is signed in; never a username from the body.
+    const developer = await requireSandboxUser('developer')
+    const username = developer.username
+    const repoRows = await db.select().from(sandboxRepos).where(eq(sandboxRepos.sandboxRepo, sandboxRepo)).limit(1)
+    if (repoRows.length === 0) {
+      return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 })
     }
 
     const repoName = sandboxRepo.split('/')[1] || sandboxRepo
@@ -27,27 +35,8 @@ export async function POST(request: Request) {
 
     // 1. Grant Developer Access (Invite developer as collaborator using owner access token)
     try {
-      // Find the specific owner token for this sandbox repo
-      const sandboxRepoInfo = await db
-        .select({
-          accessToken: sandboxUsers.accessToken
-        })
-        .from(sandboxRepos)
-        .innerJoin(sandboxUsers, eq(sandboxRepos.ownerId, sandboxUsers.id))
-        .where(and(eq(sandboxRepos.sandboxRepo, sandboxRepo), eq(sandboxUsers.role, 'owner')))
-        .limit(1)
-
-      let ownerToken = sandboxRepoInfo[0]?.accessToken
-      
-      // Fallback to any active owner token in the database
-      if (!ownerToken) {
-        const fallbackOwner = await db
-          .select({ accessToken: sandboxUsers.accessToken })
-          .from(sandboxUsers)
-          .where(eq(sandboxUsers.role, 'owner'))
-          .limit(1)
-        ownerToken = fallbackOwner[0]?.accessToken
-      }
+      // Only this sandbox's own owner token may be used (never another owner's).
+      const ownerToken = await ownerTokenFor(repoRows[0].ownerId)
 
       if (ownerToken) {
         console.log(`Adding developer ${username} to private sandbox repo ${sandboxRepo}`)
@@ -71,24 +60,8 @@ export async function POST(request: Request) {
           const invitationData = await addCollabResponse.json()
           const invitationId = invitationData.id
 
-          // Retrieve developer's own access token
-          const cookieStore = await cookies()
-          let devToken = cookieStore.get('forke_access_token')?.value
-
-          if (!devToken) {
-            try {
-              const devRecord = await db
-                .select()
-                .from(sandboxUsers)
-                .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'developer')))
-                .limit(1)
-              if (devRecord.length > 0) {
-                devToken = devRecord[0].accessToken
-              }
-            } catch (dbErr) {
-              console.error('Failed DB lookup for developer fork token:', dbErr)
-            }
-          }
+          // The signed-in developer's own token accepts the invitation.
+          const devToken = developer.token
 
           if (devToken && invitationId) {
             console.log(`Programmatically accepting invitation ${invitationId} for developer ${username}`)
@@ -160,6 +133,8 @@ export async function POST(request: Request) {
       githubForkPage
     })
   } catch (error: any) {
+    const denied = sandboxAuthResponse(error)
+    if (denied) return denied
     console.error('Developer fork register error:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }

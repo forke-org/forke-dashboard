@@ -16,13 +16,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, sandboxRepos } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { requireOwnedSandbox, requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
       sandboxRepo,
-      username,
       taskTitle,
       taskDescription,
       frontendStack,
@@ -33,28 +33,15 @@ export async function POST(req: NextRequest) {
     } = body
 
     // Validate required fields
-    if (!sandboxRepo || !username || !taskTitle || !taskDescription || !frontendStack || !backendStack) {
+    if (!sandboxRepo || !taskTitle || !taskDescription || !frontendStack || !backendStack) {
       return NextResponse.json(
-        { error: 'Missing required fields: sandboxRepo, username, taskTitle, taskDescription, frontendStack, backendStack' },
+        { error: 'Missing required fields: sandboxRepo, taskTitle, taskDescription, frontendStack, backendStack' },
         { status: 400 }
       )
     }
 
-    // Find the sandbox repo record
-    const existing = await db
-      .select()
-      .from(sandboxRepos)
-      .where(eq(sandboxRepos.sandboxRepo, sandboxRepo))
-      .limit(1)
-
-    if (existing.length === 0) {
-      return NextResponse.json(
-        { error: `Sandbox repo "${sandboxRepo}" not found in database` },
-        { status: 404 }
-      )
-    }
-
-    const sandboxRecord = existing[0]
+    const owner = await requireSandboxUser('owner')
+    const sandboxRecord = await requireOwnedSandbox(owner, sandboxRepo)
 
     // Serialize arrays/text for DB storage
     const allowedPathsStr = Array.isArray(allowedPaths)
@@ -86,9 +73,11 @@ export async function POST(req: NextRequest) {
       taskTitle,
     })
   } catch (err: unknown) {
+    const denied = sandboxAuthResponse(err)
+    if (denied) return denied
     console.error('[API /owner/task POST] Error:', err)
     return NextResponse.json(
-      { error: 'Failed to save task metadata', details: String(err) },
+      { error: 'Failed to save task metadata' },
       { status: 500 }
     )
   }
@@ -103,6 +92,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing sandboxRepo parameter' }, { status: 400 })
     }
 
+    // Task details are visible to any signed-in sandbox user (developers need
+    // them to work on the task), but not to anonymous callers.
+    await requireSandboxUser()
     const records = await db
       .select()
       .from(sandboxRepos)
@@ -130,9 +122,11 @@ export async function GET(req: NextRequest) {
       createdAt: record.createdAt,
     })
   } catch (err: unknown) {
+    const denied = sandboxAuthResponse(err)
+    if (denied) return denied
     console.error('[API /owner/task GET] Error:', err)
     return NextResponse.json(
-      { error: 'Failed to fetch task metadata', details: String(err) },
+      { error: 'Failed to fetch task metadata' },
       { status: 500 }
     )
   }

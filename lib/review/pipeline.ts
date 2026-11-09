@@ -152,16 +152,14 @@ export async function runFullPRPipeline(params: PipelineParams) {
     // D. Clone repository locally for isolated test runner execution
     addLog('GIT_CLONE', `Cloning PR ref to execute local tests...`)
     fs.mkdirSync(checkoutDir, { recursive: true })
-    const authenticatedUrl = `https://x-access-token:${ownerToken}@github.com/${repoFullName}.git`
-    
-    // We clone base, fetch PR head, and checkout
-    const { exec } = require('child_process')
-    const { promisify } = require('util')
-    const execPromise = promisify(exec)
+    const prNum = Number(prNumber)
+    if (!Number.isInteger(prNum) || prNum <= 0) throw new Error('Invalid PR number')
+    const { git, authenticatedUrl } = await import('@/lib/git')
 
-    await execPromise(`git clone "${authenticatedUrl}" "${checkoutDir}"`)
-    await execPromise(`git -C "${checkoutDir}" fetch origin pull/${prNumber}/head:pr-${prNumber}`)
-    await execPromise(`git -C "${checkoutDir}" checkout pr-${prNumber}`)
+    // We clone base, fetch PR head, and checkout (no shell involved)
+    await git(['clone', authenticatedUrl(ownerToken, repoFullName), checkoutDir])
+    await git(['-C', checkoutDir, 'fetch', 'origin', `pull/${prNum}/head:pr-${prNum}`])
+    await git(['-C', checkoutDir, 'checkout', `pr-${prNum}`])
     addLog('GIT_CLONE', 'Local repository checked out successfully.')
     updateProgress(45)
 

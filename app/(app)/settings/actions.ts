@@ -10,6 +10,7 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
+import { requireSelf } from '@/lib/session-guard'
 import { db } from '@/lib/db'
 import { users, owners, subscribers } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
@@ -33,6 +34,7 @@ export async function ensureTelemetrySettingsColumns() {
 }
 
 export async function updateTelemetrySettings(userId: string, type: 'emailAlerts' | 'slackWebhooks', enabled: boolean) {
+  userId = await requireSelf(userId)
   await ensureTelemetrySettingsColumns()
   try {
     if (type === 'emailAlerts') {
@@ -74,6 +76,7 @@ export async function getSystemSpecs() {
 
 
 export async function updateProfileSettings(userId: string, role: 'developer' | 'owner', formData: FormData) {
+  userId = await requireSelf(userId)
   const name = formData.get('name') as string
   if (!name || !name.trim()) {
     return { success: false, error: 'Name is required.' }
@@ -134,6 +137,7 @@ export async function updateProfileSettings(userId: string, role: 'developer' | 
 }
 
 export async function setupPasswordAction(userId: string, password: string) {
+  userId = await requireSelf(userId)
   if (!password || password.length < 8) {
     return { success: false, error: 'Password must be at least 8 characters long.' }
   }
@@ -152,6 +156,7 @@ export async function setupPasswordAction(userId: string, password: string) {
 }
 
 export async function scheduleAccountDeletionAction(userId: string) {
+  userId = await requireSelf(userId)
   try {
     const dbUser = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -173,6 +178,7 @@ export async function scheduleAccountDeletionAction(userId: string) {
 }
 
 export async function updatePromotionalSubscriptionAction(userId: string, subscribe: boolean) {
+  userId = await requireSelf(userId)
   try {
     const dbUser = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -200,6 +206,7 @@ export async function updatePromotionalSubscriptionAction(userId: string, subscr
 }
 
 export async function changePasswordAction(userId: string, oldPass: string, newPass: string) {
+  userId = await requireSelf(userId)
   if (!oldPass || !newPass || newPass.length < 8) {
     return { success: false, error: 'Password must be at least 8 characters long.' }
   }

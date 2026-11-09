@@ -16,7 +16,7 @@ import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { users, accounts, sessions, developers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { processLoginStreak } from '@/lib/auth-actions'
+import { processLoginStreak } from '@/lib/login-streak'
 import { recordAuthEvent } from '@/lib/actions/auth-events'
 import { authConfig } from './auth.config'
 

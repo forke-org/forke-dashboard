@@ -14,17 +14,25 @@ import { eq, and } from 'drizzle-orm'
 import { updateCommitStatus } from '@/lib/github/commitStatus'
 import { runFullPRPipeline } from '@/lib/review/pipeline'
 import { activeJobs } from '@/lib/jobs'
+import { decryptToken } from '@/lib/token-crypto'
+import { requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, sandboxRepo, prNumber } = await req.json()
+    const body = await req.json()
+    const sandboxRepo = body.sandboxRepo
+    const prNumber = Number(body.prNumber)
 
-    if (!username || !sandboxRepo || !prNumber) {
+    if (!sandboxRepo || !Number.isInteger(prNumber) || prNumber <= 0) {
       return NextResponse.json(
-        { error: 'Missing required parameters: username, sandboxRepo, prNumber' },
+        { error: 'Missing required parameters: sandboxRepo, prNumber' },
         { status: 400 }
       )
     }
+
+    // Only the signed-in developer can trigger a review of their own fork.
+    const developer = await requireSandboxUser('developer')
+    const username = developer.username
 
     // 1. Get developer fork record
     const forkRecords = await db
@@ -67,7 +75,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Sandbox owner not found' }, { status: 404 })
     }
 
-    const ownerToken = ownerRecords[0].accessToken
+    const ownerToken = decryptToken(ownerRecords[0].accessToken)
 
     // 3. Fetch PR info from GitHub API to get title, description, and head SHA
     const prResponse = await fetch(`https://api.github.com/repos/${sandboxRepo}/pulls/${prNumber}`, {
@@ -171,7 +179,10 @@ export async function POST(req: NextRequest) {
     try {
       const goResp = await fetch(`${goBackendUrl}/api/v1/reviews/trigger`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN || ''}`,
+        },
         body: JSON.stringify({ username, sandboxRepo, prNumber }),
         signal: AbortSignal.timeout(2000),
       })
@@ -189,7 +200,7 @@ export async function POST(req: NextRequest) {
       sha: headSha,
       verdict: 'pending',
       accessToken: ownerToken,
-      prNumber: parseInt(prNumber, 10),
+      prNumber: prNumber,
     })
 
     const jobId = `pr-review-${prNumber}-${Date.now()}`
@@ -206,7 +217,7 @@ export async function POST(req: NextRequest) {
         await runFullPRPipeline({
           sandboxId: sandboxRecord.id,
           ownerToken,
-          prNumber: parseInt(prNumber, 10),
+          prNumber: prNumber,
           prTitle,
           prBody,
           headSha,
@@ -227,6 +238,8 @@ export async function POST(req: NextRequest) {
     }, { status: 202 })
 
   } catch (error: any) {
+    const denied = sandboxAuthResponse(error)
+    if (denied) return denied
     console.error('[Trigger Review API] Error:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }

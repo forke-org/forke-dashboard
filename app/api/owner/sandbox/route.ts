@@ -9,10 +9,10 @@
  */
 
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxUsers, sandboxRepos, developerForks } from '@/lib/db/schema'
+import { sandboxRepos, developerForks } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { requireSandboxUser, sandboxAuthResponse, storedTokenFor } from '@/lib/sandbox-auth'
 
 // POST/PUT to configure/update sandbox metadata
 export async function POST(request: Request) {
@@ -33,7 +33,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing sandboxId parameter' }, { status: 400 })
     }
 
-    await db
+    const owner = await requireSandboxUser('owner')
+    const updated = await db
       .update(sandboxRepos)
       .set({
         taskTitle,
@@ -45,12 +46,18 @@ export async function POST(request: Request) {
         acceptanceCriteria,
         verificationStatus: 'idle' // reset status on edit
       })
-      .where(eq(sandboxRepos.id, sandboxId))
+      .where(and(eq(sandboxRepos.id, sandboxId), eq(sandboxRepos.ownerId, owner.id)))
+      .returning({ id: sandboxRepos.id })
 
+    if (updated.length === 0) {
+      return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 })
+    }
     return NextResponse.json({ success: true, sandboxId })
   } catch (error: any) {
+    const denied = sandboxAuthResponse(error)
+    if (denied) return denied
     console.error('Configure sandbox error:', error)
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -61,28 +68,23 @@ export async function PUT(request: Request) {
 // DELETE to delete sandbox repository and DB records
 export async function DELETE(request: Request) {
   try {
-    const { username, sandboxRepo, force } = await request.json()
+    const { sandboxRepo, force } = await request.json()
 
-    if (!username || !sandboxRepo) {
-      return NextResponse.json({ error: 'Missing required parameters: username, sandboxRepo' }, { status: 400 })
+    if (!sandboxRepo) {
+      return NextResponse.json({ error: 'Missing required parameter: sandboxRepo' }, { status: 400 })
     }
 
-    const cookieStore = await cookies()
-    let token = cookieStore.get('forke_access_token')?.value
-
-    // 1. Fetch token for owner to delete organization repo
-    const existing = await db
-      .select()
-      .from(sandboxUsers)
-      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
-
-    if (existing.length > 0 && !token) {
-      token = existing[0].accessToken
+    // 1. Only the owner of this sandbox may delete it, with their own token.
+    const owner = await requireSandboxUser('owner')
+    const owned = await db
+      .select({ id: sandboxRepos.id })
+      .from(sandboxRepos)
+      .where(and(eq(sandboxRepos.sandboxRepo, sandboxRepo), eq(sandboxRepos.ownerId, owner.id)))
+      .limit(1)
+    if (owned.length === 0) {
+      return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 })
     }
-
-    if (!token) {
-      return NextResponse.json({ error: 'GitHub access token not found. Please log in again.' }, { status: 401 })
-    }
+    const token = owner.token
 
     // 2. Query developer forks for this repository to clean them up
     const forks = await db
@@ -100,28 +102,10 @@ export async function DELETE(request: Request) {
       let errorMsg = ''
 
       try {
-        let devToken: string | undefined
-
-        const devRecord = await db
-          .select()
-          .from(sandboxUsers)
-          .where(and(eq(sandboxUsers.username, devUsername), eq(sandboxUsers.role, 'developer')))
-          .limit(1)
-
-        if (devRecord.length > 0 && devRecord[0].accessToken) {
-          devToken = devRecord[0].accessToken
-        } else {
-          // Look up developer's OAuth token in sandboxUsers table as a fallback
-          const devOwnerRecord = await db
-            .select()
-            .from(sandboxUsers)
-            .where(and(eq(sandboxUsers.username, devUsername), eq(sandboxUsers.role, 'owner')))
-            .limit(1)
-
-          if (devOwnerRecord.length > 0 && devOwnerRecord[0].accessToken) {
-            devToken = devOwnerRecord[0].accessToken
-          }
-        }
+        const devToken =
+          (await storedTokenFor(devUsername, 'developer')) ??
+          (await storedTokenFor(devUsername, 'owner')) ??
+          undefined
 
         if (devToken) {
           // GitHub DELETE /repos/{owner}/{repo}
@@ -215,6 +199,8 @@ export async function DELETE(request: Request) {
       deletedForks: deletedForksInfo
     })
   } catch (error: any) {
+    const denied = sandboxAuthResponse(error)
+    if (denied) return denied
     console.error('Delete sandbox error:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }

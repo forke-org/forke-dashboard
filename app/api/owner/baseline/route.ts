@@ -9,60 +9,32 @@
  */
 
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxUsers, sandboxRepos, baselineSnapshots } from '@/lib/db/schema'
+import { sandboxRepos, baselineSnapshots } from '@/lib/db/schema'
 import { eq, desc, and } from 'drizzle-orm'
+import { requireOwnedSandbox, requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
+import { authenticatedUrl, git } from '@/lib/git'
 import { runReviewPipeline } from '@/lib/review/runner'
 import { analyzeBaselineWithAI } from '@/lib/review/gemini'
 import { computeTestScore } from '@/lib/review/scoreEngine'
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import path from 'path'
 import fs from 'fs'
 import { activeJobs } from '@/lib/jobs'
 
-const execPromise = promisify(exec)
 
 export async function POST(request: Request) {
   try {
-    const { username, sandboxRepo } = await request.json()
+    const { sandboxRepo } = await request.json()
 
-    if (!username || !sandboxRepo) {
-      return NextResponse.json({ error: 'Missing required parameters: username, sandboxRepo' }, { status: 400 })
+    if (!sandboxRepo) {
+      return NextResponse.json({ error: 'Missing required parameter: sandboxRepo' }, { status: 400 })
     }
 
-    // 1. Authenticate owner token
-    const cookieStore = await cookies()
-    let token = cookieStore.get('forke_access_token')?.value
-
-    const ownerRecord = await db
-      .select()
-      .from(sandboxUsers)
-      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
-      .limit(1)
-
-    if (ownerRecord.length > 0 && !token) {
-      token = ownerRecord[0].accessToken
-    }
-
-    if (!token) {
-      return NextResponse.json({ error: 'GitHub access token not found. Please log in again.' }, { status: 401 })
-    }
-
-    // 2. Fetch sandbox repo details
-    const repoInfo = await db
-      .select()
-      .from(sandboxRepos)
-      .where(eq(sandboxRepos.sandboxRepo, sandboxRepo))
-      .orderBy(desc(sandboxRepos.createdAt))
-      .limit(1)
-
-    if (repoInfo.length === 0) {
-      return NextResponse.json({ error: 'Sandbox repository not found in database.' }, { status: 404 })
-    }
-
-    const sandboxRepoId = repoInfo[0].id
+    // 1-2. Only the signed-in owner of this sandbox, with their own token.
+    const owner = await requireSandboxUser('owner')
+    const repoRecord = await requireOwnedSandbox(owner, sandboxRepo)
+    const token = owner.token
+    const sandboxRepoId = repoRecord.id
     const repoBasename = sandboxRepo.split('/')[1] || sandboxRepo
     const jobId = `baseline-${repoBasename}-${Date.now()}`
     const tempDir = path.resolve(process.cwd(), 'git-mirrors', jobId)
@@ -100,12 +72,11 @@ export async function POST(request: Request) {
 
         // A. Clone main/default branch
         addLog('GIT_CLONE', `Cloning sandbox branch for baseline checks...`)
-        const authenticatedCloneUrl = `https://x-access-token:${token}@github.com/${sandboxRepo}.git`
-        await execPromise(`git clone --depth 1 "${authenticatedCloneUrl}" "${tempDir}"`)
+        await git(['clone', '--depth', '1', authenticatedUrl(token, sandboxRepo), tempDir])
         updateProgress(45)
 
         // B. Get latest commit SHA
-        const { stdout: commitShaOut } = await execPromise(`git -C "${tempDir}" rev-parse HEAD`)
+        const { stdout: commitShaOut } = await git(['-C', tempDir, 'rev-parse', 'HEAD'])
         const commitSha = commitShaOut.trim()
 
         // C. Run validation checks
@@ -197,8 +168,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, jobId })
   } catch (error: any) {
+    const denied = sandboxAuthResponse(error)
+    if (denied) return denied
     console.error('Trigger baseline snapshot error:', error)
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -211,6 +184,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing required parameter: sandboxRepo' }, { status: 400 })
     }
 
+    await requireSandboxUser()
     const repoInfo = await db
       .select()
       .from(sandboxRepos)
