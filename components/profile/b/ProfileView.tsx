@@ -98,7 +98,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
   return (
     <div className="grid gap-8 px-1 py-2 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
       {/* sidebar */}
-      <aside className="min-w-0 lg:sticky lg:top-0 lg:self-start">
+      <aside className={cn("min-w-0 lg:sticky lg:self-start", actions ? "lg:top-20" : "lg:top-0")}>
         <div className="relative">
           <CardLive data={card} style={cardStyle} height={400} />
           <p className="text-center font-mono text-[11px] text-white/30">drag it · tap to flip</p>
