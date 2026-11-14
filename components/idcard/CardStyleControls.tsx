@@ -101,8 +101,8 @@ function Tick() {
   )
 }
 
-export default function CardStyleControls({ data, value, onChange }: { data: Data; value: CardStyle; onChange: (patch: Partial<CardStyle>) => void }) {
-  const thumbs = useThumbs(data, value.line)
+export default function CardStyleControls({ data, value, onChange, defaultLine }: { data: Data; value: CardStyle; onChange: (patch: Partial<CardStyle>) => void; defaultLine: string }) {
+  const thumbs = useThumbs(data, value.line.trim() || defaultLine)
   const photos = usePhotoTiles(data.avatarUrl)
   const [hover, setHover] = useState<string | null>(null)
 
@@ -177,8 +177,8 @@ export default function CardStyleControls({ data, value, onChange }: { data: Dat
         <span className="flex items-center justify-between text-[13px] text-white/60">
           Card line <span className="font-mono text-[11px] text-white/30">{value.line.length}/22</span>
         </span>
-        <input value={value.line} maxLength={22} onChange={(e) => onChange({ line: e.target.value })} placeholder="Ships it. Verified." className="app-field mt-2 h-10 w-full px-3 text-[13.5px]" />
-        <span className="mt-1.5 block text-[12px] text-white/35">Printed under your name on the front.</span>
+        <input value={value.line} maxLength={22} onChange={(e) => onChange({ line: e.target.value })} placeholder={defaultLine} className="app-field mt-2 h-10 w-full px-3 text-[13.5px]" />
+        <span className="mt-1.5 block text-[12px] text-white/35">Sits beside your name on the front. Write your own, or leave it empty to keep your Forke line.</span>
       </label>
     </div>
   )

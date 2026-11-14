@@ -22,7 +22,7 @@ import { isGeneratedAvatar } from '@/lib/avatar/dither'
 import ProfileView, { GithubIcon, LinkedinIcon } from './b/ProfileView'
 import type { DevProfile } from './b/types'
 import CardStyleControls from '@/components/idcard/CardStyleControls'
-import { DEFAULT_CARD_STYLE, type CardStyle } from '@/components/idcard/style'
+import { DEFAULT_CARD_STYLE, defaultCardLine, type CardStyle } from '@/components/idcard/style'
 import type { CardData } from '@/components/idcard/paint'
 
 type SectionId = 'basics' | 'about' | 'links' | 'id-card'
@@ -87,6 +87,9 @@ export default function DevProfileEditor({ profile, card, initialCard }: { profi
     avatarUrl,
   }
   const liveCard = { ...card, first: name.split(/\s+/)[0], full: name, avatarUrl }
+  // this user's line from card-lines.json, shown whenever their own line is empty
+  const defaultLine = defaultCardLine(profile.username)
+  const shownStyle = { ...cardStyle, line: cardStyle.line.trim() || defaultLine }
 
   // open straight on a section when linked, e.g. /profile#id-card
   useEffect(() => {
@@ -182,7 +185,7 @@ export default function DevProfileEditor({ profile, card, initialCard }: { profi
           </div>
           {dirty && <p className="shrink-0 border-b border-[var(--color-border)] bg-accent/[0.06] px-4 py-2 text-[12.5px] text-accent-text">Showing your unsaved changes. Save to make them public.</p>}
           <div className="p-4 pb-28 sm:pb-5 md:p-8 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            <ProfileView p={liveProfile} card={liveCard} cardStyle={cardStyle} />
+            <ProfileView p={liveProfile} card={liveCard} cardStyle={shownStyle} />
           </div>
         </div>
       ) : (
@@ -247,14 +250,14 @@ export default function DevProfileEditor({ profile, card, initialCard }: { profi
               right={
                 <button
                   type="button"
-                  onClick={() => setCardStyle(DEFAULT_CARD_STYLE)}
+                  onClick={() => setCardStyle({ ...DEFAULT_CARD_STYLE, line: defaultLine })}
                   className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--color-border-strong)] px-2.5 text-[12.5px] text-white/60 hover:text-white"
                 >
                   <RotateCcw className="h-3.5 w-3.5" /> Default
                 </button>
               }
             >
-              <CardStyleControls data={liveCard} value={cardStyle} onChange={(patch) => setCardStyle((s) => ({ ...s, ...patch }))} />
+              <CardStyleControls data={liveCard} value={cardStyle} defaultLine={defaultLine} onChange={(patch) => setCardStyle((s) => ({ ...s, ...patch }))} />
               <button type="button" onClick={() => setMode('preview')} className="flex items-center gap-1.5 text-[13px] text-white/45 hover:text-white">
                 <Eye className="h-4 w-4" /> See the 3D card on your profile
               </button>
