@@ -348,7 +348,7 @@ function CardFront({ card }: { card: LanyardCard }) {
   const rawHeadline = card.headline || 'Real, verified work.'
   const headline = rawHeadline.length > 25 ? `${rawHeadline.slice(0, 25)}...` : rawHeadline
   return (
-    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
+    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#151414] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
 
       {/* Header: dots + URL */}
       <div className="flex items-center justify-between px-6 pt-5 pb-4">
@@ -357,7 +357,7 @@ function CardFront({ card }: { card: LanyardCard }) {
           <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
           <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
         </div>
-        <span className="text-[#ff8a00] text-[15px] tracking-tight">forke.space</span>
+        <span className="text-[#FF7A00] text-[15px] tracking-tight">forke.space</span>
       </div>
       <div className="h-px bg-white/20" />
 
@@ -419,7 +419,7 @@ function CardFront({ card }: { card: LanyardCard }) {
           <p className="text-white text-[15px] tracking-tight">Level {card.level} Builder</p>
           <p className="text-white/65 text-[14px] tracking-tight truncate">{headline}</p>
         </div>
-        <span className="text-[#ff8a00] text-[18px] tracking-tight whitespace-nowrap">@{card.username || 'forke'}</span>
+        <span className="text-[#FF7A00] text-[18px] tracking-tight whitespace-nowrap">@{card.username || 'forke'}</span>
       </div>
       <div className="h-px bg-white/20 mx-6" />
       <div className="h-3" />
@@ -435,7 +435,7 @@ function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
     : `https://www.forke.space/${card.username || 'forke'}`)
 
   return (
-    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
+    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#151414] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
       <style>{`
         .lanyard-qr image {
           filter: brightness(0) invert(1);
@@ -449,7 +449,7 @@ function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
           <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
           <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
         </div>
-        <span className="text-[#ff8a00] text-[15px] tracking-tight">forke.space</span>
+        <span className="text-[#FF7A00] text-[15px] tracking-tight">forke.space</span>
       </div>
       <div className="h-px bg-white/20" />
 
@@ -458,7 +458,7 @@ function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
         <QRCodeSVG
           value={profileUrl}
           size={220}
-          bgColor="#0a0a0a"
+          bgColor="#151414"
           fgColor="#ffffff"
           level="H"
           imageSettings={{
@@ -473,7 +473,7 @@ function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
           <h2 className="text-white font-light leading-none tracking-tight" style={{ fontSize: '38px' }}>
             @{card.username || 'forke'}
           </h2>
-          <p className="text-[#ff8a00] text-[15px] tracking-[0.25em] uppercase mt-3">Developer Network</p>
+          <p className="text-[#FF7A00] text-[15px] tracking-[0.25em] uppercase mt-3">Developer Network</p>
         </div>
       </div>
     </div>

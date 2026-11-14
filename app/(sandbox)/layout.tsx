@@ -23,7 +23,7 @@ import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 import ToastContainer from '@/components/shared/Toast'
 
 import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
-import { resolveAvatarUrl } from '@/lib/utils/avatar'
+import { resolveAvatar } from '@/lib/avatar/resolve'
 import DotPatternBackground from '@/components/shared/DotPatternBackground'
 
 export const metadata: Metadata = {
@@ -60,7 +60,7 @@ export default async function SandboxLayout({
   }
 
   const userLevel = getLevelFromXp(user.xp || 0)
-  const resolvedAvatarUrl = resolveAvatarUrl(user.image)
+  const resolvedAvatarUrl = await resolveAvatar(user.image, user.username || user.id)
 
   let companyName = ''
   let pendingSubmissionsCount = 0
@@ -107,7 +107,7 @@ export default async function SandboxLayout({
   if (user.role === 'developer' && !user.username) {
     return (
       <DashboardProvider>
-        <div className="flex h-screen bg-[#070709] overflow-hidden theme-ember relative">
+        <div className="flex h-screen bg-[#121111] overflow-hidden theme-ember relative">
           <DotPatternBackground />
           <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
             {children}

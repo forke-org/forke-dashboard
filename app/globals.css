@@ -13,12 +13,13 @@
   --color-surface-hover: var(--color-surface-hover);
   --color-muted: var(--color-muted);
   --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
   --color-bg: var(--color-bg);
 
   /* Font mapping for Next.js Fonts */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono: var(--font-geist-mono), var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
@@ -26,15 +27,16 @@
   --color-accent-hover: #E66E00;
   --color-accent-muted: rgba(255, 122, 0, 0.1);
   --color-accent-light: rgba(255, 122, 0, 0.05);
-  --color-accent-text: #FF7A00;
-  --color-bg: #050505;
-  --color-bg-surface: #050505;
-  --color-text-primary: #FFFFFF;
-  --color-text-muted: #888888;
-  --color-border: #222222;
-  --color-surface: #121212;
-  --color-surface-hover: #1A1A1A;
-  --color-muted: #888888;
+  --color-accent-text: #FFA347;
+  --color-bg: #151414;
+  --color-bg-surface: #151414;
+  --color-text-primary: #F4F4F5;
+  --color-text-muted: #8E8E93;
+  --color-border: rgba(240, 227, 222, 0.09);
+  --color-border-strong: rgba(240, 227, 222, 0.16);
+  --color-surface: #1A1919;
+  --color-surface-hover: #22201F;
+  --color-muted: #8E8E93;
   --lanyard-scale: 1;
   --term-scale: calc((min(1920px, 100vw) - 80px) * 0.5526 / 672px);
 }
@@ -57,16 +59,17 @@
 .theme-ember {
   --color-accent: #FF7A00;
   --color-accent-hover: #E66E00;
-  --color-accent-muted: rgba(255, 122, 0, 0.08);
-  --color-accent-light: rgba(255, 122, 0, 0.04);
+  --color-accent-muted: rgba(255, 122, 0, 0.1);
+  --color-accent-light: rgba(255, 122, 0, 0.05);
   --color-accent-text: #FFA347;
-  --color-bg: #060608;
-  --color-bg-surface: #0a0a0c;
+  --color-bg: #151414;
+  --color-bg-surface: #151414;
   --color-text-primary: #F4F4F5;
   --color-text-muted: #8E8E93;
-  --color-border: rgba(255, 255, 255, 0.06);
-  --color-surface: #111114;
-  --color-surface-hover: #161619;
+  --color-border: rgba(240, 227, 222, 0.09);
+  --color-border-strong: rgba(240, 227, 222, 0.16);
+  --color-surface: #1A1919;
+  --color-surface-hover: #22201F;
   --color-muted: #8E8E93;
 
   color-scheme: dark;
@@ -96,12 +99,12 @@ img {
   }
 
   .ui-surface:where(.theme-ember *) {
-    background: rgba(255, 255, 255, 0.018);
+    background: rgba(240, 227, 222, 0.02);
   }
 
   .ui-surface-soft {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(240, 227, 222, 0.025);
+    border: 1px solid var(--color-border);
   }
 
   /* Compact eyebrow label — used sparingly, GitHub/Linear style */
@@ -114,18 +117,19 @@ img {
 
   .ui-kpi {
     color: var(--color-text-primary);
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.04em;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
   }
 
   .ui-btn-primary {
     background: var(--color-accent);
-    color: #0a0a0a;
+    color: #1a0a00;
     border: 1px solid var(--color-accent);
-    font-weight: 600;
+    font-weight: 500;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 24px -8px rgba(255, 122, 0, 0.55);
   }
 
   .ui-btn-primary:hover {
@@ -134,8 +138,8 @@ img {
   }
 
   .ui-btn-secondary {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--color-border);
+    background: rgba(240, 227, 222, 0.04);
+    border: 1px solid var(--color-border-strong);
     color: var(--color-text-primary);
     font-weight: 500;
   }
@@ -148,9 +152,10 @@ img {
   /* Terminal-style section eyebrow — `// label` in mono */
   .ui-eyebrow {
     font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.02em;
-    color: rgba(255, 255, 255, 0.38);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
   }
 
   /* Outlined display type — giant footer wordmark */
@@ -180,7 +185,7 @@ img {
   }
 
   .theme-ember .glass {
-    background: rgba(18, 18, 20, 0.6);
+    background: rgba(26, 25, 25, 0.6);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -194,7 +199,7 @@ img {
   }
 
   .theme-ember .glass-card {
-    background: rgba(10, 10, 12, 0.7);
+    background: rgba(26, 25, 25, 0.7);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 12px;
@@ -202,9 +207,9 @@ img {
   }
 
   .app-panel {
-    background: rgba(255, 255, 255, 0.018);
+    background: rgba(240, 227, 222, 0.02);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 18px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.01);
   }
 
@@ -213,8 +218,8 @@ img {
   }
 
   .app-panel-hover:hover {
-    background: rgba(255, 255, 255, 0.026);
-    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(240, 227, 222, 0.03);
+    border-color: rgba(240, 227, 222, 0.2);
   }
 
   .app-page-shell {
@@ -224,9 +229,9 @@ img {
   }
 
   .app-field {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+    background: rgba(240, 227, 222, 0.03);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 10px;
     color: var(--color-text-primary);
     transition: border-color 150ms ease, background-color 150ms ease;
   }
@@ -240,7 +245,8 @@ img {
   .app-badge {
     display: inline-flex;
     align-items: center;
-    border-radius: 6px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
     border: 1px solid var(--color-border);
     background: rgba(255, 255, 255, 0.035);
     color: var(--color-text-muted);
@@ -250,22 +256,22 @@ img {
   }
 
   .app-empty {
-    border: 1px dashed var(--color-border);
-    background: rgba(255, 255, 255, 0.01);
-    border-radius: 12px;
+    border: 1px dashed var(--color-border-strong);
+    background: rgba(240, 227, 222, 0.01);
+    border-radius: 18px;
     color: var(--color-text-muted);
   }
 
   .app-terminal {
-    background: rgba(4, 4, 6, 0.96);
+    background: #0f0e0e;
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.55);
   }
 
   .app-modal {
-    background: rgba(10, 10, 12, 0.96);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    background: rgba(26, 25, 25, 0.97);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 18px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.72);
   }
 
@@ -789,3 +795,8 @@ input[type="checkbox"]:not(.appearance-none):focus {
 
 
 
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}

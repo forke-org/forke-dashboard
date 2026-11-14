@@ -10,6 +10,14 @@
 
 import type { NextConfig } from "next";
 
+const r2Host = (() => {
+  try {
+    return process.env.CLOUDFLARE_R2_PUBLIC_URL ? new URL(process.env.CLOUDFLARE_R2_PUBLIC_URL).hostname : null
+  } catch {
+    return null
+  }
+})()
+
 const nextConfig: NextConfig = {
   output: "standalone",
   eslint: {
@@ -49,6 +57,9 @@ const nextConfig: NextConfig = {
         hostname: 'flagcdn.com',
         pathname: '**',
       },
+      // uploaded avatars on R2, so the ID card painter can read them through /_next/image
+      { protocol: 'https', hostname: '*.r2.dev', pathname: '**' },
+      ...(r2Host ? [{ protocol: 'https' as const, hostname: r2Host, pathname: '**' }] : []),
     ],
   },
 };

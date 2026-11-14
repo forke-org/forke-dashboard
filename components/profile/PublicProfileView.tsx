@@ -100,7 +100,7 @@ const ACH_ICON = {
   loot: Trophy, untouchable: Award, sprint: Zap, night: Sparkles,
 } as const
 
-const tile = 'rounded-2xl border border-white/[0.06] bg-[#0c0c0f]/60 backdrop-blur-xl'
+const tile = 'rounded-2xl border border-white/[0.06] bg-[#1A1919]/60 backdrop-blur-xl'
 
 export default function PublicProfileView({
   data,
@@ -167,7 +167,7 @@ export default function PublicProfileView({
               />
             )}
             <div className="min-w-0">
-              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate">{data.name}</h1>
+              <h1 className="text-[28px] md:text-[34px] font-medium text-white tracking-[-0.035em] truncate">{data.name}</h1>
               <p className="text-sm text-white/40 font-mono mt-0.5">@{data.username}</p>
             </div>
           </div>
@@ -188,7 +188,7 @@ export default function PublicProfileView({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
           <div className="col-span-2 rounded-xl border border-accent/20 bg-accent/[0.04] p-3.5">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[#ff8a00] font-bold text-xs"><Award className="w-3.5 h-3.5" /> LVL {data.level}</span>
+              <span className="flex items-center gap-1.5 text-[#FF7A00] font-bold text-xs"><Award className="w-3.5 h-3.5" /> LVL {data.level}</span>
               <span className="text-[10px] font-mono text-white/40">{data.nextLevel ? `${data.xpRemaining} XP →` : 'MAX'}</span>
             </div>
             <p className="text-[13px] font-bold text-white mt-1">{data.levelTitle}</p>
@@ -220,7 +220,7 @@ export default function PublicProfileView({
 
       {/* Shipped work */}
       {(!contained && data.shippedWork.length === 0) ? null : (
-        <Section icon={<Trophy className="w-4 h-4 text-[#ff8a00]" />} title="Shipped Work" subtitle="Verified · timestamped · GitHub-linked">
+        <Section icon={<Trophy className="w-4 h-4 text-[#FF7A00]" />} title="Shipped Work" subtitle="Verified · timestamped · GitHub-linked">
           {data.shippedWork.length === 0 ? (
             <Empty text="No shipped work yet. Approved tasks appear here as verified proof of work." />
           ) : (
@@ -241,7 +241,7 @@ export default function PublicProfileView({
                     </div>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
-                    <span className="text-sm font-black text-accent font-mono">₹{t.budget.toLocaleString()}</span>
+                    <span className="text-sm font-medium text-accent font-mono">₹{t.budget.toLocaleString()}</span>
                     {t.prUrl ? (
                       <a href={t.prUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-accent/40 hover:text-accent text-white/70 text-xs font-bold transition-colors">
                         <Github className="w-3.5 h-3.5" /> PR <ExternalLink className="w-3 h-3" />
@@ -258,13 +258,13 @@ export default function PublicProfileView({
       )}
 
       {/* Heatmap */}
-      <Section icon={<Sparkles className="w-4 h-4 text-[#ff8a00]" />} title="XP Activity">
+      <Section icon={<Sparkles className="w-4 h-4 text-[#FF7A00]" />} title="XP Activity">
         <Heatmap data={data.heatmap} username={data.username} joinedAt={data.joinedAt} />
       </Section>
 
       {/* Achievements */}
       {(!contained && data.achievements.filter(a => a.unlocked).length === 0) ? null : (
-        <Section icon={<Award className="w-4 h-4 text-[#ff8a00]" />} title="Achievements" subtitle={`${data.achievements.filter(a => a.unlocked).length} / ${data.achievements.length} unlocked`}>
+        <Section icon={<Award className="w-4 h-4 text-[#FF7A00]" />} title="Achievements" subtitle={`${data.achievements.filter(a => a.unlocked).length} / ${data.achievements.length} unlocked`}>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {data.achievements
               .filter((a) => contained || a.unlocked)
@@ -314,7 +314,7 @@ export default function PublicProfileView({
 function MiniStat({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-xl border border-white/[0.05] bg-white/[0.01] p-3 flex flex-col justify-center text-center">
-      <div className="text-lg font-black text-white font-mono tabular-nums leading-none">{value}</div>
+      <div className="text-lg font-medium text-white font-mono tabular-nums leading-none">{value}</div>
       <div className="text-[10px] text-white/35 uppercase tracking-wider font-mono mt-1">{label}</div>
     </div>
   )
@@ -332,7 +332,7 @@ function Section({ icon, title, subtitle, children }: { icon: React.ReactNode; t
   return (
     <div className={`${tile} p-4 sm:p-6 text-left w-full max-w-full overflow-hidden`}>
       <div className="flex items-baseline justify-between gap-3 mb-4">
-        <h2 className="text-sm font-black tracking-wider font-mono text-white flex items-center gap-2 uppercase">{icon}{title}</h2>
+        <h2 className="text-sm font-medium tracking-[0.12em] font-mono text-white flex items-center gap-2 uppercase">{icon}{title}</h2>
         {subtitle && <span className="text-[11px] text-white/30 font-mono text-right">{subtitle}</span>}
       </div>
       {children}
@@ -502,10 +502,10 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
 
   const colors = [
     'bg-white/[0.04] border border-white/[0.02]',
-    'bg-[#ff8a00]/15 border border-[#ff8a00]/20',
-    'bg-[#ff8a00]/40 border border-[#ff8a00]/45',
-    'bg-[#ff8a00]/70 border border-[#ff8a00]/75',
-    'bg-[#ff8a00] shadow-[0_0_10px_rgba(255,138,0,0.45)]',
+    'bg-[#FF7A00]/15 border border-[#FF7A00]/20',
+    'bg-[#FF7A00]/40 border border-[#FF7A00]/45',
+    'bg-[#FF7A00]/70 border border-[#FF7A00]/75',
+    'bg-[#FF7A00] shadow-[0_0_10px_rgba(255,138,0,0.45)]',
   ]
 
   // Calculate total sum of counts for the selected year
@@ -594,20 +594,20 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
                                 isTopRow ? (
                                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-[120]">
                                     {/* Up arrow */}
-                                    <div className="w-1.5 h-1.5 bg-[#0b0a0d] border-l border-t border-white/10 transform rotate-45 -mb-[4px] z-[121]" />
-                                    <div className="bg-[#0b0a0d] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
+                                    <div className="w-1.5 h-1.5 bg-[#1A1919] border-l border-t border-white/10 transform rotate-45 -mb-[4px] z-[121]" />
+                                    <div className="bg-[#1A1919] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
                                       <span className="font-medium text-white/90">{getTooltipTextOnly(d.count)}</span>
-                                      <span className="text-[9px] text-white/40 font-mono">{d.date}</span>
+                                      <span className="text-[10.5px] text-white/40 font-mono">{d.date}</span>
                                     </div>
                                   </div>
                                 ) : (
                                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-[120]">
-                                    <div className="bg-[#0b0a0d] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
+                                    <div className="bg-[#1A1919] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
                                       <span className="font-medium text-white/90">{getTooltipTextOnly(d.count)}</span>
-                                      <span className="text-[9px] text-white/40 font-mono">{d.date}</span>
+                                      <span className="text-[10.5px] text-white/40 font-mono">{d.date}</span>
                                     </div>
                                     {/* Down arrow */}
-                                    <div className="w-1.5 h-1.5 bg-[#0b0a0d] border-r border-b border-white/10 transform rotate-45 -mt-[4px]" />
+                                    <div className="w-1.5 h-1.5 bg-[#1A1919] border-r border-b border-white/10 transform rotate-45 -mt-[4px]" />
                                   </div>
                                 )
                               )}
@@ -660,7 +660,7 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
               }}
               className={`text-xs font-bold py-1.5 px-3 text-center lg:text-left rounded-lg transition-all cursor-pointer shrink-0 w-auto lg:w-full ${
                 isActive 
-                  ? 'bg-[#ff8a00] text-black font-black shadow-[0_0_12px_rgba(255,138,0,0.3)]' 
+                  ? 'bg-[#FF7A00] text-black font-medium shadow-[0_0_12px_rgba(255,138,0,0.3)]' 
                   : 'text-white/40 hover:text-white/80 hover:bg-white/5'
               }`}
             >
@@ -758,12 +758,12 @@ function ShareModal({ shareUrl, onClose }: ShareModalProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div 
-        className="w-full max-w-md rounded-2xl bg-[#0c0c0f]/95 border border-[#ff8a00]/15 p-6 shadow-[0_32px_64px_rgba(0,0,0,0.9),_0_0_50px_rgba(255,138,0,0.05)] relative text-left flex flex-col gap-6 animate-scale-in"
+        className="w-full max-w-md rounded-2xl bg-[#1A1919]/95 border border-[#FF7A00]/15 p-6 shadow-[0_32px_64px_rgba(0,0,0,0.9),_0_0_50px_rgba(255,138,0,0.05)] relative text-left flex flex-col gap-6 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black tracking-widest font-mono text-white flex items-center gap-1.5 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] animate-pulse" />
+          <h2 className="text-sm font-medium tracking-[0.12em] font-mono text-white flex items-center gap-1.5 uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00] animate-pulse" />
             Share Profile
           </h2>
           <button 
@@ -793,13 +793,13 @@ function ShareModal({ shareUrl, onClose }: ShareModalProps) {
         </div>
 
         {/* Copy bar */}
-        <div className="flex items-center gap-3 w-full h-12 rounded-xl bg-black/55 border border-white/5 px-3 focus-within:border-[#ff8a00]/50 transition-colors">
+        <div className="flex items-center gap-3 w-full h-12 rounded-xl bg-black/55 border border-white/5 px-3 focus-within:border-[#FF7A00]/50 transition-colors">
           <div className="flex-grow text-xs text-white/70 truncate pr-2 font-mono select-all">
             {profileUrl}
           </div>
           <button
             onClick={handleCopy}
-            className="h-8 px-4 rounded-full bg-[#ff8a00] text-black hover:bg-[#ff8a00]/90 active:scale-95 transition-all text-xs font-black shrink-0 cursor-pointer shadow-md"
+            className="h-8 px-4 rounded-full bg-[#FF7A00] text-black hover:bg-[#FF7A00]/90 active:scale-95 transition-all text-xs font-medium shrink-0 cursor-pointer shadow-md"
           >
             {copied ? 'Copied' : 'Copy'}
           </button>

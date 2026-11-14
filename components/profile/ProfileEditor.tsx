@@ -112,7 +112,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div>
-          <h1 className="text-xl font-black text-white tracking-tight">{preview ? 'Public preview' : 'Edit your profile'}</h1>
+          <h1 className="text-[26px] md:text-[30px] font-medium leading-[1.1] text-white tracking-[-0.035em]">{preview ? 'Public preview' : 'Edit your profile'}</h1>
           <p className="text-[13px] text-white/40 mt-0.5">
             {preview ? 'This is exactly what visitors see at your public link.' : 'Fill in your details, then hit the eye to preview your public profile.'}
           </p>
@@ -132,19 +132,19 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
       {preview ? (
         <PublicProfileView data={previewData} contained />
       ) : (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0c0c0f]/60 backdrop-blur-xl p-6 md:p-8 space-y-6 lg:h-full lg:overflow-y-auto">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#1A1919]/60 backdrop-blur-xl p-6 md:p-8 space-y-6 lg:h-full lg:overflow-y-auto">
           {/* Avatar */}
           <div className="flex items-center gap-5">
             <button
               type="button"
               onClick={() => setAvatarModalOpen(true)}
-              className="relative w-24 h-24 rounded-full border border-[#ff8a00]/40 bg-accent/10 overflow-hidden shrink-0 group cursor-pointer"
+              className="relative w-24 h-24 rounded-full border border-[#FF7A00]/40 bg-accent/10 overflow-hidden shrink-0 group cursor-pointer"
             >
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="w-full h-full flex items-center justify-center text-3xl font-black text-accent">
+                <span className="w-full h-full flex items-center justify-center text-3xl font-medium text-accent">
                   {form.name?.[0]?.toUpperCase() || 'F'}
                 </span>
               )}
@@ -183,7 +183,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
             <button
               onClick={handleSave}
               disabled={saving || isBioOverLimit}
-              className="h-9 px-5 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 transition-all text-xs font-black text-[#0a0a0a] flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="h-9 px-5 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 transition-all text-xs font-medium text-[#151414] flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save changes
             </button>
@@ -207,7 +207,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
 
 /* ----------------------------- Avatar Picker Modal ----------------------------- */
 
-function AvatarPickerModal({
+export function AvatarPickerModal({
   currentAvatar,
   onSelectOAuth,
   onUpload,
@@ -236,13 +236,13 @@ function AvatarPickerModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-[#0c0c0f]/95 border border-[#ff8a00]/15 p-6 shadow-[0_32px_64px_rgba(0,0,0,0.9),_0_0_50px_rgba(255,138,0,0.05)] relative text-left flex flex-col gap-5 animate-scale-in"
+        className="w-full max-w-sm rounded-2xl bg-[#1A1919]/95 border border-[#FF7A00]/15 p-6 shadow-[0_32px_64px_rgba(0,0,0,0.9),_0_0_50px_rgba(255,138,0,0.05)] relative text-left flex flex-col gap-5 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black tracking-widest font-mono text-white flex items-center gap-1.5 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] animate-pulse" />
+          <h2 className="text-sm font-medium tracking-[0.12em] font-mono text-white flex items-center gap-1.5 uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00] animate-pulse" />
             Change Photo
           </h2>
           <button
@@ -255,12 +255,12 @@ function AvatarPickerModal({
 
         {/* Current avatar preview */}
         <div className="flex justify-center">
-          <div className="w-20 h-20 rounded-full border-2 border-[#ff8a00]/40 bg-accent/10 overflow-hidden">
+          <div className="w-20 h-20 rounded-full border-2 border-[#FF7A00]/40 bg-accent/10 overflow-hidden">
             {currentAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={currentAvatar} alt="Current" className="w-full h-full object-cover" />
             ) : (
-              <span className="w-full h-full flex items-center justify-center text-2xl font-black text-accent">?</span>
+              <span className="w-full h-full flex items-center justify-center text-2xl font-medium text-accent">?</span>
             )}
           </div>
         </div>
@@ -276,31 +276,31 @@ function AvatarPickerModal({
               {githubAvatar && (
                 <button
                   onClick={() => onSelectOAuth(githubAvatar)}
-                  className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-[#ff8a00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"
+                  className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-[#FF7A00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"
                 >
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={githubAvatar} alt="GitHub" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-[13px] font-bold text-white group-hover:text-[#ff8a00] transition-colors">Use GitHub photo</p>
+                    <p className="text-[13px] font-bold text-white group-hover:text-[#FF7A00] transition-colors">Use GitHub photo</p>
                     <p className="text-[11px] text-white/35 font-mono truncate">From linked GitHub account</p>
                   </div>
-                  <Github className="w-4 h-4 text-white/25 group-hover:text-[#ff8a00] transition-colors shrink-0" />
+                  <Github className="w-4 h-4 text-white/25 group-hover:text-[#FF7A00] transition-colors shrink-0" />
                 </button>
               )}
 
               {googleAvatar && (
                 <button
                   onClick={() => onSelectOAuth(googleAvatar)}
-                  className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-[#ff8a00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"
+                  className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-[#FF7A00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"
                 >
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={googleAvatar} alt="Google" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-[13px] font-bold text-white group-hover:text-[#ff8a00] transition-colors">Use Google photo</p>
+                    <p className="text-[13px] font-bold text-white group-hover:text-[#FF7A00] transition-colors">Use Google photo</p>
                     <p className="text-[11px] text-white/35 font-mono truncate">From linked Google account</p>
                   </div>
                   <GoogleIcon className="w-4 h-4 shrink-0" />
@@ -316,13 +316,13 @@ function AvatarPickerModal({
           {/* Upload option — always available */}
           <button
             onClick={() => { onUpload(); onClose() }}
-            className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-dashed border-white/10 bg-white/[0.01] hover:border-[#ff8a00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"
+            className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-dashed border-white/10 bg-white/[0.01] hover:border-[#FF7A00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"
           >
             <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
-              <Upload className="w-4 h-4 text-white/40 group-hover:text-[#ff8a00] transition-colors" />
+              <Upload className="w-4 h-4 text-white/40 group-hover:text-[#FF7A00] transition-colors" />
             </div>
             <div className="flex-1 text-left min-w-0">
-              <p className="text-[13px] font-bold text-white group-hover:text-[#ff8a00] transition-colors">Upload custom photo</p>
+              <p className="text-[13px] font-bold text-white group-hover:text-[#FF7A00] transition-colors">Upload custom photo</p>
               <p className="text-[11px] text-white/35 font-mono">PNG, JPG, WebP or GIF · up to 5MB</p>
             </div>
           </button>
@@ -334,7 +334,7 @@ function AvatarPickerModal({
 
 /* ----------------------------- Field component ----------------------------- */
 
-function Field({
+export function Field({
   label, value, onChange, placeholder, textarea, icon, maxLength, charLimit,
 }: {
   label: string
@@ -356,7 +356,7 @@ function Field({
           </span>
         )}
         {charLimit && (
-          <span className={`text-[10px] font-mono ${value.length > charLimit ? 'text-red-500 font-black' : 'text-white/30'}`}>
+          <span className={`text-[10px] font-mono ${value.length > charLimit ? 'text-red-500 font-medium' : 'text-white/30'}`}>
             {value.length}/{charLimit} characters
           </span>
         )}

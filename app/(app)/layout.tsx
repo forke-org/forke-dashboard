@@ -32,8 +32,7 @@ import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 import ToastContainer from '@/components/shared/Toast'
 
 import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
-import { resolveAvatarUrl } from '@/lib/utils/avatar'
-import DotPatternBackground from '@/components/shared/DotPatternBackground'
+import { resolveAvatar } from '@/lib/avatar/resolve'
 
 export default async function AppLayout({
   children,
@@ -63,7 +62,7 @@ export default async function AppLayout({
   }
 
   const userLevel = getLevelFromXp(user.xp || 0)
-  const resolvedAvatarUrl = resolveAvatarUrl(user.image)
+  const resolvedAvatarUrl = await resolveAvatar(user.image, user.username || user.id)
 
   let companyName = ''
   let pendingSubmissionsCount = 0
@@ -110,9 +109,8 @@ export default async function AppLayout({
   if (user.role === 'developer' && !user.username) {
     return (
       <DashboardProvider>
-        <div className="flex h-screen bg-[#070709] overflow-hidden theme-ember relative">
-          <DotPatternBackground />
-          <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
+        <div className="flex h-screen bg-[#121111] overflow-hidden theme-ember relative">
+            <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
             {children}
           </main>
         </div>
@@ -124,7 +122,6 @@ export default async function AppLayout({
   return (
     <DashboardProvider>
       <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember relative">
-        <DotPatternBackground />
 
         <Sidebar
           user={{

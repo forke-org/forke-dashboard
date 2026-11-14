@@ -18,6 +18,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
 import { createHash } from 'crypto'
 import { encryptUrl } from '@/lib/utils/encrypt'
+import { isPlaceholderPhoto } from '@/lib/avatar/resolve'
 import { revalidatePath } from 'next/cache'
 import { isR2Configured, uploadToR2, deleteFileByUrl } from '@/lib/r2'
 
@@ -199,7 +200,12 @@ export async function getLinkedAvatars(): Promise<{ github: string | null; googl
       }
     }
 
-    return { github: githubAvatar, google: googleAvatar }
+    // a GitHub identicon or Google letter tile is not a photo worth offering
+    const [ghPlaceholder, gPlaceholder] = await Promise.all([
+      githubAvatar ? isPlaceholderPhoto(githubAvatar) : false,
+      googleAvatar ? isPlaceholderPhoto(googleAvatar) : false,
+    ])
+    return { github: ghPlaceholder ? null : githubAvatar, google: gPlaceholder ? null : googleAvatar }
   } catch (error) {
     console.error('Error fetching linked avatars:', error)
     return { github: null, google: null }

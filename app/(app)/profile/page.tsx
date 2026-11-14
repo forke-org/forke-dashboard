@@ -18,9 +18,13 @@ import {
 } from '@/lib/utils/xp'
 import { redirect } from 'next/navigation'
 import { resolveAvatarUrl } from '@/lib/utils/avatar'
+import { resolveAvatar } from '@/lib/avatar/resolve'
 import { ensureProfileColumns } from '@/lib/actions/profile-actions'
 import ProfileEditor from '@/components/profile/ProfileEditor'
 import { ShippedItem, AchievementItem, ProfileData } from '@/components/profile/PublicProfileView'
+import DevProfileEditor from '@/components/profile/DevProfileEditor'
+import { parsePr, type Achievement, type DevProfile, type ShippedWork } from '@/components/profile/b/types'
+import { DEFAULT_CARD_STYLE, type CardStyle } from '@/components/idcard/style'
 
 function getStreakMilestoneBonus(day: number): number {
   if (day === 30) return 150
@@ -122,6 +126,11 @@ export default async function ProfilePage() {
   let completionRate: number | null = null
   let earned = 0
   let shipActivities: { date: Date; xp: number }[] = []
+  let devWork: ShippedWork[] = []
+  let owners5 = 0
+  let fiveStars = 0
+  const shipActivitiesXp = (r: { budget: number | null; taskCreatedAt: Date; date: Date; deadline: Date | null; rating: number | null }) =>
+    calculateXpAward({ budgetPaise: r.budget || 0, taskCreatedAt: r.taskCreatedAt, submittedAt: r.date, deadline: r.deadline, rating: r.rating, hadRevision: false })
 
   if (isOwner) {
     const rows = await db
@@ -140,19 +149,30 @@ export default async function ProfilePage() {
         .select({
           id: tasks.id, title: tasks.title, budget: tasks.budget, tags: tasks.skillTags,
           rating: submissions.rating, prUrl: submissions.githubLink, date: submissions.createdAt,
-          taskCreatedAt: tasks.createdAt, deadline: tasks.deadline
+          taskCreatedAt: tasks.createdAt, deadline: tasks.deadline,
+          sourceRepo: tasks.sourceRepo, company: owners.companyName, clientId: tasks.clientId,
         })
         .from(submissions)
         .innerJoin(tasks, eq(submissions.taskId, tasks.id))
+        .leftJoin(owners, eq(owners.id, tasks.clientId))
         .where(and(eq(submissions.developerId, dbUser.id), eq(submissions.status, 'approved')))
         .orderBy(desc(submissions.createdAt))
-        .limit(30),
+        .limit(100),
       db
         .select({ total: sql<number>`count(*)::int`, approved: sql<number>`count(*) filter (where ${submissions.status} = 'approved')::int` })
         .from(submissions)
         .where(eq(submissions.developerId, dbUser.id)),
     ])
     shippedWork = rows.map((r) => ({ id: r.id, title: r.title, budget: Math.floor((r.budget || 0) / 100), tags: r.tags || [], rating: r.rating ?? null, prUrl: r.prUrl ?? null, date: r.date.toISOString() }))
+    devWork = rows.map((r) => {
+      const pr = parsePr(r.prUrl)
+      return {
+        id: r.id, title: r.title, repo: pr.repo ?? r.sourceRepo ?? null, pr: pr.pr, prUrl: r.prUrl ?? null,
+        company: r.company ?? null, tags: r.tags || [], rating: r.rating ?? null, xp: shipActivitiesXp(r), date: r.date.toISOString(),
+      }
+    })
+    owners5 = new Set(rows.map((r) => r.clientId)).size
+    fiveStars = rows.filter((r) => r.rating === 5).length
     shipped = rows.length
     shipActivities = rows.map((r) => {
       const xpVal = calculateXpAward({
@@ -174,6 +194,7 @@ export default async function ProfilePage() {
     avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null
 
     const t = totals[0]
+    if (t) shipped = Math.max(shipped, t.approved)
     completionRate = t && t.total > 0 ? Math.round((t.approved / t.total) * 100) : null
   }
 
@@ -206,6 +227,74 @@ export default async function ProfilePage() {
     shippedWork,
     achievements: buildAchievements({ shipped, level, streak: dbUser.currentStreak || 0, earned }),
     heatmap: buildHeatmap(shipActivities, dbUser.currentStreak || 0),
+  }
+
+  if (!isOwner) {
+    const streak = dbUser.currentStreak || 0
+    const stackCount = new Map<string, number>()
+    devWork.forEach((w) => w.tags.forEach((t) => stackCount.set(t, (stackCount.get(t) || 0) + 1)))
+    const stack = [...stackCount.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t).slice(0, 10)
+    const achievements: Achievement[] = [
+      { label: 'First merge', desc: 'Ship your first task', group: 'Shipping', have: shipped, need: 1 },
+      { label: 'Ten down', desc: 'Ship 10 tasks', group: 'Shipping', have: shipped, need: 10 },
+      { label: 'Fifty club', desc: 'Ship 50 tasks', group: 'Shipping', have: shipped, need: 50 },
+      { label: 'On fire', desc: 'Keep a 7 day streak', group: 'Consistency', have: streak, need: 7 },
+      { label: 'Monthly', desc: 'Keep a 30 day streak', group: 'Consistency', have: streak, need: 30 },
+      { label: 'Five stars', desc: 'Get a 5 star rating', group: 'Quality', have: fiveStars, need: 1 },
+      { label: 'Untouchable', desc: '10 five star ratings', group: 'Quality', have: fiveStars, need: 10 },
+      { label: 'Getting there', desc: 'Reach level 5', group: 'Levels', have: level, need: 5 },
+      { label: 'Legend', desc: 'Reach level 10', group: 'Levels', have: level, need: 10 },
+      { label: 'Polyglot', desc: 'Ship across 5 stacks', group: 'Range', have: stackCount.size, need: 5 },
+      { label: 'Repo hopper', desc: 'Ship for 10 different owners', group: 'Range', have: owners5, need: 10 },
+    ]
+    const profile: DevProfile = {
+      username: dbUser.username,
+      name: dbUser.name,
+      headline: dbUser.headline ?? null,
+      bio: dbUser.bio ?? null,
+      location: dbUser.location ?? null,
+      college: dbUser.college ?? null,
+      avatarUrl: await resolveAvatar(dbUser.image, dbUser.username),
+      level,
+      levelTitle,
+      currentStreak: streak,
+      joinedAt: data.joinedAt,
+      githubUrl: dbUser.githubUrl ?? null,
+      linkedinUrl: dbUser.linkedinUrl ?? null,
+      websiteUrl: dbUser.websiteUrl ?? null,
+      shipped,
+      avgRating: avgRating ? Math.round(avgRating * 10) / 10 : null,
+      stack,
+      work: devWork,
+      achievements,
+      heatmap: data.heatmap,
+    }
+    const saved = dbUser.cardStyle
+    const cardStyle: CardStyle = {
+      color: (['black', 'white', 'orange'].includes(saved?.color ?? '') ? saved?.color : DEFAULT_CARD_STYLE.color) as CardStyle['color'],
+      filter: (['orange', 'bw', 'normal'].includes(saved?.filter ?? '') ? saved?.filter : DEFAULT_CARD_STYLE.filter) as CardStyle['filter'],
+      line: saved?.line ?? DEFAULT_CARD_STYLE.line,
+    }
+    const card = {
+      first: dbUser.name.split(/\s+/)[0],
+      full: dbUser.name,
+      username: dbUser.username,
+      level,
+      title: levelTitle,
+      shipped,
+      rating: profile.avgRating ?? 0,
+      id: `FK-${dbUser.id.replace(/-/g, '').slice(0, 4).toUpperCase()}`,
+      issued: new Date(dbUser.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      avatarUrl: profile.avatarUrl,
+    }
+    return (
+      <div className="flex h-full flex-col bg-transparent font-sans text-white">
+        <TopBar title="Profile" />
+        <div className="w-full min-h-0 flex-grow overflow-y-auto px-4 py-5 md:px-6 lg:overflow-hidden lg:px-8 lg:py-6">
+          <DevProfileEditor profile={profile} card={card} initialCard={cardStyle} />
+        </div>
+      </div>
+    )
   }
 
   return (

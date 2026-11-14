@@ -71,6 +71,8 @@ export const users = pgTable('users', {
   college: text('college'),
   deletionScheduledAt: timestamp('deletion_scheduled_at'),
   attribution: jsonb('attribution'), // first-touch marketing attribution { source, medium, campaign, referrer, landingPage, signupRole }
+  // ID card look, picked by the user in the dashboard: { color: 'black'|'white'|'orange', filter: 'orange'|'bw'|'normal', line }
+  cardStyle: jsonb('card_style').$type<{ color: string; filter: string; line: string }>(),
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
