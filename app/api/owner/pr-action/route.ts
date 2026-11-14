@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
+/**
  * POST /api/owner/pr-action
  * Executes owner actions on a developer PR: approve/merge, request changes, or reject.
  *
@@ -11,17 +21,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db, sandboxOwners } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { requireOwnedSandbox, requireSandboxUser, sandboxAuthResponse } from '@/lib/sandbox-auth'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { action, sandboxRepo, prNumber, username, message } = body
+    const { action, sandboxRepo, message } = body
+    const prNumber = Number(body.prNumber)
 
-    if (!action || !sandboxRepo || !prNumber || !username) {
+    if (!action || !sandboxRepo || !Number.isInteger(prNumber) || prNumber <= 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: action, sandboxRepo, prNumber, username' },
+        { error: 'Missing required fields: action, sandboxRepo, prNumber' },
         { status: 400 }
       )
     }
@@ -33,18 +43,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Get owner's access token
-    const ownerRecords = await db
-      .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.username, username))
-      .limit(1)
-
-    if (ownerRecords.length === 0) {
-      return NextResponse.json({ error: 'Owner not found' }, { status: 404 })
-    }
-
-    const accessToken = ownerRecords[0].accessToken
+    // Only the signed-in owner of this sandbox may act on its PRs.
+    const owner = await requireSandboxUser('owner')
+    await requireOwnedSandbox(owner, sandboxRepo)
+    const accessToken = owner.token
     const baseUrl = `https://api.github.com/repos/${sandboxRepo}`
     const headers = {
       Authorization: `Bearer ${accessToken}`,
@@ -110,9 +112,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err: unknown) {
+    const denied = sandboxAuthResponse(err)
+    if (denied) return denied
     console.error('[API /owner/pr-action POST] Error:', err)
     return NextResponse.json(
-      { error: 'Failed to execute PR action', details: String(err) },
+      { error: 'Failed to execute PR action' },
       { status: 500 }
     )
   }

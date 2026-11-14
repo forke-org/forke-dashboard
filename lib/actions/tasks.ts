@@ -1,6 +1,16 @@
 'use server'
 
-import { tasks, users, submissions, revisionRequests, escrow } from '@/lib/db/schema'
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
+import { tasks, users, submissions, revisionRequests, escrow, developers } from '@/lib/db/schema'
 import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
@@ -15,7 +25,8 @@ import {
 } from '@/lib/utils/xp'
 import { XP_CLAIM_TASK } from '@/constants'
 import { z } from 'zod'
-import { createNotification } from '@/app/(app)/notifications/actions'
+import { createNotification } from '@/lib/notifications'
+import { logAudit } from './audit-actions'
 
 export type CreateTaskState = {
   errors?: {
@@ -134,6 +145,15 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
       body: `Your task "${title}" is now live and visible to developers.`,
       link: '/tasks',
     })
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'task',
+      action: 'task.posted',
+      target: title,
+      actorId: user.id,
+      actorName: session?.user?.name
+    })
   } catch (error) {
     console.error('Database Error:', error)
     return { message: 'Something went wrong while posting the task. Please try again.' }
@@ -152,15 +172,25 @@ export async function claimTask(taskId: string) {
     throw new Error('Unauthorized: Only developers can claim tasks.')
   }
 
+  // These three reads are all independent of each other (none depend on
+  // another's result) — fetch concurrently instead of one at a time.
+  const [devProfile, taskResult, developer] = await Promise.all([
+    db.query.developers.findFirst({ where: eq(developers.userId, user.id) }),
+    getTaskById(taskId),
+    db.query.users.findFirst({ where: eq(users.id, user.id) }),
+  ])
+
+  // Enforce GitHub account connection
+  if (!devProfile || !devProfile.isGithubConnected) {
+    throw new Error('GitHubConnectionRequired')
+  }
+
   // Get task to check level requirements
-  const taskResult = await getTaskById(taskId)
   if (!taskResult) throw new Error('Task not found.')
-  
+
   if (taskResult.task.status !== 'open') {
     throw new Error('This task has already been claimed.')
   }
-
-  const developer = await db.query.users.findFirst({ where: eq(users.id, user.id) })
 
   // Perform atomic update to handle race conditions
   const updated = await db
@@ -204,7 +234,7 @@ export async function claimTask(taskId: string) {
 
   revalidatePath('/tasks')
   revalidatePath(`/tasks/${taskId}`)
-  redirect(`/tasks/${taskId}?toast=claimed`)
+  redirect(`/ide/${taskId}`)
 }
 
 export async function submitWork(prevState: SubmitWorkState | null, formData: FormData): Promise<SubmitWorkState> {
@@ -225,13 +255,17 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
     return { error: 'Invalid URL. Must start with https://' }
   }
 
-  const taskResult = await getTaskById(taskId)
+  // Independent of each other — fetch concurrently.
+  const [taskResult, devUsers] = await Promise.all([
+    getTaskById(taskId),
+    db.select({ name: users.name }).from(users).where(eq(users.id, user.id)).limit(1),
+  ])
   if (!taskResult) return { error: 'Task not found.' }
   if (taskResult.task.status !== 'claimed') return { error: 'Task is not in claimed state.' }
   if (taskResult.task.claimantId !== user.id) return { error: 'You are not the claimant.' }
 
   // Look up developer name for notification
-  const [devUser] = await db.select({ name: users.name }).from(users).where(eq(users.id, user.id)).limit(1)
+  const [devUser] = devUsers
 
   try {
     await db.transaction(async (tx) => {
@@ -265,6 +299,15 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
       title: '📤 Submission sent',
       body: `Your submission for "${taskResult.task.title}" is under review. You'll be notified once the client responds.`,
       link: `/tasks/${taskId}`,
+    })
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'task',
+      action: 'submission.created',
+      target: `submission for task ${taskId.slice(0, 8)}`,
+      actorId: user.id,
+      actorName: devUser?.name
     })
   } catch (error) {
     console.error('Submission Error:', error)

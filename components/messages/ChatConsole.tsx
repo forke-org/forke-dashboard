@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React, { useState, useEffect, useRef } from 'react'
 import { getMessagesBetweenUsers, sendMessageAction, uploadChatFile } from '@/app/(app)/messages/actions'
 import { Send, Check, CheckCheck, Paperclip, Mail, ShieldAlert, Loader2, ImageIcon, FileText, GitBranch } from 'lucide-react'
@@ -172,7 +182,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
       {/* Left Column: Contact threads */}
       <div className="w-72 rounded-xl bg-white/[0.018] border border-[var(--color-border)] p-3 flex flex-col gap-3 shrink-0">
         <div className="px-1.5 text-left">
-          <h4 className="text-sm font-semibold text-white">Conversations</h4>
+          <h4 className="text-sm font-medium text-white">Conversations</h4>
         </div>
 
         <div className="flex-grow overflow-y-auto space-y-1 pr-0.5">
@@ -269,7 +279,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
                                 className="block relative group rounded overflow-hidden border border-white/10 bg-[#0d0d0f]/50 p-0.5"
                               >
                                 <img src={m.fileUrl} alt={m.fileName || 'Attached image'} className="max-h-36 object-cover rounded hover:opacity-90 transition-opacity" />
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-semibold text-white">
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-medium text-white">
                                   View Image
                                 </div>
                               </a>
@@ -278,7 +288,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
                                 href={m.fileUrl} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                className="flex items-center gap-2 p-2 bg-[#0c0c0e] hover:bg-white/[0.04] border border-white/10 rounded-lg text-xs text-accent font-semibold transition-colors"
+                                className="flex items-center gap-2 p-2 bg-[#1A1919] hover:bg-white/[0.04] border border-white/10 rounded-lg text-xs text-accent font-semibold transition-colors"
                               >
                                 <Paperclip className="w-4 h-4 shrink-0" />
                                 <span className="truncate max-w-[180px] text-white/80">{m.fileName || 'Attached File'}</span>
@@ -413,7 +423,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
               <button 
                 type="submit" 
                 disabled={isUploading}
-                className="p-2.5 text-[#0a0a0a] bg-accent hover:bg-accent-hover rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                className="p-2.5 text-[#151414] bg-accent hover:bg-accent-hover rounded-lg cursor-pointer transition-colors disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
               </button>

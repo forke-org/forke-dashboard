@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import SandboxWorkspace from '@/components/sandbox/SandboxWorkspace'
@@ -64,15 +74,24 @@ export default async function DashboardPage() {
 
   try {
     if (user?.role === 'owner') {
-      const statsResult = await db
-        .select({
-          status: tasks.status,
-          count: sql<number>`count(*)::int`,
-          sumBudget: sql<number>`sum(${tasks.budget})::int`,
-        })
-        .from(tasks)
-        .where(eq(tasks.clientId, user.id))
-        .groupBy(tasks.status)
+      const [statsResult, ownerTurnaround] = await Promise.all([
+        db
+          .select({
+            status: tasks.status,
+            count: sql<number>`count(*)::int`,
+            sumBudget: sql<number>`sum(${tasks.budget})::int`,
+          })
+          .from(tasks)
+          .where(eq(tasks.clientId, user.id))
+          .groupBy(tasks.status),
+        db
+          .select({
+            avgHours: sql<number>`avg(extract(epoch from (${submissions.createdAt} - ${tasks.createdAt})) / 3600)::float`,
+          })
+          .from(tasks)
+          .innerJoin(submissions, eq(submissions.taskId, tasks.id))
+          .where(eq(tasks.clientId, user.id)),
+      ])
 
       for (const row of statsResult) {
         if (row.status === 'approved') {
@@ -83,25 +102,26 @@ export default async function DashboardPage() {
           ownerStats.totalEscrow += row.sumBudget ? Math.floor(row.sumBudget / 100) : 0
         }
       }
-
-      const ownerTurnaround = await db
-        .select({
-          avgHours: sql<number>`avg(extract(epoch from (${submissions.createdAt} - ${tasks.createdAt})) / 3600)::float`,
-        })
-        .from(tasks)
-        .innerJoin(submissions, eq(submissions.taskId, tasks.id))
-        .where(eq(tasks.clientId, user.id))
       avgTurnaroundHours = ownerTurnaround[0]?.avgHours ?? null
     } else if (user?.role === 'developer') {
-      const statsResult = await db
-        .select({
-          status: tasks.status,
-          count: sql<number>`count(*)::int`,
-          sumBudget: sql<number>`sum(${tasks.budget})::int`,
-        })
-        .from(tasks)
-        .where(eq(tasks.claimantId, user.id))
-        .groupBy(tasks.status)
+      const [statsResult, devTurnaround] = await Promise.all([
+        db
+          .select({
+            status: tasks.status,
+            count: sql<number>`count(*)::int`,
+            sumBudget: sql<number>`sum(${tasks.budget})::int`,
+          })
+          .from(tasks)
+          .where(eq(tasks.claimantId, user.id))
+          .groupBy(tasks.status),
+        db
+          .select({
+            avgHours: sql<number>`avg(extract(epoch from (${submissions.createdAt} - ${tasks.createdAt})) / 3600)::float`,
+          })
+          .from(tasks)
+          .innerJoin(submissions, eq(submissions.taskId, tasks.id))
+          .where(eq(submissions.developerId, user.id)),
+      ])
 
       for (const row of statsResult) {
         if (row.status === 'approved') {
@@ -112,14 +132,6 @@ export default async function DashboardPage() {
           devStats.totalEscrow += row.sumBudget ? Math.floor(row.sumBudget / 100) : 0
         }
       }
-
-      const devTurnaround = await db
-        .select({
-          avgHours: sql<number>`avg(extract(epoch from (${submissions.createdAt} - ${tasks.createdAt})) / 3600)::float`,
-        })
-        .from(tasks)
-        .innerJoin(submissions, eq(submissions.taskId, tasks.id))
-        .where(eq(submissions.developerId, user.id))
       avgTurnaroundHours = devTurnaround[0]?.avgHours ?? null
     }
   } catch (e) {
@@ -169,7 +181,7 @@ export default async function DashboardPage() {
           {/* Header */}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-white">
+              <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] tracking-[-0.035em] text-white">
                 {greeting()}, {firstName}
               </h2>
               <p className="text-sm text-[var(--color-text-muted)] mt-1">

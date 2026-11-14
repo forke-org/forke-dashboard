@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React, { useState, useActionState, useEffect } from 'react'
 import { submitWork } from '@/lib/actions/tasks'
 import { Button } from '@/components/ui/Button'
@@ -38,21 +48,21 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
 
   if (state?.success) {
     return (
-      <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl animate-in fade-in slide-in-from-bottom-4 duration-700 select-none text-left">
-        <div className="flex flex-col items-center text-center space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-450 shadow-inner">
-            <Sparkles className="w-6 h-6" />
+      <div className="p-5 bg-emerald-500/[0.07] border border-emerald-500/20 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500 select-none text-left">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-11 h-11 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-xl font-serif text-white tracking-tight">Work Submitted!</h3>
-            <p className="text-xs text-emerald-450/80 font-light">Waiting for client review. Great job!</p>
+            <h3 className="text-base font-medium text-white">Work submitted</h3>
+            <p className="text-[13px] text-emerald-400/80">Waiting for client review. Great job!</p>
           </div>
-          <div className="w-full p-4 bg-white/[0.005] rounded-2xl border border-white/[0.03] space-y-3">
-            <div className="flex items-center justify-between text-[8px] font-mono font-black text-emerald-450 uppercase tracking-widest">
-              <span>Your Submission</span>
-              <span>{state.submittedAt ? new Date(state.submittedAt).toLocaleTimeString() : ''}</span>
+          <div className="w-full p-3.5 bg-white/[0.01] rounded-lg border border-[var(--color-border)] space-y-2.5">
+            <div className="flex items-center justify-between text-[11px] text-emerald-400">
+              <span>Your submission</span>
+              <span className="tabular-nums">{state.submittedAt ? new Date(state.submittedAt).toLocaleTimeString() : ''}</span>
             </div>
-            <div className="flex items-center gap-3 text-white/80 font-mono text-xs break-all">
+            <div className="flex items-center gap-2.5 text-white/80 text-[13px] break-all">
               <GitPullRequest className="w-4 h-4 shrink-0 text-accent" />
               {state.githubLink || ''}
             </div>
@@ -63,31 +73,31 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
   }
 
   return (
-    <form action={action} className="space-y-6 text-left">
+    <form action={action} className="space-y-4 text-left">
       <input type="hidden" name="taskId" value={taskId} />
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label htmlFor="githubLink" className="text-[9px] font-black text-white/40 uppercase tracking-widest font-mono pl-1">
+          <label htmlFor="githubLink" className="text-xs font-medium text-[var(--color-text-muted)] pl-0.5">
             Your submission link
           </label>
           <div className="flex items-center gap-2">
             {isValidUrl === true && (
-              <span className="text-[8px] font-black font-mono text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> VALID URL
+              <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Valid URL
               </span>
             )}
             {isValidUrl === false && (
-              <span className="text-[8px] font-black font-mono text-red-400 flex items-center gap-1">
-                <XCircle className="w-3.5 h-3.5" /> INVALID URL
+              <span className="text-[11px] text-red-400 flex items-center gap-1">
+                <XCircle className="w-3.5 h-3.5" /> Invalid URL
               </span>
             )}
           </div>
         </div>
-        
+
         <div className="relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-accent transition-colors">
-            <LinkIcon className="w-4.5 h-4.5" />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] group-focus-within:text-accent transition-colors">
+            <LinkIcon className="w-4 h-4" />
           </div>
           <input
             id="githubLink"
@@ -97,18 +107,18 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://github.com/username/repo-link"
-            className="w-full bg-white/[0.01] border border-white/5 rounded-xl py-3.5 pl-12 pr-6 text-xs text-white placeholder-white/20 outline-none focus:border-accent transition-all"
+            className="w-full bg-white/[0.02] border border-[var(--color-border)] rounded-lg py-2.5 pl-10 pr-4 text-[13px] text-white placeholder-white/25 outline-none focus:border-accent transition-colors"
           />
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label htmlFor="note" className="text-[9px] font-black text-white/40 uppercase tracking-widest font-mono pl-1">
+          <label htmlFor="note" className="text-xs font-medium text-[var(--color-text-muted)] pl-0.5">
             Note to client
           </label>
-          <span className="text-[9px] font-black font-mono text-white/20 uppercase tracking-wider">
-            Optional note
+          <span className="text-[11px] text-[var(--color-text-muted)]">
+            Optional
           </span>
         </div>
         <textarea
@@ -117,13 +127,13 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
           rows={4}
           maxLength={300}
           placeholder="Briefly explain what you built, any decisions you made, or anything the client should know."
-          className="w-full bg-white/[0.01] border border-white/5 rounded-xl py-3.5 px-4 text-xs text-white placeholder-white/20 outline-none focus:border-accent transition-all resize-none leading-relaxed"
+          className="w-full bg-white/[0.02] border border-[var(--color-border)] rounded-lg py-2.5 px-3 text-[13px] text-white placeholder-white/25 outline-none focus:border-accent transition-colors resize-none leading-relaxed"
         />
       </div>
 
       {state?.error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2.5 text-red-400 animate-in fade-in slide-in-from-top-1 font-medium text-xs">
-          <XCircle className="w-4.5 h-4.5 shrink-0" />
+        <div className="p-3 bg-red-500/[0.07] border border-red-500/20 rounded-lg flex items-start gap-2 text-red-400 animate-in fade-in slide-in-from-top-1 text-[13px]">
+          <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <p>{state.error}</p>
         </div>
       )}
@@ -131,17 +141,17 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
       <Button
         type="submit"
         disabled={isPending || isValidUrl !== true}
-        className="w-full h-12 text-[10px] font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_12px_rgba(255,122,0,0.2)] active:translate-y-[1px] transition-all cursor-pointer font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+        className="w-full h-10 text-[13px] font-medium rounded-lg ui-btn-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
       >
         {isPending ? (
           <>
             <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-            SUBMITTING...
+            Submitting...
           </>
         ) : (
           <>
-            SUBMIT FOR REVIEW
-            <Send className="w-4 h-4 stroke-[2.5px] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+            Submit for review
+            <Send className="w-4 h-4" />
           </>
         )}
       </Button>

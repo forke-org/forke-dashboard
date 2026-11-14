@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React, { useState, useEffect } from 'react'
 import TaskCard from './TaskCard'
 import { useRouter } from 'next/navigation'
@@ -73,7 +83,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
       return task.status === 'open'
     }
     if (filterStatus === 'claimed') {
-      return task.status !== 'open'
+      return task.status !== 'open' && task.status !== 'processing'
     }
     return true
   })
@@ -92,7 +102,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
             className={cn(
               "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
               filterStatus === 'all'
-                ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                ? "bg-accent border-accent text-[#151414] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
                 : "text-[var(--color-text-muted)] hover:text-white"
             )}
           >
@@ -103,7 +113,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
             className={cn(
               "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
               filterStatus === 'unclaimed'
-                ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                ? "bg-accent border-accent text-[#151414] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
                 : "text-[var(--color-text-muted)] hover:text-white"
             )}
           >
@@ -114,7 +124,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
             className={cn(
               "px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all",
               filterStatus === 'claimed'
-                ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                ? "bg-accent border-accent text-[#151414] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
                 : "text-[var(--color-text-muted)] hover:text-white"
             )}
           >
@@ -177,7 +187,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
                   className={cn(
                     "w-8 h-8 rounded-lg text-xs font-bold border transition-all cursor-pointer",
                     isActive
-                      ? "bg-accent border-accent text-[#0a0a0a] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
+                      ? "bg-accent border-accent text-[#151414] shadow-[0_0_10px_rgba(255,122,0,0.15)]"
                       : "border-[var(--color-border)] bg-white/[0.02] text-[var(--color-text-muted)] hover:border-white/20 hover:text-white"
                   )}
                 >

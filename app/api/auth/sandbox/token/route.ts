@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -35,24 +45,10 @@ export async function POST(request: Request) {
 
     // Save to database (non-blocking — sandbox still works if DB is down)
     try {
-      const { db } = await import('@/lib/db')
-      const { sandboxOwners, sandboxDevelopers } = await import('@/lib/db/schema')
-      const { eq } = await import('drizzle-orm')
+      const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
 
-      if (role === 'owner') {
-        const existing = await db.select().from(sandboxOwners).where(eq(sandboxOwners.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxOwners).set({ username: githubUsername, accessToken: token }).where(eq(sandboxOwners.githubId, githubId))
-        } else {
-          await db.insert(sandboxOwners).values({ githubId, username: githubUsername, accessToken: token })
-        }
-      } else if (role === 'developer') {
-        const existing = await db.select().from(sandboxDevelopers).where(eq(sandboxDevelopers.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxDevelopers).set({ username: githubUsername, accessToken: token }).where(eq(sandboxDevelopers.githubId, githubId))
-        } else {
-          await db.insert(sandboxDevelopers).values({ githubId, username: githubUsername, accessToken: token })
-        }
+      if (role === 'owner' || role === 'developer') {
+        await upsertSandboxUser({ githubId, username: githubUsername, token, role })
       }
     } catch (dbErr) {
       console.warn('[Sandbox PAT] DB save skipped:', dbErr)

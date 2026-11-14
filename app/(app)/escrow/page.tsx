@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
@@ -64,87 +74,85 @@ export default async function EscrowPage() {
     .reduce((sum, r) => sum + r.amount, 0)
 
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title={isOwner ? "Escrow Vault" : "Active Claims"} />
-      
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-5xl mx-auto w-full">
-        {/* Header Banner */}
-        <div className="space-y-3 text-left">
-          <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-            Financial <span className="text-accent italic">Ledger</span>
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
+      <TopBar title="Escrow" />
+
+      <div className="flex-grow overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        {/* Header */}
+        <div className="space-y-1 text-left">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
+            Escrow ledger
           </h2>
-          <p className="text-white/50 text-xs md:text-sm font-light max-w-xl leading-relaxed">
-            Verify funded contracts, track funds held in escrow, and audit cryptographic payouts on the developer board.
+          <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
+            Track funds held in escrow and review released payouts across your tasks.
           </p>
         </div>
 
-        {/* Tactile Mini stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
-          {/* Card 1: Total Held */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
+        {/* Mini stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">Funds Held</span>
-              <Coins className="w-4 h-4 text-accent/50" />
+              <span className="text-xs text-[var(--color-text-muted)]">Funds held</span>
+              <Coins className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
             </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-2xl font-mono font-bold text-white">₹{Math.floor(totalHeld / 100).toLocaleString()}</h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1 font-mono">Secured Vault Balance</p>
+            <div className="mt-3">
+              <h3 className="ui-kpi">₹{Math.floor(totalHeld / 100).toLocaleString()}</h3>
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Secured in escrow</p>
             </div>
           </div>
 
-          {/* Card 2: Total Settled */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">Funds Settled</span>
-              <ShieldCheck className="w-4 h-4 text-emerald-400/50" />
+              <span className="text-xs text-[var(--color-text-muted)]">Funds released</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
             </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-2xl font-mono font-bold text-white">₹{Math.floor(totalReleased / 100).toLocaleString()}</h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1 font-mono">Released to builders</p>
+            <div className="mt-3">
+              <h3 className="ui-kpi">₹{Math.floor(totalReleased / 100).toLocaleString()}</h3>
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Paid out to developers</p>
             </div>
           </div>
 
-          {/* Card 3: Security Nodes */}
-          <div className="p-6 rounded-[2rem] bg-[#0b0b0e] border border-white/[0.04] text-left relative overflow-hidden shadow-lg">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-white/30 font-black uppercase tracking-widest font-mono">Escrow Node</span>
-              <ShieldCheck className="w-4 h-4 text-accent/50 animate-pulse" />
+              <span className="text-xs text-[var(--color-text-muted)]">Escrow status</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             </div>
-            <div className="mt-4 leading-none">
-              <h3 className="text-xs font-black uppercase text-emerald-400 tracking-wider font-mono">active & secure</h3>
-              <p className="text-[8px] text-white/20 font-black uppercase tracking-wider mt-1.5 font-mono">100% SLA verification</p>
+            <div className="mt-3">
+              <h3 className="text-sm font-medium text-emerald-400">Active &amp; secure</h3>
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Funds locked until approval</p>
             </div>
           </div>
         </div>
 
-        {/* Ledger Table Section */}
-        <div className="space-y-4 pt-4 text-left">
-          <h4 className="text-xs font-black uppercase text-white/30 tracking-widest font-mono">Transaction Log</h4>
-          
+        {/* Ledger Table */}
+        <div className="space-y-3 text-left">
+          <h4 className="text-sm font-medium text-white">Transactions</h4>
+
           {escrowRecords.length > 0 ? (
-            <div className="border border-white/[0.04] rounded-2xl overflow-hidden bg-[#0b0b0e] shadow-xl">
+            <div className="border border-[var(--color-border)] rounded-xl overflow-hidden bg-white/[0.018]">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/[0.04] text-[9.5px] font-black uppercase tracking-widest text-white/40 font-mono bg-white/[0.005]">
-                      <th className="py-4 px-6">Transaction Node ID</th>
-                      <th className="py-4 px-6">Associated Mission</th>
-                      <th className="py-4 px-6">Vault Status</th>
-                      <th className="py-4 px-6 text-right">Value (INR)</th>
+                    <tr className="border-b border-[var(--color-border)] text-[11px] text-[var(--color-text-muted)]">
+                      <th className="py-2.5 px-4 font-medium">ID</th>
+                      <th className="py-2.5 px-4 font-medium">Task</th>
+                      <th className="py-2.5 px-4 font-medium">Status</th>
+                      <th className="py-2.5 px-4 text-right font-medium">Value (₹)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.03]">
+                  <tbody className="divide-y divide-[var(--color-border)]">
                     {escrowRecords.map((row) => (
-                      <tr key={row.id} className="text-xs hover:bg-white/[0.005] transition-colors">
-                        <td className="py-4 px-6 font-mono text-[10px] text-accent font-semibold uppercase">
+                      <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-4 font-mono text-[12px] text-accent">
                           {row.id.split('-')[0]}-{row.id.split('-')[1]}
                         </td>
-                        <td className="py-4 px-6 text-white/80 font-serif max-w-[200px] truncate">
+                        <td className="py-3 px-4 text-[13px] text-white/85 max-w-[200px] truncate">
                           {row.taskTitle}
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-4">
                           <span className={cn(
-                            "px-2 py-0.5 text-[8.5px] font-black font-mono rounded uppercase tracking-wider",
+                            "px-1.5 py-0.5 text-[11px] font-medium rounded capitalize",
                             row.status === 'held' && "bg-amber-500/10 border border-amber-500/20 text-amber-400",
                             row.status === 'released' && "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
                             row.status === 'refunded' && "bg-white/5 border border-white/10 text-white/40"
@@ -152,7 +160,7 @@ export default async function EscrowPage() {
                             {row.status}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-right font-mono font-bold text-white">
+                        <td className="py-3 px-4 text-right font-medium tabular-nums text-white">
                           ₹{Math.floor(row.amount / 100).toLocaleString()}
                         </td>
                       </tr>
@@ -162,18 +170,19 @@ export default async function EscrowPage() {
               </div>
             </div>
           ) : (
-            <div className="p-16 border border-white/[0.04] rounded-[2.5rem] flex flex-col items-center justify-center text-center gap-4 bg-[#0b0b0e] shadow-xl">
-              <BadgeInfo className="w-8 h-8 text-white/20" />
+            <div className="p-10 border border-dashed border-[var(--color-border)] rounded-xl flex flex-col items-center justify-center text-center gap-3 bg-white/[0.01]">
+              <BadgeInfo className="w-6 h-6 text-[var(--color-text-muted)]" />
               <div className="space-y-1">
-                <p className="text-white font-serif text-lg">No Financial Transactions</p>
-                <p className="text-white/40 text-xs leading-relaxed max-w-sm">
-                  There are no escrows recorded. Once tasks are posted or claimed, active contracts will appear in the vault logs.
+                <p className="text-white font-medium text-sm">No transactions yet</p>
+                <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed max-w-sm">
+                  Once tasks are posted or claimed, active escrow contracts will appear here.
                 </p>
               </div>
             </div>
           )}
         </div>
 
+        </div>
       </div>
     </div>
   )

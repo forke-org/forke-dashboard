@@ -1,7 +1,18 @@
 'use server'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { db } from '@/lib/db'
 import { supportEnquiries } from '@/lib/db/schema'
+import { logAudit } from '@/lib/actions/audit-actions'
 
 export async function submitSupportEnquiry(formData: FormData) {
   const firstName = formData.get('firstName') as string
@@ -27,6 +38,15 @@ export async function submitSupportEnquiry(formData: FormData) {
       relevantLinks: relevantLinks || '',
       status: 'pending',
     })
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'support',
+      action: 'support.enquiry',
+      target: errorType ? `${contactEmail} · ${errorType}` : contactEmail,
+      actorName: `${firstName} ${lastName}`
+    })
+
     return { success: true }
   } catch (e) {
     console.error('Failed to submit support enquiry:', e)

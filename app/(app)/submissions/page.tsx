@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
@@ -35,24 +45,22 @@ function OwnerSubmissionRow({ item }: { item: OwnerSubmissionItem }) {
   const s = statusConfig[item.status]
 
   return (
-    <div className="bg-[#0b0b0e] border border-white/[0.04] rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-accent/30 transition-all shadow-lg relative overflow-hidden group select-none">
-      <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-      <div className="flex-grow space-y-3 min-w-0 text-left relative z-10">
-        <div className="flex items-start gap-3 flex-wrap">
-          <h4 className="text-base font-serif text-white truncate">{item.taskTitle}</h4>
-          <span className={cn('px-2 py-0.5 text-[8px] font-black font-mono rounded uppercase tracking-wider border shrink-0', s.color)}>
+    <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/[0.14] transition-colors group select-none">
+      <div className="flex-grow space-y-2 min-w-0 text-left">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <h4 className="text-sm font-medium text-white truncate">{item.taskTitle}</h4>
+          <span className={cn('px-1.5 py-0.5 text-[11px] font-medium rounded border shrink-0', s.color)}>
             {s.label}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
-          <div className="flex items-center gap-1.5 text-accent font-bold">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-1.5 text-accent font-medium tabular-nums">
             <Wallet className="w-3.5 h-3.5" />
             ₹{budgetInRupees.toLocaleString()}
           </div>
           <div className="flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" />
-            {item.developerName || 'Unknown Dev'}
+            {item.developerName || 'Unknown'}
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" />
@@ -64,16 +72,16 @@ function OwnerSubmissionRow({ item }: { item: OwnerSubmissionItem }) {
           </div>
         </div>
         {item.note && (
-          <p className="text-[10px] text-white/40 font-light italic line-clamp-1 max-w-md">"{item.note}"</p>
+          <p className="text-[13px] text-white/45 italic line-clamp-1 max-w-md">&ldquo;{item.note}&rdquo;</p>
         )}
       </div>
 
-      <div className="flex items-center gap-3 relative z-10 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         <Link
           href={`/tasks/${item.taskId}`}
-          className="h-10 px-4 text-[9px] font-black uppercase tracking-widest border border-accent/20 rounded-xl bg-accent/5 text-accent hover:bg-accent hover:text-[#050505] transition-all flex items-center gap-1.5 cursor-pointer font-bold"
+          className="h-9 px-3.5 text-[13px] font-medium rounded-lg ui-btn-primary transition-colors flex items-center gap-1.5 cursor-pointer"
         >
-          <Eye className="w-3.5 h-3.5" /> Review <ChevronRight className="w-3.5 h-3.5 stroke-[3px]" />
+          <Eye className="w-3.5 h-3.5" /> Review <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
     </div>
@@ -85,12 +93,11 @@ function OwnerSubmissionRow({ item }: { item: OwnerSubmissionItem }) {
 function DevSubmissionRow({ item }: { item: DevSubmissionItem }) {
   const budgetInRupees = Math.floor(item.taskBudget / 100)
   return (
-    <div className="bg-[#0b0b0e] border border-white/[0.04] rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-accent/30 transition-all shadow-lg relative overflow-hidden group select-none">
-      <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-      <div className="flex-grow space-y-3 min-w-0 text-left relative z-10">
-        <h4 className="text-lg font-serif text-white truncate">{item.taskTitle}</h4>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
-          <div className="flex items-center gap-1.5 text-accent font-bold">
+    <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/[0.14] transition-colors group select-none">
+      <div className="flex-grow space-y-2 min-w-0 text-left">
+        <h4 className="text-sm font-medium text-white truncate">{item.taskTitle}</h4>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-1.5 text-accent font-medium tabular-nums">
             <Wallet className="w-3.5 h-3.5" />
             ₹{budgetInRupees.toLocaleString()}
           </div>
@@ -104,12 +111,12 @@ function DevSubmissionRow({ item }: { item: DevSubmissionItem }) {
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-4 relative z-10 shrink-0">
+      <div className="flex items-center gap-4 shrink-0">
         <Link
           href={`/tasks/${item.submission.taskId}`}
-          className="h-10 px-4 text-[9px] font-black uppercase tracking-widest border border-accent/20 rounded-xl bg-accent/5 text-accent hover:bg-accent hover:text-[#050505] transition-all flex items-center gap-1.5 cursor-pointer font-bold"
+          className="h-9 px-3.5 text-[13px] font-medium rounded-lg ui-btn-secondary transition-colors flex items-center gap-1.5 cursor-pointer"
         >
-          View Task <ChevronRight className="w-3.5 h-3.5 stroke-[3px]" />
+          View task <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
     </div>
@@ -119,32 +126,29 @@ function DevSubmissionRow({ item }: { item: DevSubmissionItem }) {
 // ─── Section wrappers ───────────────────────────────────────────────────────
 
 function OwnerSection({ title, items, icon: Icon, colorClass, statusLabel, badgeColor }: {
-  title: string; items: OwnerSubmissionItem[]; icon: React.ElementType; colorClass: string; statusLabel: string; badgeColor: string
+  title: string; items: OwnerSubmissionItem[]; icon: React.ComponentType<any>; colorClass: string; statusLabel: string; badgeColor: string
 }) {
   return (
-    <section className="space-y-6 text-left">
+    <section className="space-y-3 text-left">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center border', colorClass)}>
-            <Icon className="w-5 h-5" />
+        <div className="flex items-center gap-2.5">
+          <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', colorClass)}>
+            <Icon className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className="text-xl font-serif text-white tracking-wide">{title}</h3>
-            <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-0.5 font-mono">{statusLabel} queue</p>
-          </div>
+          <h3 className="text-sm font-medium text-white">{title}</h3>
         </div>
-        <span className={cn('px-3 py-1 text-[9px] font-black font-mono rounded-full uppercase tracking-widest', badgeColor)}>
-          {items.length} {items.length === 1 ? 'Entry' : 'Entries'}
+        <span className={cn('px-2 py-0.5 text-[11px] font-medium rounded-full tabular-nums', badgeColor)}>
+          {items.length} {items.length === 1 ? 'entry' : 'entries'}
         </span>
       </div>
       {items.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {items.map((s, i) => <OwnerSubmissionRow key={`${s.taskId}-${i}`} item={s} />)}
         </div>
       ) : (
-        <div className="p-12 border border-white/[0.04] rounded-[2rem] flex flex-col items-center text-center gap-3 bg-[#0b0b0e]/50">
-          <Inbox className="w-6 h-6 text-white/20" />
-          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/20 font-mono">No {statusLabel} submissions</p>
+        <div className="p-8 border border-dashed border-[var(--color-border)] rounded-xl flex flex-col items-center text-center gap-2 bg-white/[0.01]">
+          <Inbox className="w-5 h-5 text-[var(--color-text-muted)]" />
+          <p className="text-[13px] text-[var(--color-text-muted)]">No {statusLabel} submissions</p>
         </div>
       )}
     </section>
@@ -152,32 +156,29 @@ function OwnerSection({ title, items, icon: Icon, colorClass, statusLabel, badge
 }
 
 function DevSection({ title, items, icon: Icon, colorClass, statusLabel, badgeColor }: {
-  title: string; items: DevSubmissionItem[]; icon: React.ElementType; colorClass: string; statusLabel: string; badgeColor: string
+  title: string; items: DevSubmissionItem[]; icon: React.ComponentType<any>; colorClass: string; statusLabel: string; badgeColor: string
 }) {
   return (
-    <section className="space-y-6 text-left">
+    <section className="space-y-3 text-left">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center border', colorClass)}>
-            <Icon className="w-5 h-5" />
+        <div className="flex items-center gap-2.5">
+          <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', colorClass)}>
+            <Icon className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className="text-xl font-serif text-white tracking-wide">{title}</h3>
-            <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-0.5 font-mono">{statusLabel} operations queue</p>
-          </div>
+          <h3 className="text-sm font-medium text-white">{title}</h3>
         </div>
-        <span className={cn('px-3 py-1 text-[9px] font-black font-mono rounded-full uppercase tracking-widest', badgeColor)}>
-          {items.length} {items.length === 1 ? 'Entry' : 'Entries'}
+        <span className={cn('px-2 py-0.5 text-[11px] font-medium rounded-full tabular-nums', badgeColor)}>
+          {items.length} {items.length === 1 ? 'entry' : 'entries'}
         </span>
       </div>
       {items.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {items.map((s) => <DevSubmissionRow key={s.submission.id} item={s} />)}
         </div>
       ) : (
-        <div className="p-12 border border-white/[0.04] rounded-[2rem] flex flex-col items-center text-center gap-3 bg-[#0b0b0e]/50">
-          <Inbox className="w-6 h-6 text-white/20" />
-          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/20 font-mono">No {statusLabel} submissions</p>
+        <div className="p-8 border border-dashed border-[var(--color-border)] rounded-xl flex flex-col items-center text-center gap-2 bg-white/[0.01]">
+          <Inbox className="w-5 h-5 text-[var(--color-text-muted)]" />
+          <p className="text-[13px] text-[var(--color-text-muted)]">No {statusLabel} submissions</p>
         </div>
       )}
     </section>
@@ -225,36 +226,37 @@ export default async function SubmissionsPage() {
     const rejected = ownerSubmissions.filter(s => s.status === 'rejected')
 
     return (
-      <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-        <TopBar title="Developer Submissions" />
-        <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-12 max-w-5xl mx-auto w-full select-none">
+      <div className="flex flex-col h-full bg-transparent text-white font-sans">
+        <TopBar title="Submissions" />
+        <div className="flex-grow overflow-y-auto">
+         <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
-          <div className="space-y-3 text-left">
-            <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-              Incoming <span className="text-accent italic">Submissions</span>
+          <div className="space-y-1 text-left">
+            <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
+              Incoming submissions
             </h2>
-            <p className="text-white/50 text-xs md:text-sm font-light max-w-xl leading-relaxed">
-              Review work submitted by developers on your missions. Approve, request revisions, or dispute submissions from this command panel.
+            <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
+              Review work submitted by developers on your tasks. Approve or request revisions from here.
             </p>
           </div>
 
           {/* Summary strip */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Awaiting Review', count: pending.length, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-              { label: 'Approved',        count: approved.length, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-              { label: 'Revision Sent',   count: rejected.length, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+              { label: 'Awaiting review', count: pending.length, color: 'text-amber-400', bg: 'bg-amber-500/[0.07] border-amber-500/20' },
+              { label: 'Approved',        count: approved.length, color: 'text-emerald-400', bg: 'bg-emerald-500/[0.07] border-emerald-500/20' },
+              { label: 'Revision sent',   count: rejected.length, color: 'text-red-400', bg: 'bg-red-500/[0.07] border-red-500/20' },
             ].map(({ label, count, color, bg }) => (
-              <div key={label} className={cn('p-4 rounded-2xl border text-left', bg)}>
-                <p className="text-[8px] font-black uppercase tracking-widest font-mono text-white/40">{label}</p>
-                <h4 className={cn('text-2xl font-mono font-bold mt-1', color)}>{count}</h4>
+              <div key={label} className={cn('p-4 rounded-xl border text-left', bg)}>
+                <p className="text-xs text-white/50">{label}</p>
+                <h4 className={cn('text-2xl font-semibold tabular-nums mt-1', color)}>{count}</h4>
               </div>
             ))}
           </div>
 
-          <div className="space-y-12 pt-2 pb-16">
+          <div className="space-y-8 pt-2 pb-16">
             <OwnerSection
-              title="Awaiting Your Review"
+              title="Awaiting your review"
               items={pending}
               icon={Clock}
               colorClass="bg-amber-500/10 border-amber-500/20 text-amber-400"
@@ -262,7 +264,7 @@ export default async function SubmissionsPage() {
               badgeColor="bg-amber-500/10 border border-amber-500/20 text-amber-400"
             />
             <OwnerSection
-              title="Revision Requested"
+              title="Revision requested"
               items={rejected}
               icon={AlertCircle}
               colorClass="bg-red-500/10 border-red-500/20 text-red-400"
@@ -270,7 +272,7 @@ export default async function SubmissionsPage() {
               badgeColor="bg-red-500/10 border border-red-500/20 text-red-400"
             />
             <OwnerSection
-              title="Approved & Settled"
+              title="Approved & settled"
               items={approved}
               icon={CheckCircle2}
               colorClass="bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
@@ -278,6 +280,7 @@ export default async function SubmissionsPage() {
               badgeColor="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
             />
           </div>
+         </div>
         </div>
       </div>
     )
@@ -290,22 +293,23 @@ export default async function SubmissionsPage() {
   const rejected = devSubmissions.filter(s => s.submission.status === 'rejected')
 
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title="My Submissions" />
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-12 max-w-5xl mx-auto w-full select-none">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
+      <TopBar title="Submissions" />
+      <div className="flex-grow overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
-        <div className="space-y-3 text-left">
-          <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-            Submission <span className="text-accent italic">History</span>
+        <div className="space-y-1 text-left">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
+            Submission history
           </h2>
-          <p className="text-white/50 text-xs md:text-sm font-light max-w-xl leading-relaxed">
-            Track status, review cycles, and completed payouts for all your claimed missions.
+          <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
+            Track status, review cycles, and completed payouts for all your claimed tasks.
           </p>
         </div>
 
-        <div className="space-y-12 pt-2 pb-16">
+        <div className="space-y-8 pt-2 pb-16">
           <DevSection
-            title="Active Reviews"
+            title="Active reviews"
             items={pending}
             icon={Clock}
             colorClass="bg-amber-500/10 border-amber-500/20 text-amber-400"
@@ -313,7 +317,7 @@ export default async function SubmissionsPage() {
             badgeColor="bg-amber-500/10 border border-amber-500/20 text-amber-400"
           />
           <DevSection
-            title="Revision Requested"
+            title="Revision requested"
             items={rejected}
             icon={AlertCircle}
             colorClass="bg-red-500/10 border-red-500/20 text-red-400"
@@ -321,13 +325,14 @@ export default async function SubmissionsPage() {
             badgeColor="bg-red-500/10 border border-red-500/20 text-red-400"
           />
           <DevSection
-            title="Completed Work"
+            title="Completed work"
             items={approved}
             icon={CheckCircle2}
             colorClass="bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
             statusLabel="completed"
             badgeColor="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
           />
+        </div>
         </div>
       </div>
     </div>

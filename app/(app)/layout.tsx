@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { Metadata } from 'next'
@@ -22,7 +32,7 @@ import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 import ToastContainer from '@/components/shared/Toast'
 
 import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
-import { resolveAvatarUrl } from '@/lib/utils/avatar'
+import { resolveAvatar } from '@/lib/avatar/resolve'
 
 export default async function AppLayout({
   children,
@@ -52,7 +62,7 @@ export default async function AppLayout({
   }
 
   const userLevel = getLevelFromXp(user.xp || 0)
-  const resolvedAvatarUrl = resolveAvatarUrl(user.image)
+  const resolvedAvatarUrl = await resolveAvatar(user.image, user.username || user.id)
 
   let companyName = ''
   let pendingSubmissionsCount = 0
@@ -99,8 +109,8 @@ export default async function AppLayout({
   if (user.role === 'developer' && !user.username) {
     return (
       <DashboardProvider>
-        <div className="flex h-screen bg-[#070709] overflow-hidden theme-ember relative">
-          <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
+        <div className="flex h-screen bg-[#121111] overflow-hidden theme-ember relative">
+            <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
             {children}
           </main>
         </div>
@@ -129,9 +139,7 @@ export default async function AppLayout({
         />
         <main className="flex-grow flex flex-col min-w-0 overflow-hidden relative z-10">
           {/* Floating Mobile Trigger */}
-          <div className="absolute top-3 left-4 z-40 md:hidden bg-[#0c0c0f]/80 backdrop-blur border border-white/[0.06] p-1 rounded-lg">
-            <MobileMenuTrigger />
-          </div>
+          <MobileMenuTrigger />
           {children}
         </main>
       </div>

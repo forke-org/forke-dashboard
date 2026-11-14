@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { handlers } from '@/auth'
 
@@ -5,16 +15,19 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const state = searchParams.get('state') || ''
 
+  const decodedState = decodeURIComponent(state)
+  const [role] = decodedState.split(':')
+
   // If state is 'owner' or 'developer', this is the sandbox OAuth flow
-  if (state === 'owner' || state === 'developer') {
-    return handleSandboxCallback(request, state)
+  if (role === 'owner' || role === 'developer') {
+    return handleSandboxCallback(request, decodedState)
   }
 
   // Otherwise delegate to NextAuth's built-in GitHub callback handler
   return handlers.GET(request)
 }
 
-async function handleSandboxCallback(request: NextRequest, role: string) {
+async function handleSandboxCallback(request: NextRequest, state: string) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
 
@@ -22,9 +35,10 @@ async function handleSandboxCallback(request: NextRequest, role: string) {
     return NextResponse.redirect(new URL('/?error=No+code+received+from+GitHub', request.url))
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET
-  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI
+  const [role, callbackUrl] = state.split(':')
+  const clientId = process.env.GITHUB_CLIENT_ID || process.env.AUTH_GITHUB_ID
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.AUTH_GITHUB_SECRET
+  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/callback/github`
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(new URL('/?error=GitHub+OAuth+not+configured', request.url))
@@ -65,31 +79,16 @@ async function handleSandboxCallback(request: NextRequest, role: string) {
 
     // 3. Save to DB — non-blocking, never fails the login
     try {
-      const { db } = await import('@/lib/db')
-      const { sandboxOwners, sandboxDevelopers } = await import('@/lib/db/schema')
-      const { eq } = await import('drizzle-orm')
-
-      if (role === 'owner') {
-        const existing = await db.select().from(sandboxOwners).where(eq(sandboxOwners.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxOwners).set({ username: githubUsername, accessToken }).where(eq(sandboxOwners.githubId, githubId))
-        } else {
-          await db.insert(sandboxOwners).values({ githubId, username: githubUsername, accessToken })
-        }
-      } else {
-        const existing = await db.select().from(sandboxDevelopers).where(eq(sandboxDevelopers.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxDevelopers).set({ username: githubUsername, accessToken }).where(eq(sandboxDevelopers.githubId, githubId))
-        } else {
-          await db.insert(sandboxDevelopers).values({ githubId, username: githubUsername, accessToken })
-        }
-      }
+      const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
+      await upsertSandboxUser({ githubId, username: githubUsername, token: accessToken, role })
     } catch (dbErr) {
       console.warn('[Sandbox OAuth] DB save skipped (DB unavailable):', dbErr)
     }
 
     // 4. Redirect to workspace page with session info in URL params
-    const targetPath = role === 'owner' ? '/owner' : '/developer'
+    // Only same-site paths; "//evil.com" or "/\\evil.com" would leave the site.
+    const safeCallback = callbackUrl && /^\/(?![\/\\])/.test(callbackUrl) ? callbackUrl : null
+    const targetPath = safeCallback || (role === 'owner' ? '/owner' : '/developer')
     const targetUrl = new URL(targetPath, request.url)
     targetUrl.searchParams.set('success', 'true')
     targetUrl.searchParams.set('github_id', githubUsername)

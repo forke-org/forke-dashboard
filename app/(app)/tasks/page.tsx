@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React, { Suspense } from 'react'
 import { auth } from '@/auth'
 import { getOpenTasks } from '@/lib/db/queries/tasks'
@@ -30,16 +40,16 @@ export default async function TasksPage({
   const q = params.q || ''
   const filterParam = params.filter
 
-  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: true })
+  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: true, callerRole: user?.role })
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+    <div className="flex flex-col h-full bg-transparent text-[var(--color-text-primary)]">
       <TopBar title="Tasks" />
       <div className="flex-grow overflow-y-auto">
         <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
           <div className="flex flex-wrap items-end justify-between gap-4 text-left">
             <div className="min-w-0">
-              <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-white">
+              <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] tracking-[-0.035em] text-white">
                 {isOwner ? 'All tasks' : 'Browse tasks'}
               </h2>
               <p className="text-sm text-[var(--color-text-muted)] mt-1 max-w-2xl">

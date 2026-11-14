@@ -1,5 +1,16 @@
 'use server'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
+import { requireSelf, sessionUserId } from '@/lib/session-guard'
 import { db } from '@/lib/db'
 import { messages, users } from '@/lib/db/schema'
 import { eq, and, or, asc, sql } from 'drizzle-orm'
@@ -7,6 +18,7 @@ import { revalidatePath } from 'next/cache'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { encryptUrl, decryptUrl } from '@/lib/utils/encrypt'
+import { isR2Configured, uploadToR2 } from '@/lib/r2'
 
 export async function ensureMessagesTable() {
   try {
@@ -29,6 +41,7 @@ export async function ensureMessagesTable() {
 }
 
 export async function uploadChatFile(formData: FormData) {
+  await sessionUserId()
   try {
     const file = formData.get('file') as File
     if (!file) {
@@ -38,17 +51,21 @@ export async function uploadChatFile(formData: FormData) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadsDir, { recursive: true })
-
     const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const fileName = `${Date.now()}-${cleanName}`
-    const filePath = join(uploadsDir, fileName)
 
+    if (isR2Configured()) {
+      const url = await uploadToR2(buffer, `chats/${fileName}`, file.type)
+      const encryptedUrl = encryptUrl(url)
+      return { success: true, fileUrl: encryptedUrl, fileName: file.name }
+    }
+
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    await mkdir(uploadsDir, { recursive: true })
+    const filePath = join(uploadsDir, fileName)
     await writeFile(filePath, buffer)
 
     const fileUrl = `/uploads/${fileName}`
-    // Encrypt the URL before handing it back — it will be stored encrypted in the DB
     const encryptedUrl = encryptUrl(fileUrl)
     return { success: true, fileUrl: encryptedUrl, fileName: file.name }
   } catch (error) {
@@ -57,7 +74,11 @@ export async function uploadChatFile(formData: FormData) {
   }
 }
 
+
+
 export async function getMessagesBetweenUsers(userId1: string, userId2: string) {
+  const me = await sessionUserId()
+  if (me !== userId1) return { success: false, messages: [], isOnline: false, error: 'Not authorized' }
   await ensureMessagesTable()
   try {
     // 1. Update userId1's lastActiveAt to now
@@ -131,6 +152,7 @@ export async function sendMessageAction(
   fileUrl?: string,
   fileName?: string
 ) {
+  senderId = await requireSelf(senderId)
   await ensureMessagesTable()
   if ((!content || !content.trim()) && !fileUrl) {
     return { success: false, error: 'Message content cannot be empty.' }

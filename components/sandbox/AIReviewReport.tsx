@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { useState } from 'react'
 import { cn } from '@/lib/utils/cn'
 
@@ -76,10 +86,10 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center" style={{ marginTop: '-54px' }}>
-        <span className="text-xl font-black text-white tabular-nums leading-none">{score}</span>
-        <span className="text-[9px] text-[var(--color-text-muted)] font-medium leading-none mt-0.5">/ 100</span>
+        <span className="text-xl font-medium text-white tabular-nums leading-none">{score}</span>
+        <span className="text-[10.5px] text-[var(--color-text-muted)] font-medium leading-none mt-0.5">/ 100</span>
       </div>
-      <span className="text-[9px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider -mt-1">AI Score</span>
+      <span className="text-[10.5px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono -mt-1">AI Score</span>
     </div>
   )
 }
@@ -93,7 +103,7 @@ function VerdictBanner({ verdict, summary }: { verdict: string; summary: string 
     : { bg: 'bg-amber-500/8 border-amber-500/25', icon: '~', iconBg: 'bg-amber-500', label: 'Recommended: Approve with fixes', color: 'text-amber-400' }
   return (
     <div className={cn('flex items-start gap-3 p-4 rounded-xl border', cfg.bg)}>
-      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-black font-black text-xs shrink-0 mt-0.5', cfg.iconBg)}>
+      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-black font-medium text-xs shrink-0 mt-0.5', cfg.iconBg)}>
         {cfg.icon}
       </div>
       <div className="min-w-0">
@@ -220,7 +230,7 @@ function TestSuiteCards({ results: rawResults }: { results: Record<string, any> 
 
   return (
     <div>
-      <p className="text-[11px] font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wider">Test suites</p>
+      <p className="text-[11px] font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-[0.1em] font-mono">Test suites</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {active.map(k => {
           const cat = results[k]
@@ -257,9 +267,9 @@ function TestSuiteCards({ results: rawResults }: { results: Record<string, any> 
                 {nums && (
                   <div className="flex items-center gap-3 text-[10px]">
                     <span className="text-emerald-400">{nums.passed} passed</span>
-                    {nums.skipped > 0 && <span className="text-zinc-500">{nums.skipped} skipped</span>}
+                    {nums.skipped > 0 && <span className="text-white/40">{nums.skipped} skipped</span>}
                     {nums.failed > 0 && <span className="text-red-400">{nums.failed} failed</span>}
-                    {nums.duration && <span className="text-zinc-500 ml-auto">{nums.duration}s</span>}
+                    {nums.duration && <span className="text-white/40 ml-auto">{nums.duration}s</span>}
                   </div>
                 )}
                 {!nums && cat.issuesCount > 0 && (
@@ -271,7 +281,7 @@ function TestSuiteCards({ results: rawResults }: { results: Record<string, any> 
               </button>
               
               {isExpanded && cat.logs && (
-                <div className="rounded-lg border border-zinc-800 bg-black/60 p-3 mt-0.5 max-h-60 overflow-y-auto font-mono text-[10px] text-zinc-300 whitespace-pre-wrap break-all leading-normal">
+                <div className="rounded-lg border border-white/[0.08] bg-black/60 p-3 mt-0.5 max-h-60 overflow-y-auto font-mono text-[10px] text-white/75 whitespace-pre-wrap break-all leading-normal">
                   {cat.logs}
                 </div>
               )}
@@ -333,7 +343,7 @@ function FindingsTable({ review }: { review: AIReviewData }) {
     if (s === 'medium') return 'bg-amber-500 text-black'
     if (s === 'low') return 'bg-blue-400/80 text-white'
     if (s === 'good' || s === 'resolved') return 'bg-emerald-500 text-black'
-    return 'bg-zinc-700 text-zinc-300'
+    return 'bg-zinc-700 text-white/75'
   }
   function severityLabel(s: string) {
     if (s === 'critical') return 'Blocker'
@@ -348,23 +358,23 @@ function FindingsTable({ review }: { review: AIReviewData }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">AI Findings</p>
+        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">AI Findings</p>
       </div>
       <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
         <table className="w-full text-[11px]">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-20">Severity</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-48">Finding</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Detail</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-36">Location</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-20">Severity</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-48">Finding</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Detail</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-36">Location</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, i) => (
               <tr key={i} className={cn('border-b border-[var(--color-border)] last:border-0', row.isGood ? 'bg-emerald-500/[0.03]' : '')}>
                 <td className="px-3 py-2.5">
-                  <span className={cn('inline-flex items-center gap-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded', severityBadge(row.severity))}>
+                  <span className={cn('inline-flex items-center gap-1 text-[10.5px] font-bold uppercase px-2 py-0.5 rounded', severityBadge(row.severity))}>
                     {row.severity === 'critical' && '⊗ '}
                     {row.severity === 'medium' && '△ '}
                     {(row.severity === 'good' || row.severity === 'resolved') && '✓ '}
@@ -434,7 +444,7 @@ function FilesChanged({ review }: { review: AIReviewData }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Files changed</p>
+        <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Files changed</p>
         <span className="text-[11px] text-[var(--color-text-muted)]">{files.length} file{files.length !== 1 ? 's' : ''}</span>
       </div>
       <div className="rounded-xl border border-[var(--color-border)] divide-y divide-[var(--color-border)] overflow-hidden">
@@ -448,9 +458,9 @@ function FilesChanged({ review }: { review: AIReviewData }) {
               </svg>
               <span className="font-mono text-[11px] text-white/80 flex-1 truncate">{f}</span>
               {isUnauth && (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-red-400 bg-red-500/10 border-red-500/20 shrink-0">Unauthorized</span>
+                <span className="text-[10.5px] font-bold px-1.5 py-0.5 rounded border text-red-400 bg-red-500/10 border-red-500/20 shrink-0">Unauthorized</span>
               )}
-              <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0', riskBadge(risk))}>
+              <span className={cn('text-[10.5px] font-bold px-1.5 py-0.5 rounded border shrink-0', riskBadge(risk))}>
                 {riskLabel(risk)}
               </span>
             </div>
@@ -550,13 +560,13 @@ function ScorecardBreakdown({ results, requirementMatch }: { results: any; requi
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Execution Score Breakdown</p>
+        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Execution Score Breakdown</p>
         <div className="text-right">
-          <span className="text-[11px] text-zinc-400">Test Quality: </span>
-          <span className="text-[13px] font-black text-white">{testScore}</span>
-          <span className="text-[10px] text-zinc-500"> / 100</span>
+          <span className="text-[11px] text-white/55">Test Quality: </span>
+          <span className="text-[13px] font-medium text-white">{testScore}</span>
+          <span className="text-[10px] text-white/40"> / 100</span>
           {rawScore !== testScore && (
-            <span className="text-[10px] text-zinc-600 ml-1">(raw {rawScore})</span>
+            <span className="text-[10px] text-white/30 ml-1">(raw {rawScore})</span>
           )}
         </div>
       </div>
@@ -567,10 +577,10 @@ function ScorecardBreakdown({ results, requirementMatch }: { results: any; requi
         <table className="w-full text-[11px]">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Category</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-20">Status</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-16">Weight</th>
-              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Quality</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Category</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-20">Status</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono w-16">Weight</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Quality</th>
             </tr>
           </thead>
           <tbody>
@@ -588,7 +598,7 @@ function ScorecardBreakdown({ results, requirementMatch }: { results: any; requi
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
                       {c.isBlocking && (
-                        <span className="text-[8px] text-zinc-500 font-bold border border-zinc-700 rounded px-1">BLOCKING</span>
+                        <span className="text-[10px] text-white/40 font-bold border border-white/[0.12] rounded px-1">BLOCKING</span>
                       )}
                       <span className="font-medium text-white capitalize">{String(c.name).replace(/_/g, ' ')}</span>
                     </div>
@@ -621,30 +631,30 @@ function ScorecardBreakdown({ results, requirementMatch }: { results: any; requi
 
       {/* Score Deductions Audit Trail */}
       <div className="space-y-2">
-        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Score Deductions (Final Score Impact)</p>
+        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">Score Deductions (Final Score Impact)</p>
         {allDeductions.length > 0 ? (
           <div className="space-y-1.5">
             {allDeductions.map((d, idx) => (
               <div key={idx} className="flex items-start justify-between gap-4 p-3 rounded-lg border border-red-500/10 bg-red-500/[0.015] hover:border-red-500/15 transition-all">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-extrabold uppercase px-1 py-0.5 rounded border border-red-500/20 bg-red-500/5 text-red-400 shrink-0">
+                    <span className="text-[10px] font-extrabold uppercase px-1 py-0.5 rounded border border-red-500/20 bg-red-500/5 text-red-400 shrink-0">
                       {d.type.replace('_', ' ')}
                     </span>
                     <p className="text-[11px] font-semibold text-white/95 capitalize truncate">{d.name}</p>
                   </div>
-                  <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">{d.detail}</p>
+                  <p className="text-[10px] text-white/40 mt-0.5 leading-normal">{d.detail}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[12px] font-black text-red-400">−{d.finalLoss} pts</p>
+                  <p className="text-[12px] font-medium text-red-400">−{d.finalLoss} pts</p>
                   {d.type === 'test_category' && d.rawLoss > 0 && (
-                    <p className="text-[9px] text-zinc-600 mt-0.5">−{d.rawLoss} raw quality pts (scaled ×0.7)</p>
+                    <p className="text-[10.5px] text-white/30 mt-0.5">−{d.rawLoss} raw quality pts (scaled ×0.7)</p>
                   )}
                   {d.type === 'penalty' && (
-                    <p className="text-[9px] text-zinc-600 mt-0.5">penalty points (scaled ×0.7)</p>
+                    <p className="text-[10.5px] text-white/30 mt-0.5">penalty points (scaled ×0.7)</p>
                   )}
                   {d.type === 'requirement' && (
-                    <p className="text-[9px] text-zinc-600 mt-0.5">requirement score impact (scaled ×0.3)</p>
+                    <p className="text-[10.5px] text-white/30 mt-0.5">requirement score impact (scaled ×0.3)</p>
                   )}
                 </div>
               </div>

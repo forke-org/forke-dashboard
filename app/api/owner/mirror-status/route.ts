@@ -1,9 +1,24 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { NextResponse } from 'next/server'
 import { activeJobs } from '@/lib/jobs'
+import { getSandboxUser } from '@/lib/sandbox-auth'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const jobId = searchParams.get('jobId')
+
+  if (!(await getSandboxUser())) {
+    return NextResponse.json({ error: 'Please sign in with GitHub again.' }, { status: 401 })
+  }
 
   if (!jobId) {
     return NextResponse.json({ error: 'Missing jobId parameter' }, { status: 400 })

@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React from 'react'
 import Link from 'next/link'
 import { Clock, User, ChevronRight } from 'lucide-react'
@@ -50,17 +60,33 @@ export default function TaskCard({
   currentUserId,
 }: TaskCardProps) {
   const budgetInRupees = Math.floor(task.budget / 100)
+  const isProcessing = task.status === 'processing'
 
   return (
-    <div className="group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 transition-colors hover:border-white/[0.14] flex flex-col h-full text-left">
+    <div className={cn(
+      "group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 transition-colors flex flex-col h-full text-left relative overflow-hidden",
+      isProcessing
+        ? "opacity-55 pointer-events-none select-none"
+        : "hover:border-white/[0.14]"
+    )}>
+
+      {/* Processing overlay badge */}
+      {isProcessing && (
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] font-mono text-amber-500">Processing</span>
+        </div>
+      )}
 
       <div className="flex justify-between items-start gap-3 mb-3">
         <h3 className="text-sm font-medium text-white line-clamp-2 leading-snug flex-grow group-hover:text-accent transition-colors">
           {task.title}
         </h3>
-        <div className="text-[13px] font-medium tabular-nums text-accent px-2 py-0.5 bg-accent/10 border border-accent/20 rounded shrink-0">
-          ₹{budgetInRupees.toLocaleString()}
-        </div>
+        {!isProcessing && (
+          <div className="text-[13px] font-medium tabular-nums text-accent px-2 py-0.5 bg-accent/10 border border-accent/20 rounded shrink-0">
+            ₹{budgetInRupees.toLocaleString()}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-5">
@@ -76,7 +102,7 @@ export default function TaskCard({
 
       <div className="mt-auto space-y-3.5">
         {/* Claimant Info if Claimed */}
-        {task.status !== 'open' && claimantName && (
+        {task.status !== 'open' && task.status !== 'processing' && claimantName && (
           <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
             <div className={cn(
               "flex items-center gap-1.5 font-medium",
@@ -88,7 +114,7 @@ export default function TaskCard({
               )} />
               <span>
                 {currentUserId === task.claimantId ? (
-                  <span>Claimed by <span className="font-semibold text-white">you</span></span>
+                  <span>Claimed by <span className="font-medium text-white">you</span></span>
                 ) : (
                   <span>
                     Claimed by{' '}
@@ -105,6 +131,16 @@ export default function TaskCard({
             <span className="text-[var(--color-text-muted)] font-mono text-[10px]">
               {timeAgo(task.claimedAt || task.createdAt)}
             </span>
+          </div>
+        )}
+
+        {/* Processing status row */}
+        {isProcessing && (
+          <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
+            <div className="flex items-center gap-1.5 text-amber-500 font-medium">
+              <div className="w-3 h-3 border-[1.5px] border-amber-500 border-t-transparent rounded-full animate-spin" />
+              <span>Importing & analyzing repository…</span>
+            </div>
           </div>
         )}
 
@@ -127,18 +163,20 @@ export default function TaskCard({
           </div>
         )}
 
-        <Link
-          href={`/tasks/${task.id}`}
-          className={cn(
-            "flex items-center justify-center gap-1.5 w-full h-9 rounded-lg text-[13px] font-medium transition-colors",
-            isOwner
-              ? "ui-btn-secondary"
-              : "ui-btn-primary"
-          )}
-        >
-          View details
-          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        {!isProcessing && (
+          <Link
+            href={`/tasks/${task.id}`}
+            className={cn(
+              "flex items-center justify-center gap-1.5 w-full h-9 rounded-lg text-[13px] font-medium transition-colors",
+              isOwner
+                ? "ui-btn-secondary"
+                : "ui-btn-primary"
+            )}
+          >
+            View details
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        )}
       </div>
     </div>
   )

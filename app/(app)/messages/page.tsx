@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
@@ -19,23 +29,10 @@ export default async function MessagesPage({
   const params = await searchParams
   const queryUserId = params.userId
 
-  // Fetch registered contacts from DB (excluding current user)
-  const contacts = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      image: users.image,
-      role: users.role,
-      githubUrl: users.githubUrl,
-    })
-    .from(users)
-    .where(ne(users.id, sessionUser.id))
-    .limit(10)
-
-  // If a specific userId was requested, fetch that contact if not already in the first 10
-  let targetUser = null
-  if (queryUserId) {
-    const res = await db
+  // Registered contacts and the optionally-requested target user are
+  // independent queries — fetch concurrently.
+  const [contacts, targetUserRes] = await Promise.all([
+    db
       .select({
         id: users.id,
         name: users.name,
@@ -44,10 +41,23 @@ export default async function MessagesPage({
         githubUrl: users.githubUrl,
       })
       .from(users)
-      .where(eq(users.id, queryUserId))
-      .limit(1)
-    targetUser = res[0] || null
-  }
+      .where(ne(users.id, sessionUser.id))
+      .limit(10),
+    queryUserId
+      ? db
+          .select({
+            id: users.id,
+            name: users.name,
+            image: users.image,
+            role: users.role,
+            githubUrl: users.githubUrl,
+          })
+          .from(users)
+          .where(eq(users.id, queryUserId))
+          .limit(1)
+      : Promise.resolve([]),
+  ])
+  const targetUser = targetUserRes[0] || null
 
   if (targetUser && !contacts.some(c => c.id === targetUser.id)) {
     contacts.unshift(targetUser)
@@ -65,10 +75,10 @@ export default async function MessagesPage({
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Messages" />
 
-      <div className="flex-grow p-5 md:p-8 select-none max-w-5xl mx-auto w-full min-h-0">
+      <div className="flex-grow px-5 md:px-8 py-6 md:py-8 select-none max-w-5xl mx-auto w-full min-h-0">
         <ChatConsole
           contacts={contacts} 
           currentUserId={sessionUser.id}

@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
@@ -21,59 +31,65 @@ export default async function DevelopersPage() {
 
   if (!sessionUser) return null
 
-  // Fetch all users with role 'developer' ordered by level desc, xp desc
-  const developersList = await db
-    .select()
-    .from(users)
-    .where(eq(users.role, 'developer'))
-    .orderBy(desc(users.level), desc(users.xp))
-
   // Fetch tasks claimed by these developers that were posted by the current owner
   const isOwner = sessionUser.role === 'owner'
   let ownerClaimedTasks: any[] = []
   let unreadCounts: Record<string, number> = {}
 
-  if (isOwner) {
-    ownerClaimedTasks = await db
+  // Fetch all users with role 'developer', and (if owner) the owner-scoped
+  // claimed-tasks + unread-message-count queries — all independent, so they
+  // run concurrently instead of one round-trip at a time.
+  const [developersList, ownerClaimedTasksResult, unreadMsgs] = await Promise.all([
+    db
       .select()
-      .from(tasks)
-      .where(
-        and(
-          eq(tasks.clientId, sessionUser.id),
-          sql`${tasks.claimantId} IS NOT NULL`
-        )
-      )
-      .orderBy(desc(tasks.createdAt))
+      .from(users)
+      .where(eq(users.role, 'developer'))
+      .orderBy(desc(users.level), desc(users.xp)),
+    isOwner
+      ? db
+          .select()
+          .from(tasks)
+          .where(
+            and(
+              eq(tasks.clientId, sessionUser.id),
+              sql`${tasks.claimantId} IS NOT NULL`
+            )
+          )
+          .orderBy(desc(tasks.createdAt))
+      : Promise.resolve([]),
+    isOwner
+      ? db
+          .select({
+            senderId: messages.senderId,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(messages)
+          .where(
+            and(
+              eq(messages.receiverId, sessionUser.id),
+              eq(messages.isSeen, false)
+            )
+          )
+          .groupBy(messages.senderId)
+      : Promise.resolve([]),
+  ])
+  ownerClaimedTasks = ownerClaimedTasksResult
 
-    // Fetch unread messages count for this owner grouped by sender
-    const unreadMsgs = await db
-      .select({
-        senderId: messages.senderId,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(messages)
-      .where(
-        and(
-          eq(messages.receiverId, sessionUser.id),
-          eq(messages.isSeen, false)
-        )
-      )
-      .groupBy(messages.senderId)
-    
+  if (isOwner) {
     unreadMsgs.forEach(item => {
       unreadCounts[item.senderId] = item.count
     })
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Developers" />
 
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Title Section */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             Developers
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -106,7 +122,7 @@ export default async function DevelopersPage() {
                       </Link>
                       <div className="min-w-0 leading-tight space-y-1.5">
                         <Link href={profileHref} className="group-hover:text-accent transition-colors block">
-                          <h4 className="text-sm font-semibold text-white truncate hover:underline">
+                          <h4 className="text-sm font-medium text-white truncate hover:underline">
                             {dev.name}
                           </h4>
                         </Link>
@@ -140,7 +156,7 @@ export default async function DevelopersPage() {
                             >
                               <Link
                                 href={`/tasks/${t.id}`}
-                                className="text-xs font-semibold text-white/95 hover:text-accent truncate transition-colors max-w-[130px] md:max-w-[160px] block hover:underline"
+                                className="text-xs font-medium text-white/95 hover:text-accent truncate transition-colors max-w-[130px] md:max-w-[160px] block hover:underline"
                               >
                                 {t.title}
                               </Link>
@@ -151,7 +167,7 @@ export default async function DevelopersPage() {
                                 {t.status === 'submitted' ? (
                                   <Link
                                     href={`/tasks/${t.id}`}
-                                    className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[#ff8a00]/15 border border-[#ff8a00]/25 text-[#ff8a00] uppercase hover:bg-[#ff8a00]/25 transition-colors leading-none block hover:underline"
+                                    className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[#FF7A00]/15 border border-[#FF7A00]/25 text-[#FF7A00] uppercase hover:bg-[#FF7A00]/25 transition-colors leading-none block hover:underline"
                                   >
                                     View Submission
                                   </Link>
@@ -179,7 +195,7 @@ export default async function DevelopersPage() {
                       {isOwner && (
                         <Link
                           href={`/messages?userId=${dev.id}`}
-                          className="relative h-8 px-3 text-[13px] font-bold bg-[#ff8a00]/10 border border-[#ff8a00]/20 text-[#ff8a00] hover:bg-[#ff8a00]/20 hover:border-[#ff8a00]/30 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="relative h-8 px-3 text-[13px] font-bold bg-[#FF7A00]/10 border border-[#FF7A00]/20 text-[#FF7A00] hover:bg-[#FF7A00]/20 hover:border-[#FF7A00]/30 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Mail className="w-3.5 h-3.5 shrink-0" />
                           <span>Message</span>
@@ -226,7 +242,7 @@ export default async function DevelopersPage() {
           </div>
         )}
 
-       </div>
+        </div>
       </div>
     </div>
   )

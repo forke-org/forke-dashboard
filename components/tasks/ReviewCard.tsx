@@ -1,10 +1,20 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React, { useState, useTransition } from 'react'
 import { approveSubmission, requestRevision } from '@/lib/actions/tasks'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, GitPullRequest, ExternalLink, MessageCircle, Clock, User, Star } from 'lucide-react'
+import { CheckCircle2, GitPullRequest, ExternalLink, Clock, User } from 'lucide-react'
 
 import { cn } from '@/lib/utils/cn'
 import { LevelUpModal } from '@/components/ui/LevelUpModal'
@@ -66,102 +76,92 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
   }
 
   return (
-    <div className="ui-surface rounded-3xl p-8 space-y-8 hover:border-accent/40 transition-all duration-300 group relative overflow-hidden text-left select-none">
-      <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5 hover:border-white/[0.14] transition-colors text-left select-none">
 
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
-        <div className="space-y-4 flex-1">
-          <div className="flex items-center gap-3">
-             <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent border border-accent/20 shadow-[0_0_15px_rgba(255,122,0,0.15)]">
-               <GitPullRequest className="w-6 h-6" />
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div className="space-y-2.5 flex-1 min-w-0">
+          <div className="flex items-center gap-2.5">
+             <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent border border-accent/20 shrink-0">
+               <GitPullRequest className="w-[18px] h-[18px]" />
              </div>
-             <div>
-               <h3 className="text-xl font-serif text-white leading-none tracking-tight">
+             <div className="min-w-0">
+               <h3 className="text-sm font-medium text-white leading-tight truncate">
                  {task.title}
                </h3>
-               <div className="flex items-center gap-2 mt-2.5 text-[9px] font-semibold text-white/40 uppercase tracking-[0.12em] leading-none">
-                 <User className="w-3.5 h-3.5 text-accent" />
-                 Submitted by <span className="text-white font-bold">{claimantName}</span>
+               <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--color-text-muted)]">
+                 <User className="w-3.5 h-3.5" />
+                 Submitted by <span className="text-white font-medium">{claimantName}</span>
                </div>
              </div>
           </div>
-          
-          <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
-            <div className="flex items-center gap-1.5">
+
+          <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)] pl-0.5">
+            <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               {new Date(submission.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
-            <div className="w-1 h-1 rounded-full bg-white/10" />
-            <div className="text-accent font-bold">₹ {Math.floor(task.budget / 100).toLocaleString()}</div>
+            </span>
+            <span className="w-1 h-1 rounded-full bg-white/15" />
+            <span className="text-accent font-medium tabular-nums">₹{Math.floor(task.budget / 100).toLocaleString()}</span>
           </div>
         </div>
 
-        <a 
+        <a
           href={submission.githubLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-4 px-5 py-3 bg-white/[0.01] border border-white/5 hover:border-accent/40 rounded-2xl transition-all group/link shrink-0 cursor-pointer"
+          className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.02] border border-[var(--color-border)] hover:border-white/[0.16] rounded-lg transition-colors group/link shrink-0 cursor-pointer"
         >
           <div className="flex flex-col text-left">
-            <span className="text-[8px] font-semibold text-white/35 uppercase tracking-[0.12em] leading-none mb-1.5">Source Code</span>
-            <span className="text-xs text-white/80 group-hover/link:text-accent transition-colors truncate max-w-[200px]">
+            <span className="text-[11px] text-[var(--color-text-muted)] leading-none mb-1">Source</span>
+            <span className="text-xs text-white/85 group-hover/link:text-accent transition-colors truncate max-w-[180px]">
               {submission.githubLink.replace('https://', '')}
             </span>
           </div>
-          <ExternalLink className="w-4 h-4 text-white/30 group-hover/link:text-accent group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-all" />
+          <ExternalLink className="w-4 h-4 text-[var(--color-text-muted)] group-hover/link:text-accent transition-colors" />
         </a>
       </div>
 
       {submission.note && (
-        <div className="relative p-6 bg-accent/5 border-l-4 border-accent rounded-r-2xl text-left z-10">
-          <MessageCircle className="absolute -top-3 -right-3 w-8 h-8 text-accent/15" />
-          <p className="text-white/80 leading-relaxed italic text-xs font-medium font-sans">
+        <div className="p-3.5 bg-white/[0.02] border-l-2 border-accent rounded-r-lg text-left">
+          <p className="text-[13px] text-white/80 leading-relaxed">
             &ldquo;{submission.note}&rdquo;
           </p>
         </div>
       )}
 
       {showRevisionInput ? (
-        <div className="space-y-4 animate-in slide-in-from-top-2 duration-300 relative z-10">
-           <div className="space-y-2 text-left">
-             <label className="text-[9px] font-semibold text-white/40 uppercase tracking-[0.12em] pl-1">What needs to be fixed?</label>
-             <textarea 
+        <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+           <div className="space-y-1.5 text-left">
+             <label className="text-xs text-[var(--color-text-muted)] pl-0.5">What needs to be fixed?</label>
+             <textarea
                autoFocus
                value={revisionNote}
                onChange={(e) => setRevisionNote(e.target.value)}
                placeholder="Be specific. e.g. 'The API endpoint returns 404 for empty results, should return 200 []'"
-               className="w-full bg-white/[0.01] border border-white/5 rounded-2xl p-4 text-xs font-medium text-white placeholder:text-white/20 transition-all focus:outline-none focus:border-accent min-h-[100px] resize-none"
+               className="w-full bg-white/[0.02] border border-[var(--color-border)] rounded-lg p-3 text-[13px] text-white placeholder:text-white/25 transition-colors focus:outline-none focus:border-accent min-h-[90px] resize-none"
              />
            </div>
-           <div className="flex gap-3">
-             <Button 
-               onClick={handleRevision} 
+           <div className="flex gap-2.5">
+             <Button
+               onClick={handleRevision}
                disabled={isPending || !revisionNote}
-               className="flex-1 h-12 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-primary transition-all cursor-pointer"
+               className="flex-1 h-10 text-[13px] font-medium rounded-lg ui-btn-primary transition-colors cursor-pointer"
              >
-               SEND REVISION REQUEST
+               Send revision request
              </Button>
-             <Button 
-               variant="outline" 
+             <Button
+               variant="outline"
                onClick={() => setShowRevisionInput(false)}
-               className="px-6 h-12 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-xl ui-btn-secondary transition-all cursor-pointer"
+               className="px-5 h-10 text-[13px] font-medium rounded-lg ui-btn-secondary transition-colors cursor-pointer"
              >
-               CANCEL
+               Cancel
              </Button>
            </div>
          </div>
       ) : (
-        <div className="space-y-8 relative z-10">
-          <div className="p-6 bg-white/[0.005] rounded-[2rem] border border-white/[0.03] space-y-4 text-center">
-            <div className="flex items-center justify-between">
-              <label className="text-[9px] font-semibold text-white/35 uppercase tracking-[0.12em]">Quality Rating</label>
-              {rating && (
-                <span className="text-[9px] font-semibold text-accent uppercase tracking-[0.12em] animate-in fade-in slide-in-from-right-1">
-                  {['', 'Needs work', 'Below average', 'Good', 'Great', 'Outstanding'][rating]}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center justify-center gap-3">
+        <div className="space-y-4">
+          <div className="p-4 bg-white/[0.01] rounded-lg border border-[var(--color-border)] flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
@@ -169,14 +169,14 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                   onMouseEnter={() => setHovered(star)}
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => setRating(star)}
-                  className="p-1.5 transition-transform hover:scale-125 active:scale-95 duration-200 cursor-pointer"
+                  className="p-0.5 transition-transform hover:scale-110 active:scale-95 duration-150 cursor-pointer"
                   aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                 >
                   <svg
-                    width="36" height="36" viewBox="0 0 24 24"
-                    className="transition-colors duration-300"
+                    width="24" height="24" viewBox="0 0 24 24"
+                    className="transition-colors duration-200"
                     fill={(hovered ?? rating ?? 0) >= star ? 'var(--color-accent)' : 'none'}
-                    stroke={(hovered ?? rating ?? 0) >= star ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)'}
+                    stroke={(hovered ?? rating ?? 0) >= star ? 'var(--color-accent)' : 'rgba(255,255,255,0.18)'}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -186,30 +186,33 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                 </button>
               ))}
             </div>
+            <span className="text-xs text-[var(--color-text-muted)]">
+              {rating ? ['', 'Needs work', 'Below average', 'Good', 'Great', 'Outstanding'][rating] : 'Rate the work'}
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button 
-              onClick={() => handleApprove(rating!)} 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <Button
+              onClick={() => handleApprove(rating!)}
               disabled={isPending || !rating}
               className={cn(
-                "h-13 rounded-xl text-[10px] font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer flex items-center justify-center gap-1.5",
-                rating 
-                  ? "ui-btn-primary" 
-                  : "bg-white/[0.01] text-white/20 border border-white/5 cursor-not-allowed shadow-none"
+                'h-10 rounded-lg text-[13px] font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5',
+                rating
+                  ? 'ui-btn-primary'
+                  : 'bg-white/[0.02] text-white/30 border border-[var(--color-border)] cursor-not-allowed'
               )}
             >
-              <CheckCircle2 className="w-4 h-4 stroke-[2.5px]" />
-              {rating ? 'APPROVE WORK' : 'RATE TO APPROVE'}
+              <CheckCircle2 className="w-4 h-4" />
+              {rating ? 'Approve work' : 'Rate to approve'}
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowRevisionInput(true)}
               disabled={isPending}
-              className="h-13 rounded-xl ui-btn-secondary transition-all font-semibold text-[10px] uppercase tracking-[0.12em] cursor-pointer flex items-center justify-center gap-1.5"
+              className="h-10 rounded-lg ui-btn-secondary transition-colors font-medium text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
             >
               <GitPullRequest className="w-4 h-4" />
-              REQUEST REVISION
+              Request revision
             </Button>
           </div>
         </div>

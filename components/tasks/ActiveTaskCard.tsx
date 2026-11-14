@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
@@ -24,37 +34,31 @@ export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
   const config = statusConfig[task.status as keyof typeof statusConfig] || { label: task.status.toUpperCase(), color: 'bg-white/[0.01] text-white/45 border-white/5' }
 
   return (
-    <Link 
+    <Link
       href={`/tasks/${task.id}`}
-      className="block ui-surface rounded-2xl p-6 hover:border-accent/35 hover:shadow-2xl hover:shadow-accent/[0.06] transition-all group relative overflow-hidden select-none text-left"
+      className="block rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 hover:border-white/[0.14] transition-colors group select-none text-left"
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-      <div className="flex items-center justify-between gap-4 relative z-10">
-        <div className="flex-1 min-w-0 space-y-3">
-          <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
             <span className={cn(
-              "px-2 py-0.5 rounded text-[8.5px] font-semibold border tracking-[0.12em] leading-none",
+              'px-1.5 py-0.5 rounded text-[10px] font-medium border leading-none',
               config.color
             )}>
               {config.label}
             </span>
           </div>
-          
-          <h4 className="text-lg font-serif text-white truncate group-hover:text-accent transition-colors">
+
+          <h4 className="text-sm font-medium text-white truncate group-hover:text-accent transition-colors">
             {task.title}
           </h4>
 
-          <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
-            <div className="flex items-center gap-1.5 text-accent font-semibold">
-               ₹ {Math.floor(task.budget / 100).toLocaleString()}
-            </div>
+          <div className="text-[13px] text-accent font-medium tabular-nums mt-1.5">
+            ₹{Math.floor(task.budget / 100).toLocaleString()}
           </div>
         </div>
 
-        <div className="w-9 h-9 rounded-full border border-white/5 bg-white/[0.01] text-white/40 flex items-center justify-center group-hover:bg-accent group-hover:border-accent group-hover:text-[#050505] transition-all shrink-0">
-          <ChevronRight className="w-4 h-4 stroke-[3px]" />
-        </div>
+        <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-white transition-colors shrink-0" />
       </div>
     </Link>
   )

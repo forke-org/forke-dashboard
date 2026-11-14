@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React from 'react'
 import { auth } from '@/auth'
 import SandboxWorkspace from '@/components/sandbox/SandboxWorkspace'
@@ -19,7 +29,7 @@ export default async function PostTaskPage() {
             <AlertCircle className="w-6 h-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-medium text-white tracking-tight">Clients only</h1>
+            <h1 className="text-[26px] md:text-[30px] font-medium leading-[1.1] text-white tracking-[-0.035em]">Clients only</h1>
             <p className="text-[13px] text-white/60 max-w-md mx-auto leading-relaxed">
               Posting tasks is reserved for clients. As a developer, your path is to claim open tasks and ship code.
             </p>
@@ -37,7 +47,7 @@ export default async function PostTaskPage() {
 
   return (
     <div className="flex flex-col h-full bg-transparent text-white font-sans">
-      <TopBar title="Post task" />
+      <TopBar title="Post task" breadcrumbs={[{ label: 'Tasks', href: '/tasks' }]} />
 
       <div className="flex-grow overflow-y-auto">
         <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
@@ -51,7 +61,7 @@ export default async function PostTaskPage() {
 
         {/* Title and Intro */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             Post a new task
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -59,7 +69,7 @@ export default async function PostTaskPage() {
           </p>
         </div>
 
-        <SandboxWorkspace presetRole="owner" />
+        <SandboxWorkspace presetRole="owner" embedded={true} />
         </div>
       </div>
     </div>

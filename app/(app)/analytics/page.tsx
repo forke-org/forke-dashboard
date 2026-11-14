@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
@@ -26,14 +36,33 @@ export default async function AnalyticsPage() {
       ? eq(tasks.clientId, sessionUser.id)
       : eq(tasks.claimantId, sessionUser.id)
 
-    const res = await db
-      .select({
-        status: tasks.status,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(tasks)
-      .where(whereClause)
-      .groupBy(tasks.status)
+    // Monthly breakdown – last 6 months
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
+    sixMonthsAgo.setDate(1)
+    sixMonthsAgo.setHours(0, 0, 0, 0)
+
+    const [res, monthlyRes] = await Promise.all([
+      db
+        .select({
+          status: tasks.status,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(tasks)
+        .where(whereClause)
+        .groupBy(tasks.status),
+      db
+        .select({
+          month: sql<string>`to_char(created_at, 'Mon')`,
+          monthNum: sql<number>`extract(month from created_at)::int`,
+          count: sql<number>`count(*)::int`,
+          budget: sql<number>`coalesce(sum(budget),0)::int`,
+        })
+        .from(tasks)
+        .where(and(whereClause, gte(tasks.createdAt, sixMonthsAgo)))
+        .groupBy(sql`to_char(created_at, 'Mon'), extract(month from created_at)`)
+        .orderBy(sql`extract(month from created_at)`),
+    ])
 
     for (const r of res) {
       dbStats.totalCount += r.count
@@ -42,24 +71,6 @@ export default async function AnalyticsPage() {
       if (r.status === 'submitted') dbStats.submittedCount = r.count
       if (r.status === 'claimed')   dbStats.claimedCount   = r.count
     }
-
-    // Monthly breakdown – last 6 months
-    const sixMonthsAgo = new Date()
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
-    sixMonthsAgo.setDate(1)
-    sixMonthsAgo.setHours(0, 0, 0, 0)
-
-    const monthlyRes = await db
-      .select({
-        month: sql<string>`to_char(created_at, 'Mon')`,
-        monthNum: sql<number>`extract(month from created_at)::int`,
-        count: sql<number>`count(*)::int`,
-        budget: sql<number>`coalesce(sum(budget),0)::int`,
-      })
-      .from(tasks)
-      .where(and(whereClause, gte(tasks.createdAt, sixMonthsAgo)))
-      .groupBy(sql`to_char(created_at, 'Mon'), extract(month from created_at)`)
-      .orderBy(sql`extract(month from created_at)`)
 
     monthlyData = monthlyRes.map(r => ({ month: r.month, count: r.count, budget: r.budget }))
   } catch (e) {
@@ -119,14 +130,14 @@ export default async function AnalyticsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Analytics" />
 
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Header */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             Analytics
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -171,7 +182,7 @@ export default async function AnalyticsPage() {
             <div>
               <div className="flex justify-between items-center mb-5">
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Task activity</h4>
+                  <h4 className="text-sm font-medium text-white">Task activity</h4>
                   <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
                     {isOwner ? 'Tasks posted per month (last 6 months)' : 'Tasks claimed per month (last 6 months)'}
                   </p>
@@ -207,7 +218,7 @@ export default async function AnalyticsPage() {
 
             {/* No data indicator */}
             {dbStats.totalCount === 0 && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-[var(--color-bg)]/80">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-transparent/80">
                 <AlertTriangle className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <p className="text-[13px] text-[var(--color-text-muted)]">
                   No data yet — {isOwner ? 'post your first task' : 'claim your first task'}
@@ -219,7 +230,7 @@ export default async function AnalyticsPage() {
           {/* Breakdown sidebar */}
           <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] md:col-span-4">
             <div className="px-4 py-3 border-b border-[var(--color-border)]">
-              <h4 className="text-sm font-semibold text-white">Breakdown</h4>
+              <h4 className="text-sm font-medium text-white">Breakdown</h4>
             </div>
             <div className="divide-y divide-[var(--color-border)] text-[13px]">
               <div className="px-4 py-3 flex items-center justify-between">
@@ -242,7 +253,7 @@ export default async function AnalyticsPage() {
           </div>
         </div>
 
-       </div>
+        </div>
       </div>
     </div>
   )

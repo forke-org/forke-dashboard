@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
 import React from 'react'
 import { auth } from '@/auth'
 import { getTaskById, getLatestRevisionRequest } from '@/lib/db/queries/tasks'
@@ -38,6 +48,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   if (!taskResult) notFound()
 
   const { task, clientName, claimantName } = taskResult
+  
+  // Prevent developers or guest users from viewing 'processing' tasks
+  if (task.status === 'processing' && currentUser?.id !== task.clientId) {
+    notFound()
+  }
   const isClaimedByMe = task.claimantId === currentUser?.id
   const isClaimedByOther = task.status !== 'open' && !isClaimedByMe
   const isDeveloper = currentUser?.role === 'developer'
@@ -48,11 +63,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const revisionRequest = isClaimedByMe && task.status === 'claimed' ? await getLatestRevisionRequest(task.id) : null
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Task" />
 
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Back Link */}
         <div className="text-left">
           <Link href="/tasks" className="inline-flex items-center gap-1.5 text-[var(--color-text-muted)] hover:text-white transition-colors text-[13px] group">
@@ -68,7 +83,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               <Clock className="w-[18px] h-[18px]" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white leading-tight">Work submitted</h3>
+              <h3 className="text-sm font-medium text-white leading-tight">Work submitted</h3>
               <p className="text-[13px] text-amber-400/80 mt-0.5">Under review by the client.</p>
             </div>
           </div>
@@ -81,7 +96,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <CheckCircle2 className="w-[18px] h-[18px]" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white leading-tight">Task approved</h3>
+                <h3 className="text-sm font-medium text-white leading-tight">Task approved</h3>
                 <p className="text-[13px] text-emerald-400/80 mt-0.5">Payout released successfully.</p>
               </div>
             </div>
@@ -111,7 +126,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                    <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                      Active Quest
                    </span>
-                   <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight pt-2">
+                   <h1 className="text-[28px] md:text-[34px] font-medium text-white leading-[1.1] tracking-[-0.035em] pt-2">
                      {task.title}
                    </h1>
                  </div>
@@ -162,21 +177,22 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 </Link>
 
-                {/* Submit Work Form */}
-                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
-                   <div className="space-y-2.5">
-                     <h2 className="text-base font-semibold text-white">Submit your work</h2>
-                     <ul className="space-y-1.5">
-                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
-                        </li>
-                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All requirements met
-                        </li>
-                     </ul>
-                   </div>
+                {/* Workspace / Online IDE Link */}
+                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-4">
+                  <div className="space-y-2">
+                    <h2 className="text-base font-semibold text-white">Workspace</h2>
+                    <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                      Write, compile, and run code directly inside the browser using your dedicated secure environment.
+                    </p>
+                  </div>
 
-                   <SubmitWorkForm taskId={task.id} />
+                  <Link
+                    href={`/ide/${task.id}`}
+                    className="w-full py-3 bg-gradient-to-r from-[#FF7A00] to-[#FF9E40] text-white font-bold rounded-xl text-xs hover:shadow-[0_0_15px_rgba(255,122,0,0.3)] transition-all flex items-center justify-center space-x-2 text-center cursor-pointer font-sans"
+                  >
+                    <span>Open Online IDE</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
            </div>
@@ -190,7 +206,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                   Mission Briefing
                 </span>
-                <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight pt-2">
+                <h1 className="text-[28px] md:text-[34px] font-medium text-white leading-[1.1] tracking-[-0.035em] pt-2">
                   {task.title}
                 </h1>
               </div>
@@ -329,7 +345,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             </aside>
           </div>
         )}
-       </div>
+        </div>
       </div>
     </div>
   )
