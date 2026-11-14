@@ -12,7 +12,7 @@
 
 import { useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
-import { BadgeCheck, Calendar, GitMerge, Globe, GraduationCap, Lock, MapPin, Pin, Search, Share2, Sparkles, Star, Trophy } from 'lucide-react'
+import { BadgeCheck, Calendar, Check, Pencil, GitMerge, Globe, GraduationCap, Lock, MapPin, Pin, Search, Share2, Sparkles, Star, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import Heatmap from './Heatmap'
 import { githubHandle, type DevProfile, type ShippedWork } from './types'
@@ -61,8 +61,26 @@ function Empty({ children }: { children: ReactNode }) {
 type Tab = 'overview' | 'shipped' | 'reviews' | 'achievements'
 
 /** The public profile as visitors see it (layout B), fed with real data. Used as the live preview in the dashboard. */
-export default function ProfileView({ p, card, cardStyle }: { p: DevProfile; card: Omit<CardData, 'quote'>; cardStyle: CardStyle }) {
+/** On the live page: where the main button goes, and its label. Without it (the dashboard preview) the buttons are static. */
+export type ProfileActions = { primaryHref: string; primaryLabel: string; own: boolean }
+
+export default function ProfileView({ p, card, cardStyle, actions }: { p: DevProfile; card: Omit<CardData, 'quote'>; cardStyle: CardStyle; actions?: ProfileActions }) {
   const [tab, setTab] = useState<Tab>('overview')
+  const [copied, setCopied] = useState(false)
+  async function share() {
+    const url = window.location.href
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${p.name} on Forke`, url })
+        return
+      } catch {
+        // cancelled, or not allowed here: fall back to copying the link
+      }
+    }
+    await navigator.clipboard?.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
   const reviews = p.work.filter((w) => w.rating !== null)
   const unlocked = p.achievements.filter((a) => a.have >= a.need).length
   const active = p.heatmap.filter((d) => d.count > 0).length
@@ -94,12 +112,25 @@ export default function ProfileView({ p, card, cardStyle }: { p: DevProfile; car
         </div>
 
         <div className="mt-5 flex flex-wrap justify-center gap-2.5 lg:justify-start">
-          <span className="inline-flex h-10 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-[14px] font-medium text-[#1a0a00]">
-            <Sparkles className="h-4 w-4" /> Invite to a task
-          </span>
-          <span className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 text-[14px] text-white/85">
-            <Share2 className="h-4 w-4" /> Share
-          </span>
+          {actions ? (
+            <>
+              <a href={actions.primaryHref} className="inline-flex h-10 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-[14px] font-medium text-[#1a0a00] transition-colors hover:bg-accent-hover">
+                {actions.own ? <Pencil className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {actions.primaryLabel}
+              </a>
+              <button type="button" onClick={share} className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 text-[14px] text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white">
+                {copied ? <Check className="h-4 w-4 text-accent" /> : <Share2 className="h-4 w-4" />} {copied ? 'Link copied' : 'Share'}
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="inline-flex h-10 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-[14px] font-medium text-[#1a0a00]">
+                <Sparkles className="h-4 w-4" /> Invite to a task
+              </span>
+              <span className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 text-[14px] text-white/85">
+                <Share2 className="h-4 w-4" /> Share
+              </span>
+            </>
+          )}
           {p.githubUrl && (
             <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/75 hover:text-white">
               <GithubIcon className="h-[18px] w-[18px]" />

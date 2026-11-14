@@ -53,6 +53,16 @@ function fonts() {
   return { sans, mono }
 }
 
+/** Largest font size (from `max` down to `min`) at which `s` fits in `room` px, letter spacing scaled with the size. */
+function fitSize(ctx: Ctx, s: string, room: number, weight: string, family: string, max: number, min: number, spacingAtMax = 0) {
+  for (let size = max; size > min; size -= 1) {
+    ctx.font = `${weight} ${size}px ${family}`
+    const spacing = (spacingAtMax * size) / max
+    if (ctx.measureText(s).width + spacing * Math.max(0, s.length - 1) <= room) return size
+  }
+  return min
+}
+
 function text(ctx: Ctx, s: string, x: number, y: number, font: string, color: string, align: CanvasTextAlign = 'left', spacing = 0) {
   ctx.font = font
   ctx.fillStyle = color
@@ -225,10 +235,14 @@ export async function paintFront(way: Way, d: CardData, filter: PhotoFilter): Pr
   asterisk(ctx, cx, 240, 250, way.mark, sans, { rotate: 36, outline: 3 })
 
   // text zone
-  text(ctx, d.first, 22, top + 82, `700 80px ${sans}`, ink, 'left', -4.5)
+  // the big first name shrinks to fit beside the quote, so long names never run under it or off the card
+  ctx.font = `600 16px ${sans}`
+  const quoteW = Math.max(ctx.measureText(`“${d.quote[0]}`).width, ctx.measureText(`${d.quote[1]}”`).width)
+  const nameSize = fitSize(ctx, d.first, W - 24 - quoteW - 14 - 22, '700', sans, 80, 34, -4.5)
+  text(ctx, d.first, 22, top + 82, `700 ${nameSize}px ${sans}`, ink, 'left', (-4.5 * nameSize) / 80)
   text(ctx, `“${d.quote[0]}`, W - 24, top + 42, `600 16px ${sans}`, ink, 'right', -0.3)
   text(ctx, `${d.quote[1]}”`, W - 24, top + 60, `600 16px ${sans}`, ink, 'right', -0.3)
-  text(ctx, d.full, 24, top + 110, `400 19px ${sans}`, ink, 'left', -0.4)
+  text(ctx, d.full, 24, top + 110, `400 ${fitSize(ctx, d.full, W - 48, '400', sans, 19, 12, -0.4)}px ${sans}`, ink, 'left', -0.4)
   text(ctx, `Level ${d.level}`, 24, top + 150, `400 13.5px ${sans}`, soft)
   text(ctx, d.title, 24, top + 167, `400 13.5px ${sans}`, soft)
   text(ctx, `@${d.username}`, W - 24, top + 150, `400 13.5px ${sans}`, soft, 'right')
