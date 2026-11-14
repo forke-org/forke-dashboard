@@ -232,7 +232,7 @@ export default async function SubmissionsPage() {
          <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
           <div className="space-y-1 text-left">
-            <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
+            <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
               Incoming submissions
             </h2>
             <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -299,7 +299,7 @@ export default async function SubmissionsPage() {
         <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             Submission history
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">

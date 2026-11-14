@@ -161,7 +161,7 @@ function ErrorContent() {
       <div className={`absolute inset-0 bg-gradient-to-br ${theme === 'accent' ? 'from-accent/[0.03]' : 'from-red-500/[0.03]'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
       
       <div className="text-center pb-3 border-b border-white/5">
-        <h2 className="text-xs font-black uppercase tracking-widest text-white">Contact Support</h2>
+        <h2 className="text-xs font-medium uppercase tracking-[0.12em] font-mono text-white">Contact Support</h2>
       </div>
 
       {submitError && (
@@ -173,34 +173,34 @@ function ErrorContent() {
 
       <div className="grid grid-cols-2 gap-2 relative z-10">
         <div className="space-y-1">
-          <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">First Name</label>
+          <label className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] font-mono ml-1">First Name</label>
           <input required value={formData.firstName} onChange={e => updateField('firstName', e.target.value)} type="text" className={`w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none ${theme === 'accent' ? 'focus:border-accent/40 focus:bg-accent/[0.02]' : 'focus:border-red-500/40 focus:bg-red-500/[0.02]'} transition-all`} />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Last Name</label>
+          <label className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] font-mono ml-1">Last Name</label>
           <input required value={formData.lastName} onChange={e => updateField('lastName', e.target.value)} type="text" className={`w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none ${theme === 'accent' ? 'focus:border-accent/40 focus:bg-accent/[0.02]' : 'focus:border-red-500/40 focus:bg-red-500/[0.02]'} transition-all`} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 relative z-10">
         <div className="space-y-1">
-          <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Email Address</label>
+          <label className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] font-mono ml-1">Email Address</label>
           <input required value={formData.contactEmail} onChange={e => updateField('contactEmail', e.target.value)} type="email" className={`w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none ${theme === 'accent' ? 'focus:border-accent/40 focus:bg-accent/[0.02]' : 'focus:border-red-500/40 focus:bg-red-500/[0.02]'} transition-all`} />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Contact Number</label>
+          <label className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] font-mono ml-1">Contact Number</label>
           <input required value={formData.contactNumber} onChange={e => updateField('contactNumber', e.target.value)} type="tel" className={`w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none ${theme === 'accent' ? 'focus:border-accent/40 focus:bg-accent/[0.02]' : 'focus:border-red-500/40 focus:bg-red-500/[0.02]'} transition-all`} />
         </div>
       </div>
 
       <div className="space-y-1 relative z-10">
-        <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Message</label>
+        <label className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] font-mono ml-1">Message</label>
         <textarea required value={formData.message} onChange={e => updateField('message', e.target.value)} className={`w-full h-20 bg-white/[0.02] border border-white/5 rounded-2xl p-4 text-sm text-white placeholder:text-white/10 focus:outline-none ${theme === 'accent' ? 'focus:border-accent/40 focus:bg-accent/[0.02]' : 'focus:border-red-500/40 focus:bg-red-500/[0.02]'} transition-all resize-none`} placeholder="Please describe your issue..." />
       </div>
 
       <div className="space-y-1 relative z-10">
-        <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1 flex justify-between">
-          Relevant Links <span className="text-[8px] lowercase opacity-50 font-medium">optional</span>
+        <label className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] font-mono ml-1 flex justify-between">
+          Relevant Links <span className="text-[10px] lowercase opacity-50 font-medium">optional</span>
         </label>
         <input value={formData.relevantLinks} onChange={e => updateField('relevantLinks', e.target.value)} type="text" className={`w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none ${theme === 'accent' ? 'focus:border-accent/40 focus:bg-accent/[0.02]' : 'focus:border-red-500/40 focus:bg-red-500/[0.02]'} transition-all`} placeholder="GitHub profile, portfolio, etc." />
       </div>
@@ -208,7 +208,7 @@ function ErrorContent() {
       <Button 
         type="submit"
         disabled={isSubmitting}
-        className={`w-full h-11 text-xs font-black uppercase tracking-widest rounded-2xl ${theme === 'accent' ? 'bg-accent hover:bg-accent/90 shadow-accent/20' : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'} text-white shadow-xl disabled:opacity-30 disabled:pointer-events-none transition-all mt-2 relative z-10 active:scale-[0.98]`}
+        className={`w-full h-11 text-xs font-medium uppercase tracking-[0.12em] font-mono rounded-2xl ${theme === 'accent' ? 'bg-accent hover:bg-accent/90 shadow-accent/20' : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'} text-white shadow-xl disabled:opacity-30 disabled:pointer-events-none transition-all mt-2 relative z-10 active:scale-[0.98]`}
       >
         {isSubmitting ? (
           <div className="flex items-center justify-center gap-2">
@@ -225,7 +225,7 @@ function ErrorContent() {
       <button 
         type="button" 
         onClick={() => { window.location.href = '/api/auth/logout' }} 
-        className="w-full h-11 border border-white/5 bg-transparent hover:bg-white/[0.03] text-white/40 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all mt-2 relative z-10 flex items-center justify-center gap-2"
+        className="w-full h-11 border border-white/5 bg-transparent hover:bg-white/[0.03] text-white/40 hover:text-white rounded-2xl text-[10px] font-medium uppercase tracking-[0.12em] font-mono active:scale-[0.98] transition-all mt-2 relative z-10 flex items-center justify-center gap-2"
       >
         <ArrowLeft className="w-3 h-3" /> Return Home
       </button>
@@ -239,18 +239,18 @@ function ErrorContent() {
           <CheckCircle2 className="w-6 h-6" />
         </div>
       </div>
-      <h2 className="text-xl font-serif text-white tracking-tight">Message Received</h2>
+      <h2 className="text-xl  text-white tracking-tight">Message Received</h2>
       <p className="text-xs text-white/50 leading-relaxed max-w-[320px] mx-auto">We have received your enquiry and will get back to you shortly via the provided email.</p>
-      <Button onClick={() => { window.location.href = '/api/auth/logout' }} className="w-full h-12 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest active:scale-[0.98] transition-all">
+      <Button onClick={() => { window.location.href = '/api/auth/logout' }} className="w-full h-12 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.12em] font-mono active:scale-[0.98] transition-all">
         Return to Home
       </Button>
     </div>
   )
 
   return (
-    <div className="h-screen w-full bg-[#0A0A0A] flex flex-col md:flex-row overflow-hidden selection:bg-accent selection:text-white fixed inset-0">
+    <div className="h-screen w-full bg-[#151414] flex flex-col md:flex-row overflow-hidden selection:bg-accent selection:text-white fixed inset-0">
       {/* Left Panel: dynamic graphic background, text & progress tracker overlay */}
-      <div className="w-full aspect-square md:w-auto md:h-full md:aspect-square shrink-0 bg-[#050505] flex flex-col justify-between relative overflow-hidden select-none py-6 md:py-12 border-b md:border-b-0 md:border-r border-white/5">
+      <div className="w-full aspect-square md:w-auto md:h-full md:aspect-square shrink-0 bg-[#151414] flex flex-col justify-between relative overflow-hidden select-none py-6 md:py-12 border-b md:border-b-0 md:border-r border-white/5">
         
         {/* Subtle background ambient orb behind Forky */}
         <div className="absolute top-[15%] left-[10%] w-[80%] h-[30%] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
@@ -270,7 +270,7 @@ function ErrorContent() {
         <div className="w-full flex justify-start pl-4 md:pl-8 relative z-10">
           <button 
             onClick={() => { window.location.href = '/api/auth/logout' }}
-            className={`flex items-center gap-2 text-[10px] text-white/40 ${theme === 'accent' ? 'hover:text-accent' : 'hover:text-red-500'} font-black uppercase tracking-[0.2em] transition-all group`}
+            className={`flex items-center gap-2 text-[10px] text-white/40 ${theme === 'accent' ? 'hover:text-accent' : 'hover:text-red-500'} font-medium uppercase tracking-[0.12em] transition-all group`}
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
             Back to Home
@@ -287,7 +287,7 @@ function ErrorContent() {
           <div className="space-y-3">
             {theme === 'accent' ? (
               <>
-                <h2 className="text-3xl font-serif text-white tracking-tight leading-tight">
+                <h2 className="text-3xl  text-white tracking-tight leading-tight">
                   Identity <span className="text-accent italic">Conflict</span>
                 </h2>
                 <div className="text-xs text-white/50 space-y-1 font-medium leading-relaxed max-w-[380px] mx-auto">
@@ -299,7 +299,7 @@ function ErrorContent() {
               </>
             ) : (
               <>
-                <h2 className="text-3xl font-serif text-white tracking-tight leading-tight">
+                <h2 className="text-3xl  text-white tracking-tight leading-tight">
                   Your grind has been <span className="text-accent italic">paused.</span>
                 </h2>
                 <div className="text-xs text-white/50 space-y-1 font-medium leading-relaxed max-w-[380px] mx-auto">
@@ -336,7 +336,7 @@ function ErrorContent() {
                   }`}>
                     <StepIcon className="w-4 h-4" />
                   </div>
-                  <span className={`text-[8px] font-black uppercase tracking-wider mt-2.5 text-center transition-colors duration-500 max-w-[80px] leading-tight ${
+                  <span className={`text-[10px] font-medium uppercase tracking-[0.1em] font-mono mt-2.5 text-center transition-colors duration-500 max-w-[80px] leading-tight ${
                     step.active ? 'text-accent' : 'text-white/30'
                   }`}>
                     {step.label}
@@ -349,11 +349,11 @@ function ErrorContent() {
         </div>
 
         {/* Elegant overlay fade to right side */}
-        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#0A0A0A]/40 hidden md:block pointer-events-none z-20" />
+        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#151414]/40 hidden md:block pointer-events-none z-20" />
       </div>
 
       {/* Right Panel: Orangish/Red elegant form */}
-      <div className="flex-1 h-full flex flex-col items-center justify-between relative bg-[#0A0A0A] px-6 py-8 md:py-12 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 h-full flex flex-col items-center justify-between relative bg-[#151414] px-6 py-8 md:py-12 overflow-y-auto overflow-x-hidden">
         {/* Ambient Glows */}
         <div className={`absolute top-1/4 -right-20 w-64 h-64 ${theme === 'accent' ? 'bg-accent/10' : 'bg-red-500/10'} blur-[100px] rounded-full pointer-events-none`} />
         <div className={`absolute bottom-1/4 -left-20 w-48 h-48 ${theme === 'accent' ? 'bg-accent/5' : 'bg-red-500/5'} blur-[80px] rounded-full pointer-events-none`} />
@@ -364,7 +364,7 @@ function ErrorContent() {
             <div className={`w-12 h-12 rounded-2xl ${theme === 'accent' ? 'bg-accent/10' : 'bg-red-500/10'} flex items-center justify-center mb-3`}>
               <ErrorIcon className={`w-6 h-6 ${iconColor}`} />
             </div>
-            <h1 className="text-3xl font-serif text-white tracking-tight">
+            <h1 className="text-3xl  text-white tracking-tight">
               {mainTitlePart} <span className={`italic ${theme === 'accent' ? 'text-accent' : 'text-red-500'}`}>{italicTitlePart}</span>
             </h1>
             <p className="text-xs text-white/50 mt-2 max-w-[360px] font-medium leading-relaxed">
@@ -377,7 +377,7 @@ function ErrorContent() {
 
         {/* Brand Legal Footer */}
         <div className="w-full max-w-[500px] text-center relative z-10 pt-4">
-          <p className="text-[9px] md:text-[10px] text-white/20 font-bold uppercase tracking-widest leading-none whitespace-nowrap overflow-visible">
+          <p className="text-[10.5px] md:text-[10px] text-white/20 font-bold uppercase tracking-[0.12em] font-mono leading-none whitespace-nowrap overflow-visible">
             By using Forke, you are agreeing to the <Link href="/terms" className={`text-white/40 ${theme === 'accent' ? 'hover:text-accent' : 'hover:text-red-500'} transition-colors underline underline-offset-4 decoration-white/5 ${theme === 'accent' ? 'hover:decoration-accent/40' : 'hover:decoration-red-500/40'}`}>Terms of Services</Link> and <Link href="/privacy" className={`text-white/40 ${theme === 'accent' ? 'hover:text-accent' : 'hover:text-red-500'} transition-colors underline underline-offset-4 decoration-white/5 ${theme === 'accent' ? 'hover:decoration-accent/40' : 'hover:decoration-red-500/40'}`}>Privacy Policy</Link>
           </p>
         </div>

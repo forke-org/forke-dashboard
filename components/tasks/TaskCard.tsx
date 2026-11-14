@@ -74,7 +74,7 @@ export default function TaskCard({
       {isProcessing && (
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-wider text-amber-500">Processing</span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] font-mono text-amber-500">Processing</span>
         </div>
       )}
 

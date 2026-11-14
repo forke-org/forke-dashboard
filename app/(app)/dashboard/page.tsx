@@ -181,7 +181,7 @@ export default async function DashboardPage() {
           {/* Header */}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-white">
+              <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] tracking-[-0.035em] text-white">
                 {greeting()}, {firstName}
               </h2>
               <p className="text-sm text-[var(--color-text-muted)] mt-1">

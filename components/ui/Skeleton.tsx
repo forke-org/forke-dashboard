@@ -29,7 +29,7 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 // A. Overview Page Skeleton
 export function DashboardSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white">
+    <div className="flex flex-col h-full bg-[#151414] text-white">
       {/* Top Bar Skeleton */}
       <div className="h-14 border-b border-white/[0.06] flex items-center px-8 justify-between shrink-0">
         <Skeleton className="h-4 w-28" />
@@ -118,7 +118,7 @@ export function DashboardSkeleton() {
 // B. Tasks Page Skeleton
 export function TasksSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white">
+    <div className="flex flex-col h-full bg-[#151414] text-white">
       <div className="h-14 border-b border-white/[0.06] flex items-center px-8 shrink-0">
         <Skeleton className="h-4 w-20" />
       </div>
@@ -182,7 +182,7 @@ export function TasksSkeleton() {
 // C. Submissions Page Skeleton
 export function SubmissionsSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white">
+    <div className="flex flex-col h-full bg-[#151414] text-white">
       <div className="h-14 border-b border-white/[0.06] flex items-center px-8 shrink-0">
         <Skeleton className="h-4 w-24" />
       </div>
@@ -224,7 +224,7 @@ export function SubmissionsSkeleton() {
 // D. Chat Console Skeleton
 export function MessagesSkeleton() {
   return (
-    <div className="flex h-full bg-[#060608] text-white">
+    <div className="flex h-full bg-[#151414] text-white">
       {/* Sidebar conversasion list */}
       <div className="w-80 border-r border-white/[0.06] flex flex-col shrink-0">
         <div className="h-14 border-b border-white/[0.06] flex items-center px-5 shrink-0">
@@ -291,7 +291,7 @@ export function MessagesSkeleton() {
 // E. Earnings Page Skeleton
 export function EarningsSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white">
+    <div className="flex flex-col h-full bg-[#151414] text-white">
       <div className="h-14 border-b border-white/[0.06] flex items-center px-8 shrink-0">
         <Skeleton className="h-4 w-16" />
       </div>
@@ -328,7 +328,7 @@ export function EarningsSkeleton() {
 // F. Profile / Company Profile Skeleton
 export function ProfileSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white">
+    <div className="flex flex-col h-full bg-[#151414] text-white">
       <div className="h-14 border-b border-white/[0.06] flex items-center px-8 shrink-0">
         <Skeleton className="h-4 w-16" />
       </div>
@@ -362,7 +362,7 @@ export function SettingsSkeleton() {
 // H. Support Skeleton
 export function SupportSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white">
+    <div className="flex flex-col h-full bg-[#151414] text-white">
       <div className="h-14 border-b border-white/[0.06] flex items-center px-8 shrink-0">
         <Skeleton className="h-4 w-20" />
       </div>
@@ -398,7 +398,7 @@ export function SupportSkeleton() {
 // I. Admin Panel Skeleton — full-panel loading state for admin console panels.
 export function PanelSkeleton() {
   return (
-    <div className="flex-grow flex flex-col min-h-[400px] bg-[#070709] p-6 space-y-6">
+    <div className="flex-grow flex flex-col min-h-[400px] bg-[#121111] p-6 space-y-6">
       {/* Toolbar row */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -437,7 +437,7 @@ export function PanelSkeleton() {
 // Generic Fallback Loader
 export function GenericPageSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white p-8 space-y-6">
+    <div className="flex flex-col h-full bg-[#151414] text-white p-8 space-y-6">
       <Skeleton className="h-6 w-32" />
       <Skeleton className="h-4 w-64" />
       <div className="grid grid-cols-3 gap-4">

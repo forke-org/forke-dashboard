@@ -144,7 +144,7 @@ export default function OnboardingPage() {
             height={72}
             className="mb-4"
           />
-          <h1 className="text-xl font-medium text-white tracking-tight">
+          <h1 className="text-[26px] md:text-[30px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             {step === 1 ? 'Choose your username' : 'Set up a password (optional)'}
           </h1>
           <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5 text-center max-w-xs">

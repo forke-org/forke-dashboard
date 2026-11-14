@@ -89,7 +89,7 @@ export default async function DevelopersPage() {
         <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Title Section */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             Developers
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -167,7 +167,7 @@ export default async function DevelopersPage() {
                                 {t.status === 'submitted' ? (
                                   <Link
                                     href={`/tasks/${t.id}`}
-                                    className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[#ff8a00]/15 border border-[#ff8a00]/25 text-[#ff8a00] uppercase hover:bg-[#ff8a00]/25 transition-colors leading-none block hover:underline"
+                                    className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[#FF7A00]/15 border border-[#FF7A00]/25 text-[#FF7A00] uppercase hover:bg-[#FF7A00]/25 transition-colors leading-none block hover:underline"
                                   >
                                     View Submission
                                   </Link>
@@ -195,7 +195,7 @@ export default async function DevelopersPage() {
                       {isOwner && (
                         <Link
                           href={`/messages?userId=${dev.id}`}
-                          className="relative h-8 px-3 text-[13px] font-bold bg-[#ff8a00]/10 border border-[#ff8a00]/20 text-[#ff8a00] hover:bg-[#ff8a00]/20 hover:border-[#ff8a00]/30 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="relative h-8 px-3 text-[13px] font-bold bg-[#FF7A00]/10 border border-[#FF7A00]/20 text-[#FF7A00] hover:bg-[#FF7A00]/20 hover:border-[#FF7A00]/30 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Mail className="w-3.5 h-3.5 shrink-0" />
                           <span>Message</span>

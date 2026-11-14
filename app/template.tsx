@@ -10,76 +10,47 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
-import React, { useRef, useState } from 'react'
-import { gsap } from 'gsap'
-import { useGSAP } from '@gsap/react'
+import React, { useEffect, useState } from 'react'
 import { Loader } from '@/components/ui/Loader'
 import { usePathname } from 'next/navigation'
 
+/**
+ * Page transition: the line-drawn Forky shows briefly, then fades as the page slides in.
+ * Timers and CSS transitions (not animation frames) drive it, so a page opened in a
+ * background tab is never stuck behind the loader.
+ */
 export default function Template({ children }: { children: React.ReactNode }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const loaderRef = useRef<HTMLDivElement>(null)
-  const [showLoader, setShowLoader] = useState(true)
   const pathname = usePathname()
-
   const isBypassed = pathname === '/waitlist' || pathname === '/checkout'
+  const [phase, setPhase] = useState<'loading' | 'leaving' | 'done'>(isBypassed ? 'done' : 'loading')
 
-  useGSAP(() => {
-    if (isBypassed) {
-      setShowLoader(false)
-      return
-    }
-
-    // Ensure the page starts at the top on every transition
+  useEffect(() => {
+    if (isBypassed) return
     window.scrollTo(0, 0)
+    const leave = setTimeout(() => setPhase('leaving'), 450)
+    const done = setTimeout(() => setPhase('done'), 900)
+    return () => {
+      clearTimeout(leave)
+      clearTimeout(done)
+    }
+  }, [isBypassed])
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setShowLoader(false)
-        // Clear transform inline styling so that fixed elements (like Navbar) correctly reference the global viewport
-        gsap.set(containerRef.current, { clearProps: 'transform' })
-      }
-    })
-
-    // 1. Initial State: Page content is hidden, Loader is fully opaque
-    tl.set(containerRef.current, { opacity: 0, y: 60 })
-    
-    // 2. Play the Loader slide up and fade out after a brief premium delay
-    tl.to(loaderRef.current, {
-      opacity: 0,
-      y: -60,
-      duration: 0.4,
-      ease: 'power3.inOut',
-      delay: 0.2 // Delicate delay so the user can enjoy the floating mascot loader
-    })
-
-    // 3. Simultaneously reveal page content with a premium fade and slide
-    .to(containerRef.current, {
-      opacity: 1,
-      y: 0,
-      duration: 0.5,
-      ease: 'power3.out'
-    }, '-=0.25') // Overlap slightly with loader exit for a seamless reveal
-  }, { scope: containerRef, dependencies: [isBypassed] })
-
-  if (isBypassed) {
-    return <>{children}</>
-  }
+  if (isBypassed) return <>{children}</>
 
   return (
     <div className="relative min-h-screen">
-      {/* Dynamic Loader Gate */}
-      {showLoader && (
-        <div 
-          ref={loaderRef}
-          className="fixed inset-0 z-[9999] bg-[#050505]"
+      {phase !== 'done' && (
+        <div
+          className="fixed inset-0 z-[9999] bg-[#151414] transition-[opacity,transform] duration-[400ms] ease-[cubic-bezier(.65,0,.35,1)]"
+          style={{ opacity: phase === 'leaving' ? 0 : 1, transform: phase === 'leaving' ? 'translateY(-40px)' : 'none' }}
         >
-          <Loader fullScreen text="LOADING FORKE..." />
+          <Loader fullScreen text="Loading forke" />
         </div>
       )}
-
-      {/* Main Page Content */}
-      <div ref={containerRef} style={{ opacity: 0 }}>
+      <div
+        className="transition-[opacity,transform] duration-500 ease-out"
+        style={{ opacity: phase === 'loading' ? 0 : 1, transform: phase === 'loading' ? 'translateY(40px)' : 'none' }}
+      >
         {children}
       </div>
     </div>

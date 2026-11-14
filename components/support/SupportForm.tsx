@@ -165,10 +165,10 @@ export default function SupportForm() {
                     name="errorType"
                     className="w-full h-10 pl-3 pr-8 bg-white/[0.02] border border-[var(--color-border)] rounded-lg text-[13px] text-white/80 outline-none focus:border-accent transition-colors appearance-none cursor-pointer"
                   >
-                    <option value="General" className="bg-[#0b0b0e] text-white">General inquiry</option>
-                    <option value="Transaction" className="bg-[#0b0b0e] text-white">Transaction issue</option>
-                    <option value="Dispute" className="bg-[#0b0b0e] text-white">Task dispute</option>
-                    <option value="SLA" className="bg-[#0b0b0e] text-white">SLA/delivery dispute</option>
+                    <option value="General" className="bg-[#1A1919] text-white">General inquiry</option>
+                    <option value="Transaction" className="bg-[#1A1919] text-white">Transaction issue</option>
+                    <option value="Dispute" className="bg-[#1A1919] text-white">Task dispute</option>
+                    <option value="SLA" className="bg-[#1A1919] text-white">SLA/delivery dispute</option>
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-muted)]">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

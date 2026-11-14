@@ -10,8 +10,10 @@
 
 import { Instrument_Serif, JetBrains_Mono } from 'next/font/google'
 import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 
 export const geistSans = GeistSans
+export const geistMono = GeistMono
 
 export const instrumentSerif = Instrument_Serif({
   weight: '400',

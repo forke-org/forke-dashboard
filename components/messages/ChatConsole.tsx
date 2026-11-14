@@ -288,7 +288,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
                                 href={m.fileUrl} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                className="flex items-center gap-2 p-2 bg-[#0c0c0e] hover:bg-white/[0.04] border border-white/10 rounded-lg text-xs text-accent font-semibold transition-colors"
+                                className="flex items-center gap-2 p-2 bg-[#1A1919] hover:bg-white/[0.04] border border-white/10 rounded-lg text-xs text-accent font-semibold transition-colors"
                               >
                                 <Paperclip className="w-4 h-4 shrink-0" />
                                 <span className="truncate max-w-[180px] text-white/80">{m.fileName || 'Attached File'}</span>
@@ -423,7 +423,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
               <button 
                 type="submit" 
                 disabled={isUploading}
-                className="p-2.5 text-[#0a0a0a] bg-accent hover:bg-accent-hover rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                className="p-2.5 text-[#151414] bg-accent hover:bg-accent-hover rounded-lg cursor-pointer transition-colors disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
               </button>

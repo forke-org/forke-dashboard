@@ -29,7 +29,7 @@ export default async function PostTaskPage() {
             <AlertCircle className="w-6 h-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-medium text-white tracking-tight">Clients only</h1>
+            <h1 className="text-[26px] md:text-[30px] font-medium leading-[1.1] text-white tracking-[-0.035em]">Clients only</h1>
             <p className="text-[13px] text-white/60 max-w-md mx-auto leading-relaxed">
               Posting tasks is reserved for clients. As a developer, your path is to claim open tasks and ship code.
             </p>
@@ -61,7 +61,7 @@ export default async function PostTaskPage() {
 
         {/* Title and Intro */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
+          <h2 className="text-[28px] md:text-[34px] font-medium leading-[1.1] text-white tracking-[-0.035em]">
             Post a new task
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">

@@ -214,12 +214,12 @@ export function Workspace({
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0D0F12] text-gray-200 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-screen bg-[#1A1919] text-gray-200 overflow-hidden font-sans">
       
       {/* ─── Premium Main Header ─────────────────────────────────────── */}
       <header className="flex items-center justify-between px-6 py-4 bg-[#14181E] border-b border-[#222B36] z-10">
         <div className="flex items-center space-x-3">
-          <span className="font-extrabold text-lg text-white tracking-wider flex items-center">
+          <span className="font-extrabold text-lg text-white tracking-[0.1em] font-mono flex items-center">
             <span className="text-[#FF7A00]">FORKE</span>
             <span className="text-gray-400 font-light mx-2">/</span>
             <span className="text-[#00C2FF] font-medium text-sm">IDE</span>
@@ -236,7 +236,7 @@ export function Workspace({
 
         <div className="flex items-center space-x-4">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Bounty Escrow</span>
+            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-[0.1em] font-mono">Bounty Escrow</span>
             <span className="text-sm font-bold text-[#FF7A00]">₹{taskBudget / 100} INR</span>
           </div>
           
@@ -266,34 +266,34 @@ export function Workspace({
           {/* File Explorer mock sidebar */}
           <div className="w-64 bg-[#11151B] border-r border-[#222B36] flex flex-col">
             <div className="px-4 py-3 border-b border-[#222B36] flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Workspace Files</span>
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-[0.1em] font-mono">Workspace Files</span>
             </div>
             <div className="flex-1 p-2 space-y-1 overflow-y-auto text-sm text-gray-400">
-              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer">
+              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer">
                 <Folder size={16} className="text-[#00C2FF]" />
                 <span>components</span>
               </div>
-              <div className="pl-6 flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer">
+              <div className="pl-6 flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer">
                 <FileCode size={14} className="text-[#A78BFA]" />
                 <span>Navbar.tsx</span>
               </div>
-              <div className="pl-6 flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer">
+              <div className="pl-6 flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer">
                 <FileCode size={14} className="text-[#A78BFA]" />
                 <span>MobileMenu.tsx</span>
               </div>
-              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer">
+              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer">
                 <Folder size={16} className="text-[#00C2FF]" />
                 <span>styles</span>
               </div>
-              <div className="pl-6 flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer text-gray-200 bg-[#1E2633]">
+              <div className="pl-6 flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer text-gray-200 bg-[#1E2633]">
                 <FileCode size={14} className="text-[#60A5FA]" />
                 <span>globals.css</span>
               </div>
-              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer">
+              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer">
                 <FileCode size={16} className="text-[#FBBF24]" />
                 <span>package.json</span>
               </div>
-              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#1A202C] cursor-pointer">
+              <div className="flex items-center space-x-2 p-1.5 rounded hover:bg-[#22201F] cursor-pointer">
                 <FileCode size={16} className="text-[#34D399]" />
                 <span>tailwind.config.ts</span>
               </div>
@@ -301,10 +301,10 @@ export function Workspace({
           </div>
 
           {/* Monaco Editor mock container */}
-          <div className="flex-1 flex flex-col bg-[#0D0F12]">
+          <div className="flex-1 flex flex-col bg-[#1A1919]">
             {/* Mock Tabs */}
             <div className="flex bg-[#11151B] border-b border-[#222B36] text-xs">
-              <div className="px-4 py-3 bg-[#0D0F12] border-r border-[#222B36] border-t-2 border-[#FF7A00] flex items-center space-x-2 text-white">
+              <div className="px-4 py-3 bg-[#1A1919] border-r border-[#222B36] border-t-2 border-[#FF7A00] flex items-center space-x-2 text-white">
                 <FileCode size={14} className="text-[#60A5FA]" />
                 <span>globals.css</span>
               </div>
@@ -319,7 +319,7 @@ export function Workspace({
               <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">1</span><span className="text-[#6A9955]">/* Tailwind mobile styles wrapper */</span></div>
               <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">2</span><span>@layer base &#123;</span></div>
               <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">3</span><span className="pl-4">body &#123;</span></div>
-              <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">4</span><span className="pl-8">@apply bg-[#0A0A0A] text-white;</span></div>
+              <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">4</span><span className="pl-8">@apply bg-[#151414] text-white;</span></div>
               <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">5</span><span className="pl-4">&#125;</span></div>
               <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">6</span><span>&#125;</span></div>
               <div className="flex"><span className="w-8 text-gray-600 text-right pr-4">7</span><span></span></div>
@@ -334,7 +334,7 @@ export function Workspace({
             <div className="h-48 bg-[#080A0D] border-t border-[#222B36] flex flex-col">
               <div className="px-4 py-2 bg-[#10141A] border-b border-[#222B36] flex items-center space-x-2">
                 <Terminal size={14} className="text-[#FF7A00]" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Terminal</span>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-[0.1em] font-mono">Terminal</span>
               </div>
               <div className="flex-1 p-4 font-mono text-xs text-green-500 overflow-y-auto leading-relaxed select-none">
                 <div>$ npm run dev</div>
@@ -417,7 +417,7 @@ export function Workspace({
               <div className="bg-[#080A0D]/95 border border-[#222B36] p-6 rounded-xl max-w-2xl w-full shadow-2xl flex flex-col h-96 animate-fade-in font-mono">
                 <div className="flex items-center space-x-2 border-b border-[#222B36] pb-3 mb-4">
                   <Loader2 className="animate-spin text-[#FF7A00]" size={16} />
-                  <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Orchestrator Sandbox Builder</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-[0.1em] font-mono font-semibold">Orchestrator Sandbox Builder</span>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto space-y-2 text-xs text-gray-400">
@@ -458,7 +458,7 @@ export function Workspace({
 
         {/* ─── Direct Codespace Redirection Screen ────────────────────── */}
         {state === 'ACTIVE' && codespaceUrl && (
-          <div className="flex-grow h-full w-full flex flex-col items-center justify-center bg-[#0D0F12] text-center p-8 select-none">
+          <div className="flex-grow h-full w-full flex flex-col items-center justify-center bg-[#1A1919] text-center p-8 select-none">
             <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-[#00C2FF]/20 to-[#A78BFA]/20 rounded-full flex items-center justify-center border border-[#00C2FF]/30 mb-6 animate-pulse">
               <Code className="text-[#00C2FF]" size={28} />
             </div>

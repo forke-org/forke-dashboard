@@ -18,6 +18,7 @@ const PROTECTED_ROUTES = [
   '/ide',
   '/developer',
   '/owner',
+  '/id-card',
 ]
 
 export async function middleware(req: NextRequest) {

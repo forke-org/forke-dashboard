@@ -24,7 +24,7 @@ export default function DotPatternBackground() {
   }, [])
 
   return (
-    <div className="absolute inset-0 z-0 bg-[#070709]">
+    <div className="absolute inset-0 z-0 bg-[#121111]">
       {/* Client-side randomized organic dot pattern background overlay */}
       <div 
         className="absolute inset-0 pointer-events-none mix-blend-screen bg-repeat bg-center transition-opacity duration-1000"

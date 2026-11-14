@@ -186,7 +186,7 @@ function TreeNodeRow({
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className="w-3.5 h-3.5 shrink-0 flex items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+            className="w-3.5 h-3.5 shrink-0 flex items-center justify-center text-white/40 hover:text-white/75 transition-colors cursor-pointer"
           >
             <svg className={cn('w-2.5 h-2.5 transition-transform', open && 'rotate-90')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -207,7 +207,7 @@ function TreeNodeRow({
               ? isAllowed
                 ? cn('text-white/85', extColor(node.name))
                 : 'text-red-400/70 line-through decoration-red-500/50'
-              : 'text-zinc-300 font-medium'
+              : 'text-white/75 font-medium'
           )}
           onClick={!isFile ? () => setOpen(o => !o) : undefined}
           style={!isFile ? { cursor: 'pointer' } : undefined}
@@ -219,7 +219,7 @@ function TreeNodeRow({
         {/* Status pill for files */}
         {isFile && (
           <span className={cn(
-            'text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 ml-1',
+            'text-[10.5px] font-bold uppercase tracking-[0.1em] font-mono px-1.5 py-0.5 rounded shrink-0 ml-1',
             isAllowed
               ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
               : 'text-red-400 bg-red-500/10 border border-red-500/20'

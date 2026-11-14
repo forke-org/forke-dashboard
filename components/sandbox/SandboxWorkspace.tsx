@@ -1031,21 +1031,21 @@ export default function SandboxHome({
     const tag = log.substring(0, spaceIndex)
     const message = log.substring(spaceIndex + 1)
 
-    let tagColor = 'text-zinc-400'
+    let tagColor = 'text-white/55'
     if (tag === 'INIT') tagColor = 'text-blue-400 font-bold'
     if (tag === 'CHECKING') tagColor = 'text-amber-400 font-semibold'
     if (tag === 'CREATING' || tag === 'GIT_INIT') tagColor = 'text-teal-400 font-semibold animate-pulse'
     if (tag === 'CREATED' || tag === 'GIT_CLONE_SUCCESS' || tag === 'GIT_PUSH_SUCCESS') tagColor = 'text-emerald-400 font-bold'
     if (tag === 'GIT_CLONE') tagColor = 'text-purple-400'
     if (tag === 'GIT_PUSH') tagColor = 'text-pink-400'
-    if (tag === 'CLEANUP') tagColor = 'text-zinc-500'
-    if (tag === 'SUCCESS') tagColor = 'text-emerald-400 font-black tracking-wide border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/10'
-    if (tag === 'FAILED') tagColor = 'text-red-400 font-black border border-red-500/20 px-2 py-0.5 rounded bg-red-500/10 animate-bounce'
+    if (tag === 'CLEANUP') tagColor = 'text-white/40'
+    if (tag === 'SUCCESS') tagColor = 'text-emerald-400 font-medium tracking-wide border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/10'
+    if (tag === 'FAILED') tagColor = 'text-red-400 font-medium border border-red-500/20 px-2 py-0.5 rounded bg-red-500/10 animate-bounce'
 
     return (
       <div className="py-1 flex items-start gap-2 select-text font-mono text-xs md:text-sm">
         <span className={`shrink-0 ${tagColor} select-none`}>[{tag}]</span>
-        <span className="text-zinc-300">{message}</span>
+        <span className="text-white/75">{message}</span>
       </div>
     )
   };
@@ -1095,14 +1095,12 @@ export default function SandboxHome({
           /* ========================================================================= */
           <div className="flex-1 flex flex-col items-center justify-center max-w-4xl w-full mx-auto py-12">
             <div className="text-center mb-10 animate-fade-in relative">
-              <div className="inline-flex w-14 h-14 rounded-xl bg-accent text-[#0a0a0a] items-center justify-center font-semibold text-2xl mb-6">
-                F
-              </div>
-              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3 text-white">
-                Forke Native Sandbox
+              <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.14em] text-accent-text">Sandbox</p>
+              <h1 className="mb-3 text-[28px] font-medium tracking-[-0.035em] text-white md:text-[34px]">
+                Connect GitHub to start <span className="text-white/45">working on real repos.</span>
               </h1>
               <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto text-sm leading-relaxed">
-                A secure environment to validate OAuth permissions, orchestrate git mirrors under <span className="text-white font-medium">{process.env.NEXT_PUBLIC_GITHUB_SANDBOX_ORG || 'forke-sandbox'}</span>, and configure review-ready engineering workspaces.
+                Forke mirrors task repositories under <span className="text-white font-medium">{process.env.NEXT_PUBLIC_GITHUB_SANDBOX_ORG || 'forke-sandbox'}</span> so you can fork, push and open pull requests that get reviewed.
               </p>
             </div>
 
@@ -1121,11 +1119,11 @@ export default function SandboxHome({
                     </div>
 
                     <h3 className="text-lg font-semibold mb-2 text-white group-hover:text-accent transition-colors">
-                      Repository Owner
+                      Repo owner
                     </h3>
 
                     <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-8">
-                      Import production repository structures, select scopes/organizations, and run bare mirroring pipelines inside sandbox target directories.
+                      Import a repository, pick its scope, and Forke mirrors it so tasks can be worked on safely.
                     </p>
                   </div>
 
@@ -1133,7 +1131,7 @@ export default function SandboxHome({
                     href="/api/auth/login?role=owner"
                     className="w-full h-10 px-4 rounded-lg ui-btn-primary text-center text-[13px] font-medium transition-colors flex items-center justify-center relative z-10"
                   >
-                    Authorize as Owner
+                    Connect GitHub
                   </a>
                 </div>
               )}
@@ -1142,26 +1140,26 @@ export default function SandboxHome({
               {(!presetRole || presetRole === 'developer') && (
                 <div className="group relative app-panel app-panel-hover p-6 flex flex-col justify-between overflow-hidden">
                   <div className="relative z-10">
-                    <div className="w-11 h-11 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5 transition-colors">
+                    <div className="w-11 h-11 rounded-lg bg-accent/10 border border-accent/20 text-accent flex items-center justify-center mb-5 transition-colors">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                       </svg>
                     </div>
 
-                    <h3 className="text-lg font-semibold mb-2 text-white group-hover:text-emerald-400 transition-colors">
-                      Developer Contributor
+                    <h3 className="text-lg font-semibold mb-2 text-white group-hover:text-accent transition-colors">
+                      Developer
                     </h3>
 
                     <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-8">
-                      Fork sandbox projects seamlessly, execute branchless git instructions locally, and push contributions directly back via native pull request checks.
+                      Fork task repos, work locally, and open pull requests that go straight to review.
                     </p>
                   </div>
 
                   <a
                     href="/api/auth/login?role=developer"
-                    className="w-full h-10 px-4 rounded-lg bg-emerald-400 text-[#0a0a0a] hover:bg-emerald-300 text-center text-[13px] font-medium transition-colors flex items-center justify-center relative z-10"
+                    className="w-full h-10 px-4 rounded-lg ui-btn-primary text-center text-[13px] font-medium transition-colors flex items-center justify-center relative z-10"
                   >
-                    Authorize as Developer
+                    Connect GitHub
                   </a>
                 </div>
               )}
@@ -1185,14 +1183,14 @@ export default function SandboxHome({
                     {/* Repository Selection */}
                     {needsGithubAuth ? (
                       <div className="space-y-6 app-panel p-6 border border-[var(--color-border)] rounded-xl bg-white/[0.01] text-left">
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-[0.1em] font-mono">
                           Import a Git repository
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {/* GitHub Button */}
                           <a
                             href={`/api/auth/login?role=owner&callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/owner')}`}
-                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)] bg-[#0a0a0c] hover:bg-white/[0.04] hover:border-white/20 text-[13px] font-semibold text-white transition-all cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)] bg-[#151414] hover:bg-white/[0.04] hover:border-white/20 text-[13px] font-semibold text-white transition-all cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                           >
                             <svg className="w-4.5 h-4.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                               <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
@@ -1204,7 +1202,7 @@ export default function SandboxHome({
                           <button
                             type="button"
                             onClick={() => alert('GitLab integration is coming soon!')}
-                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#0a0a0c]/50 hover:bg-[#0a0a0c]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#151414]/50 hover:bg-[#151414]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
                           >
                             <svg className="w-4.5 h-4.5 opacity-55 text-[#fc6d26]" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M23.953 13.07a.485.485 0 00-.175-.54l-9.61-6.98 3.52-10.8a.485.485 0 00-.918-.3L12 10.686 7.23 1.45a.485.485 0 00-.917.3l3.52 10.8-9.61 6.98a.485.485 0 00-.175.54L4.82 22.56a.485.485 0 00.457.34h13.446a.485.485 0 00.457-.34l4.773-9.49z" />
@@ -1216,7 +1214,7 @@ export default function SandboxHome({
                           <button
                             type="button"
                             onClick={() => alert('Bitbucket integration is coming soon!')}
-                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#0a0a0c]/50 hover:bg-[#0a0a0c]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#151414]/50 hover:bg-[#151414]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
                           >
                             <svg className="w-4.5 h-4.5 opacity-55 text-[#0052cc]" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M22.33 3.023a.987.987 0 00-.796-.388H2.467c-.367 0-.702.203-.872.53a.994.994 0 00.038 1.03L5.43 19.82c.162.296.471.48.81.48h11.518c.34 0 .649-.184.81-.48l3.799-15.626a1.002 1.002 0 00-.038-1.171zM15.42 14.93H8.58l-1.39-5.75h9.62l-1.39 5.75z" />
@@ -1228,7 +1226,7 @@ export default function SandboxHome({
                           <button
                             type="button"
                             onClick={() => alert('Azure DevOps integration is coming soon!')}
-                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#0a0a0c]/50 hover:bg-[#0a0a0c]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
+                            className="flex items-center justify-center gap-2 h-11 rounded-lg border border-[var(--color-border)]/50 bg-[#151414]/50 hover:bg-[#151414]/80 text-[13px] font-semibold text-white/40 transition-all cursor-not-allowed"
                           >
                             <svg className="w-4.5 h-4.5 opacity-55 text-[#0078d4]" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
@@ -1243,7 +1241,7 @@ export default function SandboxHome({
                         <div className="space-y-4">
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
                             <div>
-                              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Repository</h3>
+                              <h3 className="text-sm font-bold text-white uppercase tracking-[0.1em] font-mono">Select Repository</h3>
                               <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Choose a repository to start the review</p>
                             </div>
                             
@@ -1253,7 +1251,7 @@ export default function SandboxHome({
                                 <select
                                   value={selectedScope}
                                   onChange={(e) => setSelectedScope(e.target.value)}
-                                  className="bg-[#070709] border border-[var(--color-border)] hover:border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-accent cursor-pointer transition appearance-none pr-8 min-w-[150px]"
+                                  className="bg-[#121111] border border-[var(--color-border)] hover:border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-accent cursor-pointer transition appearance-none pr-8 min-w-[150px]"
                                 >
                                   <option value="personal">Personal Profile</option>
                                   {organizations.map(org => (
@@ -1262,7 +1260,7 @@ export default function SandboxHome({
                                     </option>
                                   ))}
                                 </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
                                   ?
                                 </div>
                               </div>
@@ -1275,7 +1273,7 @@ export default function SandboxHome({
                                   onChange={(e) => setRepoSearch(e.target.value)}
                                   className="bg-white/[0.02] border border-[var(--color-border)] focus:border-accent rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-white/20 focus:outline-none transition min-w-[180px]"
                                 />
-                                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500">
+                                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40">
                                   <Search className="w-3.5 h-3.5" />
                                 </div>
                               </div>
@@ -1321,10 +1319,10 @@ export default function SandboxHome({
                                         {repo.name}
                                       </span>
                                       <span className={cn(
-                                        "text-[9px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0",
+                                        "text-[10.5px] font-medium uppercase px-1.5 py-0.5 rounded border leading-none shrink-0",
                                         repo.private
                                           ? "border-accent/20 bg-accent/5 text-accent"
-                                          : "border-zinc-800 bg-zinc-900 text-zinc-400"
+                                          : "border-white/[0.08] bg-white/[0.03] text-white/55"
                                       )}>
                                         {repo.private ? 'Private' : 'Public'}
                                       </span>
@@ -1394,7 +1392,7 @@ export default function SandboxHome({
                     <div className="p-4 rounded-xl border border-accent bg-accent/[0.03] space-y-3 relative overflow-hidden">
                       <div className="flex items-center justify-between gap-3 w-full">
                         <div>
-                          <div className="text-[10px] font-black uppercase tracking-wider text-accent">
+                          <div className="text-[10px] font-medium uppercase tracking-[0.1em] font-mono text-accent">
                             Selected Repository
                           </div>
                           <h4 className="font-bold text-[14px] text-white mt-1">
@@ -1445,7 +1443,7 @@ export default function SandboxHome({
                             {selectedOwnerRepo.language}
                           </span>
                         )}
-                        <span className="capitalize px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[9px]">
+                        <span className="capitalize px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[10.5px]">
                           {selectedOwnerRepo?.private ? 'Private' : 'Public'}
                         </span>
                       </div>
@@ -1551,7 +1549,7 @@ export default function SandboxHome({
                             {selectedSkills.map(skill => (
                               <span
                                 key={skill}
-                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[13px] font-medium bg-accent text-[#0a0a0a] border border-accent"
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[13px] font-medium bg-accent text-[#151414] border border-accent"
                               >
                                 {skill}
                                 <button
@@ -1602,7 +1600,7 @@ export default function SandboxHome({
                           {isSkillDropdownOpen && (
                             <>
                               <div className="fixed inset-0 z-10" onClick={() => setIsSkillDropdownOpen(false)} />
-                              <div className="absolute left-0 right-0 mt-1.5 max-h-[200px] overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[#0c0c0f] p-1.5 z-20 shadow-xl custom-scrollbar animate-in fade-in duration-200">
+                              <div className="absolute left-0 right-0 mt-1.5 max-h-[200px] overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[#1A1919] p-1.5 z-20 shadow-xl custom-scrollbar animate-in fade-in duration-200">
                                 {(() => {
                                   const options = [
                                     'React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 
@@ -1784,7 +1782,7 @@ export default function SandboxHome({
                       <h3 className="text-xs font-medium text-[var(--color-text-muted)] pl-0.5 mb-1.5">Repository Preview</h3>
                       <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 space-y-3.5">
                         <div>
-                          <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none">
+                          <span className="text-[10.5px] text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono block font-bold leading-none select-none">
                             Repository Name
                           </span>
                           <h4 className="text-sm font-bold text-white break-words mt-1">
@@ -1794,13 +1792,13 @@ export default function SandboxHome({
                         
                         <div className="grid grid-cols-2 gap-4 text-xs font-medium border-t border-white/[0.03] pt-3">
                           <div>
-                            <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
+                            <span className="text-[10.5px] text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono block font-bold leading-none select-none mb-1">
                               Language
                             </span>
                             <span className="text-white/80">{selectedOwnerRepo?.language || 'Unknown'}</span>
                           </div>
                           <div>
-                            <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
+                            <span className="text-[10.5px] text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono block font-bold leading-none select-none mb-1">
                               Visibility
                             </span>
                             <span className="text-white/80">{selectedOwnerRepo ? (selectedOwnerRepo.private ? 'Private' : 'Public') : '�'}</span>
@@ -1808,7 +1806,7 @@ export default function SandboxHome({
                         </div>
 
                         <div className="border-t border-white/[0.03] pt-3">
-                          <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
+                          <span className="text-[10.5px] text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono block font-bold leading-none select-none mb-1">
                             Description
                           </span>
                           <p className="text-[12px] text-white/45 leading-relaxed">
@@ -1821,7 +1819,7 @@ export default function SandboxHome({
                           <span className={cn(
                             "font-bold",
                             mirrorStatus === 'success' ? "text-emerald-400" :
-                            mirrorStatus === 'running' ? "text-amber-500 animate-pulse" : "text-zinc-500"
+                            mirrorStatus === 'running' ? "text-amber-500 animate-pulse" : "text-white/40"
                           )}>
                             {mirrorStatus === 'success' ? 'Imported' : mirrorStatus === 'running' ? 'Ingesting...' : 'Ready to Import'}
                           </span>
@@ -1872,7 +1870,7 @@ export default function SandboxHome({
                         <span className="truncate max-w-[70%]">
                           Repo: <span className="text-white font-mono">{selectedOwnerRepo?.name || selectedRepoMirror?.sourceRepo?.split('/')[1] || ''}</span>
                         </span>
-                        <span className="capitalize px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[9px] shrink-0">
+                        <span className="capitalize px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[10.5px] shrink-0">
                           {selectedOwnerRepo?.private ? 'Private' : 'Public'}
                         </span>
                       </div>
@@ -2107,21 +2105,21 @@ export default function SandboxHome({
 
             {/* ===== Owner PR Review Dashboard ===== */}
             {selectedSandboxForPRs && (
-              <div className="border-t border-zinc-900/80 pt-10 space-y-6 animate-fade-in">
+              <div className="border-t border-white/[0.08]/80 pt-10 space-y-6 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-black tracking-tight text-zinc-50 flex items-center gap-2">
+                    <h3 className="text-xl font-medium tracking-tight text-white flex items-center gap-2">
                       <svg className="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       Received PRs
-                      <span className="font-mono text-sm text-zinc-400 font-normal">� {selectedSandboxForPRs.sandboxRepo}</span>
+                      <span className="font-mono text-sm text-white/55 font-normal">� {selectedSandboxForPRs.sandboxRepo}</span>
                     </h3>
-                    <p className="text-zinc-400 text-xs font-medium mt-1">Developer submissions with AI review reports</p>
+                    <p className="text-white/55 text-xs font-medium mt-1">Developer submissions with AI review reports</p>
                   </div>
                   <button
                     onClick={() => { setSelectedSandboxForPRs(null); setSelectedPR(null) }}
-                    className="text-zinc-500 hover:text-zinc-300 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="text-white/40 hover:text-white/75 border border-white/[0.08] px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     ? Close
                   </button>
@@ -2130,7 +2128,7 @@ export default function SandboxHome({
                 {loadingPRs ? (
                   <div className="flex items-center gap-3 py-12 justify-center">
                     <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-zinc-400 text-sm font-bold">Loading PRs...</span>
+                    <span className="text-white/55 text-sm font-bold">Loading PRs...</span>
                   </div>
                 ) : sandboxPRs.length === 0 ? (
                   <div className="app-empty p-12 text-center text-xs font-medium">
@@ -2161,21 +2159,21 @@ export default function SandboxHome({
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <div className="font-bold text-zinc-200 text-sm">@{pr.fork.githubUsername}</div>
-                                <div className="text-[10px] text-zinc-500 mt-0.5">
+                                <div className="font-bold text-white text-sm">@{pr.fork.githubUsername}</div>
+                                <div className="text-[10px] text-white/40 mt-0.5">
                                   {pr.review ? `PR #${pr.review.prNumber}` : 'No PR'} � {new Date(pr.fork.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
                                 {pr.review ? (
                                   <>
-                                    <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${verdictStyle}`}>
+                                    <div className={`text-[10.5px] font-medium uppercase px-2 py-0.5 rounded-md border ${verdictStyle}`}>
                                       {verdictLabel}
                                     </div>
-                                    <div className="text-[10px] text-zinc-400 mt-1 font-bold">{pr.review.score}/100</div>
+                                    <div className="text-[10px] text-white/55 mt-1 font-bold">{pr.review.score}/100</div>
                                   </>
                                 ) : (
-                                  <div className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-500">
+                                  <div className="text-[10.5px] font-medium uppercase px-2 py-0.5 rounded-md border border-white/[0.12] bg-white/[0.03] text-white/40">
                                     Awaiting Review
                                   </div>
                                 )}
@@ -2194,10 +2192,10 @@ export default function SandboxHome({
                             {/* Header */}
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">AI Review Report</div>
-                                <div className="text-sm font-bold text-zinc-200 mt-0.5">@{selectedPR.fork.githubUsername} � PR #{selectedPR.review.prNumber}</div>
+                                <div className="text-xs font-medium text-white/55 uppercase tracking-[0.12em] font-mono">AI Review Report</div>
+                                <div className="text-sm font-bold text-white mt-0.5">@{selectedPR.fork.githubUsername} � PR #{selectedPR.review.prNumber}</div>
                               </div>
-                              <div className={`text-xs font-black px-3 py-1.5 rounded-xl border ${
+                              <div className={`text-xs font-medium px-3 py-1.5 rounded-xl border ${
                                 selectedPR.review.verdict === 'pass' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                                 : selectedPR.review.verdict === 'high_risk' ? 'border-red-500/40 bg-red-500/10 text-red-400'
                                 : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
@@ -2209,10 +2207,10 @@ export default function SandboxHome({
                             {/* Score bar */}
                             <div>
                               <div className="flex justify-between text-xs font-bold mb-1.5">
-                                <span className="text-zinc-400">Score</span>
-                                <span className="text-zinc-200">{selectedPR.review.score}/100</span>
+                                <span className="text-white/55">Score</span>
+                                <span className="text-white">{selectedPR.review.score}/100</span>
                               </div>
-                              <div className="h-2 bg-zinc-900 rounded-full overflow-hidden">
+                              <div className="h-2 bg-white/[0.03] rounded-full overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-700 ${
                                     selectedPR.review.score >= 75 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
@@ -2222,7 +2220,7 @@ export default function SandboxHome({
                                   style={{ width: `${selectedPR.review.score}%` }}
                                 />
                               </div>
-                              <div className="text-[10px] text-zinc-500 mt-1">Requirement match: {Math.round(selectedPR.review.requirementMatch * 100)}%</div>
+                              <div className="text-[10px] text-white/40 mt-1">Requirement match: {Math.round(selectedPR.review.requirementMatch * 100)}%</div>
                             </div>
 
                             <button
@@ -2233,18 +2231,18 @@ export default function SandboxHome({
                             </button>
 
                             {/* Summary */}
-                            <div className="app-panel p-4 text-xs text-zinc-300 leading-relaxed">
-                              <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">AI Summary</div>
+                            <div className="app-panel p-4 text-xs text-white/75 leading-relaxed">
+                              <div className="text-[10.5px] font-medium uppercase tracking-[0.12em] font-mono text-white/40 mb-1.5">AI Summary</div>
                               {selectedPR.review.summary}
                             </div>
 
                             {/* Strengths */}
                             {selectedPR.review.strengths && selectedPR.review.strengths.length > 0 && (
                               <div className="space-y-1.5">
-                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✓ Strengths ({selectedPR.review.strengths.length})</div>
+                                <div className="text-[10px] font-medium text-emerald-400 uppercase tracking-[0.1em] font-mono">✓ Strengths ({selectedPR.review.strengths.length})</div>
                                 <div className="space-y-1 pl-1">
                                   {selectedPR.review.strengths.map((s, i) => (
-                                    <div key={i} className="flex items-start gap-2 text-[10px] text-zinc-300">
+                                    <div key={i} className="flex items-start gap-2 text-[10px] text-white/75">
                                       <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
                                       {s}
                                     </div>
@@ -2256,18 +2254,18 @@ export default function SandboxHome({
                             {/* Issues */}
                             {selectedPR.review.issues.length > 0 && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider">⚠ Active Issues ({selectedPR.review.issues.length})</div>
+                                <div className="text-[10px] font-medium text-amber-400 uppercase tracking-[0.1em] font-mono">⚠ Active Issues ({selectedPR.review.issues.length})</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.issues.map((issue, i) => (
                                     <div key={i} className={`p-3 rounded-xl border text-[10px] leading-relaxed ${
                                       issue.severity === 'critical' || issue.severity === 'high' ? 'border-red-500/20 bg-red-500/5 text-red-300'
                                       : issue.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
-                                      : 'border-zinc-800 bg-zinc-900/50 text-zinc-400'
+                                      : 'border-white/[0.08] bg-white/[0.03]/50 text-white/55'
                                     }`}>
-                                      <div className="flex items-center justify-between font-black mb-1">
+                                      <div className="flex items-center justify-between font-medium mb-1">
                                         <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
                                         {issue.status && (
-                                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
+                                          <span className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
                                             issue.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                                           }`}>
                                             {issue.status}
@@ -2275,7 +2273,7 @@ export default function SandboxHome({
                                         )}
                                       </div>
                                       <div>{issue.message}</div>
-                                      {issue.suggestion && <div className="mt-1 text-zinc-500 italic">→ {issue.suggestion}</div>}
+                                      {issue.suggestion && <div className="mt-1 text-white/40 italic">→ {issue.suggestion}</div>}
                                     </div>
                                   ))}
                                 </div>
@@ -2285,14 +2283,14 @@ export default function SandboxHome({
                             {/* Risks */}
                             {selectedPR.review.risks && selectedPR.review.risks.length > 0 && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">⊗ Active Security Risks ({selectedPR.review.risks.length})</div>
+                                <div className="text-[10px] font-medium text-red-400 uppercase tracking-[0.1em] font-mono">⊗ Active Security Risks ({selectedPR.review.risks.length})</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.risks.map((risk, i) => (
                                     <div key={i} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[10px] text-red-300">
-                                      <div className="flex items-center justify-between font-black mb-1">
+                                      <div className="flex items-center justify-between font-medium mb-1">
                                         <span>[{risk.severity.toUpperCase()}] {risk.category}</span>
                                         {risk.status && (
-                                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
+                                          <span className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
                                             risk.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                                           }`}>
                                             {risk.status}
@@ -2310,27 +2308,27 @@ export default function SandboxHome({
                             {((selectedPR.review.resolvedIssues && selectedPR.review.resolvedIssues.length > 0) || 
                               (selectedPR.review.resolvedRisks && selectedPR.review.resolvedRisks.length > 0)) && (
                               <div className="space-y-2">
-                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✓ Corrected Items ({
+                                <div className="text-[10px] font-medium text-emerald-400 uppercase tracking-[0.1em] font-mono">✓ Corrected Items ({
                                   (selectedPR.review.resolvedIssues?.length || 0) + (selectedPR.review.resolvedRisks?.length || 0)
                                 })</div>
                                 <div className="space-y-2">
                                   {selectedPR.review.resolvedIssues?.map((issue, i) => (
                                     <div key={`resolved-issue-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
-                                      <div className="font-black mb-1 flex items-center gap-1.5">
-                                        <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                      <div className="font-medium mb-1 flex items-center gap-1.5">
+                                        <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[10px] font-medium leading-none">FIXED</span>
                                         <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
                                       </div>
-                                      <div className="line-through text-zinc-500">{issue.message}</div>
+                                      <div className="line-through text-white/40">{issue.message}</div>
                                       {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {issue.resolution}</div>}
                                     </div>
                                   ))}
                                   {selectedPR.review.resolvedRisks?.map((risk, i) => (
                                     <div key={`resolved-risk-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
-                                      <div className="font-black mb-1 flex items-center gap-1.5">
-                                        <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                      <div className="font-medium mb-1 flex items-center gap-1.5">
+                                        <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[10px] font-medium leading-none">FIXED</span>
                                         <span>[{risk.severity.toUpperCase()}] Category: {risk.category}</span>
                                       </div>
-                                      <div className="line-through text-zinc-500">{risk.message}</div>
+                                      <div className="line-through text-white/40">{risk.message}</div>
                                       {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {risk.resolution}</div>}
                                     </div>
                                   ))}
@@ -2341,7 +2339,7 @@ export default function SandboxHome({
                             {/* Unauthorized Edits */}
                             {selectedPR.review.unauthorizedEdits && selectedPR.review.unauthorizedEdits.length > 0 && (
                               <div className="space-y-1.5">
-                                <div className="text-[10px] font-black text-red-500 uppercase tracking-wider">🚫 Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
+                                <div className="text-[10px] font-medium text-red-500 uppercase tracking-[0.1em] font-mono">🚫 Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
                                 <div className="space-y-1">
                                   {selectedPR.review.unauthorizedEdits.map((f, i) => (
                                     <div key={i} className="font-mono text-[10px] text-red-400 bg-red-500/5 border border-red-500/15 px-3 py-1 rounded-lg">
@@ -2369,7 +2367,7 @@ export default function SandboxHome({
 
                             {/* Owner guidance — informational, no action buttons */}
                             <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.015] p-4 space-y-2.5">
-                              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">What to do next</p>
+                              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">What to do next</p>
                               <div className="space-y-2 text-[12px] text-[var(--color-text-muted)] leading-relaxed">
                                 <div className="flex items-start gap-2">
                                   <span className="text-emerald-400 shrink-0 mt-0.5 font-bold">↑</span>
@@ -2387,7 +2385,7 @@ export default function SandboxHome({
                             </div>
                           </>
                         ) : (
-                          <div className="py-12 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                          <div className="py-12 text-center text-white/40 text-xs font-bold uppercase tracking-[0.12em] font-mono">
                             No AI review yet for this PR.<br />
                             <span className="text-[10px] normal-case font-normal mt-2 block">The review runs automatically after the developer opens a PR.</span>
                           </div>
@@ -2413,7 +2411,7 @@ export default function SandboxHome({
             <div className="flex flex-col gap-1">
               <h2 className={cn(
                 "tracking-tight text-white flex items-center gap-2",
-                embedded ? "text-sm font-medium" : "text-3xl font-black"
+                embedded ? "text-sm font-medium" : "text-3xl font-medium"
               )}>
                 <svg className={cn("text-accent", embedded ? "w-4 h-4" : "w-8 h-8")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -2502,7 +2500,7 @@ export default function SandboxHome({
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <h5 className="text-[13px] font-medium text-white flex items-center gap-2.5">
-                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
+                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-medium transition-colors shadow-inner ${
                               devStatus.hasFork ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
                               {devStatus.hasFork ? '✓' : '1'}
@@ -2543,7 +2541,7 @@ export default function SandboxHome({
                             <svg className="w-5 h-5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p className="text-zinc-300 text-xs font-bold truncate leading-none">
+                            <p className="text-white/75 text-xs font-bold truncate leading-none">
                               Fork successfully verified at:{' '}
                               <a
                                 href={forkUrl || `https://github.com/${githubUsername}/${selectedSandboxRepo.sandboxRepo.split('/')[1]}`}
@@ -2561,16 +2559,16 @@ export default function SandboxHome({
                       {/* Step 2: Git Terminals */}
                       <div className="space-y-3">
                         <h5 className="text-[13px] font-medium text-white flex items-center gap-2.5">
-                          <span className="w-5.5 h-5.5 rounded-full bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)] flex items-center justify-center text-[10px] font-black">
+                          <span className="w-5.5 h-5.5 rounded-full bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)] flex items-center justify-center text-[10px] font-medium">
                             2
                           </span>
                           Step 2: Initialize Git & Commit Contributions
                         </h5>
 
-                        <div className={cn("space-y-3 app-terminal rounded-xl font-mono text-zinc-200 overflow-y-auto custom-scrollbar", embedded ? "p-3 max-h-[210px]" : "p-5")}>
+                        <div className={cn("space-y-3 app-terminal rounded-xl font-mono text-white overflow-y-auto custom-scrollbar", embedded ? "p-3 max-h-[210px]" : "p-5")}>
                           {/* Command clone */}
                           <div className="space-y-2 relative group">
-                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
+                            <span className="text-[10.5px] text-white/40 uppercase tracking-[0.12em] font-mono block font-bold leading-none select-none">
                               A � Clone your isolated Fork locally
                             </span>
                             <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
@@ -2579,7 +2577,7 @@ export default function SandboxHome({
                               </span>
                               <button
                                 onClick={() => copyToClipboard(`git clone https://github.com/${githubUsername}/${selectedSandboxRepo.sandboxRepo.split('/')[1]}.git`)}
-                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 text-[10px] px-2 py-1 border border-zinc-800 rounded bg-zinc-900/80 leading-none transition duration-200 select-none shrink-0"
+                                className="opacity-0 group-hover:opacity-100 text-white/55 hover:text-white text-[10px] px-2 py-1 border border-white/[0.08] rounded bg-white/[0.03]/80 leading-none transition duration-200 select-none shrink-0"
                               >
                                 Copy
                               </button>
@@ -2588,7 +2586,7 @@ export default function SandboxHome({
 
                           {/* Command remote */}
                           <div className="space-y-2 relative group">
-                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
+                            <span className="text-[10.5px] text-white/40 uppercase tracking-[0.12em] font-mono block font-bold leading-none select-none">
                               B � Add upstream tracking to sandbox
                             </span>
                             <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
@@ -2597,7 +2595,7 @@ export default function SandboxHome({
                               </span>
                               <button
                                 onClick={() => copyToClipboard(`git remote add upstream https://github.com/${selectedSandboxRepo.sandboxRepo}.git`)}
-                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 text-[10px] px-2 py-1 border border-zinc-800 rounded bg-zinc-900/80 leading-none transition duration-200 select-none shrink-0"
+                                className="opacity-0 group-hover:opacity-100 text-white/55 hover:text-white text-[10px] px-2 py-1 border border-white/[0.08] rounded bg-white/[0.03]/80 leading-none transition duration-200 select-none shrink-0"
                               >
                                 Copy
                               </button>
@@ -2606,7 +2604,7 @@ export default function SandboxHome({
 
                           {/* Command push */}
                           <div className="space-y-2 relative group">
-                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
+                            <span className="text-[10.5px] text-white/40 uppercase tracking-[0.12em] font-mono block font-bold leading-none select-none">
                               C � Make changes, commit, and push directly to main
                             </span>
                             <div className="flex items-center justify-between bg-black/60 px-3 py-2.5 rounded-lg border border-[var(--color-border)] font-mono text-[11px]">
@@ -2615,7 +2613,7 @@ export default function SandboxHome({
                               </span>
                               <button
                                 onClick={() => copyToClipboard('git push origin main')}
-                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 text-[10px] px-2 py-1 border border-zinc-800 rounded bg-zinc-900/80 leading-none transition duration-200 select-none shrink-0"
+                                className="opacity-0 group-hover:opacity-100 text-white/55 hover:text-white text-[10px] px-2 py-1 border border-white/[0.08] rounded bg-white/[0.03]/80 leading-none transition duration-200 select-none shrink-0"
                               >
                                 Copy
                               </button>
@@ -2628,7 +2626,7 @@ export default function SandboxHome({
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <h5 className="text-[13px] font-medium text-white flex items-center gap-2.5">
-                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
+                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-medium transition-colors shadow-inner ${
                               devStatus.hasPR ? 'bg-accent text-black' : 'bg-white/[0.03] border border-[var(--color-border)] text-[var(--color-text-muted)]'
                             }`}>
                               {devStatus.hasPR ? '✓' : '3'}
@@ -2644,7 +2642,7 @@ export default function SandboxHome({
 
                         <div className={cn("app-panel space-y-4", embedded ? "p-4" : "p-5")}>
                           <p className="text-[var(--color-text-muted)] text-xs leading-relaxed">
-                            Once your sandbox code modification is pushed, open a Pull Request comparing your fork's <span className="font-mono text-zinc-200">main</span> branch to the organization's <span className="font-mono text-zinc-200">main</span> branch. 
+                            Once your sandbox code modification is pushed, open a Pull Request comparing your fork's <span className="font-mono text-white">main</span> branch to the organization's <span className="font-mono text-white">main</span> branch. 
                           </p>
 
                           <div className="flex flex-col sm:flex-row gap-3 pt-1">
@@ -2685,18 +2683,18 @@ export default function SandboxHome({
                             <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-5 flex flex-col gap-3 animate-scale-up relative overflow-hidden">
                               <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/3 blur-2xl rounded-full pointer-events-none"></div>
                               <div className="flex items-center justify-between relative z-10">
-                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                                <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-[0.12em] font-mono flex items-center gap-1.5">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
                                   Pull request active
                                 </span>
-                                <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border border-emerald-500/20 rounded shadow-sm">
+                                <span className="text-[10.5px] font-medium uppercase bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border border-emerald-500/20 rounded shadow-sm">
                                   {devStatus.prDetails.state}
                                 </span>
                               </div>
-                              <h6 className="font-extrabold text-zinc-100 text-sm truncate relative z-10">
+                              <h6 className="font-extrabold text-white text-sm truncate relative z-10">
                                 {devStatus.prDetails.title}
                               </h6>
-                              <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-500 border-t border-zinc-900/60 pt-3 relative z-10">
+                              <div className="flex items-center justify-between text-[10px] font-semibold text-white/40 border-t border-white/[0.08]/60 pt-3 relative z-10">
                                 <span>PR #{devStatus.prDetails.number} � Created {new Date(devStatus.prDetails.createdAt).toLocaleDateString()}</span>
                                 <a
                                   href={devStatus.prDetails.url}
@@ -2718,16 +2716,16 @@ export default function SandboxHome({
                       {/* Step 4: AI Review Report */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
-                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
-                              aiReview ? (aiReview.verdict === 'pass' ? 'bg-emerald-400 text-black' : aiReview.verdict === 'high_risk' ? 'bg-red-500 text-white' : 'bg-amber-500 text-black') : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
+                          <h5 className="text-sm font-bold text-white flex items-center gap-2.5">
+                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-medium transition-colors shadow-inner ${
+                              aiReview ? (aiReview.verdict === 'pass' ? 'bg-emerald-400 text-black' : aiReview.verdict === 'high_risk' ? 'bg-red-500 text-white' : 'bg-amber-500 text-black') : 'bg-white/[0.03] border border-white/[0.08] text-white/55'
                             }`}>
                               {aiReview ? (aiReview.verdict === 'pass' ? '✓' : aiReview.verdict === 'high_risk' ? '!' : '~') : '4'}
                             </span>
                             Step 4: AI Review Report
                           </h5>
                           {aiReview && (
-                            <span className={`text-[9px] font-black uppercase border px-2 py-0.5 rounded shadow-inner ${
+                            <span className={`text-[10.5px] font-medium uppercase border px-2 py-0.5 rounded shadow-inner ${
                               aiReview.verdict === 'pass' ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
                               : aiReview.verdict === 'high_risk' ? 'border-red-500/30 bg-red-500/5 text-red-400'
                               : 'border-amber-500/30 bg-amber-500/5 text-amber-400 animate-pulse'
@@ -2739,21 +2737,21 @@ export default function SandboxHome({
 
                         <div className="app-panel p-5 space-y-4">
                           {!devStatus.hasPR ? (
-                            <p className="text-zinc-500 text-xs font-medium">Open a Pull Request first (Step 3) to trigger the AI review pipeline.</p>
+                            <p className="text-white/40 text-xs font-medium">Open a Pull Request first (Step 3) to trigger the AI review pipeline.</p>
                           ) : devReviewStatus === 'verifying' ? (
                             <div className="space-y-4">
                               {/* Live Progress Bar */}
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between text-xs font-semibold">
-                                  <span className="font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                                  <span className="font-medium uppercase tracking-[0.12em] font-mono text-white/55 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                                     Verification Pipeline
                                   </span>
-                                  <span className="text-emerald-400 font-black tracking-wider animate-pulse">
+                                  <span className="text-emerald-400 font-medium tracking-[0.1em] font-mono animate-pulse">
                                     {activeReviewProgress}%
                                   </span>
                                 </div>
-                                <div className="h-2.5 bg-[#050507] border border-zinc-900 rounded-full overflow-hidden shadow-inner">
+                                <div className="h-2.5 bg-[#050507] border border-white/[0.08] rounded-full overflow-hidden shadow-inner">
                                   <div
                                     className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 animate-pulse"
                                     style={{ width: `${activeReviewProgress}%` }}
@@ -2764,13 +2762,13 @@ export default function SandboxHome({
                               {/* Live Terminal Logs */}
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5 leading-none">
+                                  <span className="text-[10.5px] font-medium uppercase tracking-[0.12em] font-mono text-white/55 flex items-center gap-1.5 leading-none">
                                     <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 shrink-0 shadow-inner"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 shrink-0 shadow-inner"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 shrink-0 shadow-inner"></span>
                                     review-pipeline stdout
                                   </span>
-                                  <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase leading-none font-mono">
+                                  <span className="text-[10.5px] font-medium tracking-[0.12em] font-mono text-white/40 uppercase leading-none font-mono">
                                     tty0
                                   </span>
                                 </div>
@@ -2782,7 +2780,7 @@ export default function SandboxHome({
                                     {activeReviewLogs.map((log, idx) => (
                                       <div key={idx}>{formatTerminalLog(log)}</div>
                                     ))}
-                                    <div className="py-1 flex items-center gap-1 select-none font-mono text-xs text-zinc-500">
+                                    <div className="py-1 flex items-center gap-1 select-none font-mono text-xs text-white/40">
                                       <span>&gt;_</span>
                                       <span className="w-1.5 h-3.5 bg-emerald-500/80 animate-pulse inline-block"></span>
                                     </div>
@@ -2790,7 +2788,7 @@ export default function SandboxHome({
                                 </div>
                               </div>
 
-                              <p className="text-[10px] text-zinc-500 text-center font-medium">
+                              <p className="text-[10px] text-white/40 text-center font-medium">
                                 Running deterministic checks and AI analysis on your PR. This usually takes 30-60 seconds.
                               </p>
                             </div>
@@ -2838,8 +2836,8 @@ export default function SandboxHome({
                     <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
-                    <h4 className="font-bold text-zinc-400 text-sm tracking-wide">No sandbox repo selected</h4>
-                    <p className="text-zinc-500 text-xs max-w-xs leading-relaxed font-medium">
+                    <h4 className="font-bold text-white/55 text-sm tracking-wide">No sandbox repo selected</h4>
+                    <p className="text-white/40 text-xs max-w-xs leading-relaxed font-medium">
                       Select an available sandbox repository from the left panel to initialize your workspace fork and push main branch changes.
                     </p>
                   </div>
@@ -2869,7 +2867,7 @@ export default function SandboxHome({
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--color-border)]">
               <div>
-                <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">AI Review Report</p>
+                <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">AI Review Report</p>
                 <h3 className="text-base font-semibold text-white mt-0.5 truncate max-w-[460px]">{comparisonTitle}</h3>
               </div>
               <button onClick={() => setComparisonModalOpen(false)} className="text-[var(--color-text-muted)] hover:text-white border border-[var(--color-border)] hover:border-white/10 w-8 h-8 rounded-lg flex items-center justify-center transition cursor-pointer text-sm">
@@ -2901,9 +2899,9 @@ export default function SandboxHome({
       {/* Baseline Report Display Overlay */}
       {selectedBaselineReport && (
         <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-6 md:p-12 animate-fade-in">
-          <div className="w-full max-w-5xl h-[85vh] bg-[#040406] border border-zinc-800 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] flex flex-col justify-between animate-scale-up">
+          <div className="w-full max-w-5xl h-[85vh] bg-[#040406] border border-white/[0.08] rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] flex flex-col justify-between animate-scale-up">
             {/* Title bar */}
-            <div className="flex items-center justify-between border-b border-zinc-900 pb-4 mb-4 select-none">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-4 select-none">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
@@ -2913,7 +2911,7 @@ export default function SandboxHome({
                 <span className="text-xs font-semibold text-white ml-1">
                   Baseline Snapshot
                 </span>
-                <span className="text-[10px] px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-mono">
+                <span className="text-[10px] px-2 py-0.5 bg-white/[0.03] border border-white/[0.08] text-white/55 rounded font-mono">
                   commit {selectedBaselineReport.commitSha.substring(0, 7)}
                 </span>
                 {selectedBaselineReport.techStack?.language && (
@@ -2929,7 +2927,7 @@ export default function SandboxHome({
                   setSelectedBaselineReport(null)
                   setSelectedBaselineCategoryLog(null)
                 }}
-                className="text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
+                className="text-white/55 hover:text-white border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.03]/30 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
               >
                 ? Close
               </button>
@@ -2941,19 +2939,19 @@ export default function SandboxHome({
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {/* Score */}
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Baseline Score</span>
+                  <span className="text-white/40 block text-[10.5px] font-semibold uppercase tracking-[0.12em] font-mono mb-1.5">Baseline Score</span>
                   {(() => {
                     const ts = selectedBaselineReport.results?.testScoreResult
                     if (!ts) {
-                      return <span className="text-zinc-500 font-mono font-bold text-sm block">N/A</span>
+                      return <span className="text-white/40 font-mono font-bold text-sm block">N/A</span>
                     }
                     const score = ts.testScore
                     return (
                       <>
-                        <span className={`font-black text-sm block ${score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                        <span className={`font-medium text-sm block ${score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
                           {score} / 100
                         </span>
-                        <span className="text-zinc-500 font-medium text-[10px] block">
+                        <span className="text-white/40 font-medium text-[10px] block">
                           execution base quality
                         </span>
                       </>
@@ -2961,30 +2959,30 @@ export default function SandboxHome({
                   })()}
                 </div>
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Tech Stack</span>
+                  <span className="text-white/40 block text-[10.5px] font-semibold uppercase tracking-[0.12em] font-mono mb-1.5">Tech Stack</span>
                   <div className="space-y-1">
-                    <div className="text-zinc-200 font-bold text-sm flex items-center gap-1.5">
+                    <div className="text-white font-bold text-sm flex items-center gap-1.5">
                       <span>{selectedBaselineReport.techStack?.language || 'Unknown'}</span>
                       {selectedBaselineReport.techStack?.packageManager && (
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                        <span className="text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.08] text-white/55">
                           {selectedBaselineReport.techStack.packageManager}
                         </span>
                       )}
                     </div>
-                    <div className="text-zinc-400 font-medium text-[10px] space-y-0.5">
+                    <div className="text-white/55 font-medium text-[10px] space-y-0.5">
                       {selectedBaselineReport.techStack?.frontend && (
-                        <div>Frontend: <span className="text-zinc-300 font-semibold">{selectedBaselineReport.techStack.frontend}</span></div>
+                        <div>Frontend: <span className="text-white/75 font-semibold">{selectedBaselineReport.techStack.frontend}</span></div>
                       )}
                       {selectedBaselineReport.techStack?.backend && (
-                        <div>Backend: <span className="text-zinc-300 font-semibold">{selectedBaselineReport.techStack.backend}</span></div>
+                        <div>Backend: <span className="text-white/75 font-semibold">{selectedBaselineReport.techStack.backend}</span></div>
                       )}
                       {!selectedBaselineReport.techStack?.frontend && !selectedBaselineReport.techStack?.backend && (
-                        <div className="text-zinc-500 italic">
+                        <div className="text-white/40 italic">
                           {selectedBaselineReport.techStack?.isStaticSite ? 'Static HTML/CSS Site' : 'Core Scripting / CLI'}
                         </div>
                       )}
                       {selectedBaselineReport.techStack?.testFramework && (
-                        <div className="text-emerald-400/90 text-[9px] mt-1 font-mono">
+                        <div className="text-emerald-400/90 text-[10.5px] mt-1 font-mono">
                           Test runner: {selectedBaselineReport.techStack.testFramework}
                         </div>
                       )}
@@ -2993,17 +2991,17 @@ export default function SandboxHome({
                 </div>
 
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1">Commit SHA</span>
+                  <span className="text-white/40 block text-[10.5px] font-semibold uppercase tracking-[0.12em] font-mono mb-1">Commit SHA</span>
                   <span className="text-amber-400 font-mono font-bold text-sm block truncate">
                     {selectedBaselineReport.commitSha}
                   </span>
-                  <span className="text-zinc-500 font-medium text-[10px]">
+                  <span className="text-white/40 font-medium text-[10px]">
                     Branch: {selectedBaselineReport.branch}
                   </span>
                 </div>
 
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1">Issues Found</span>
+                  <span className="text-white/40 block text-[10.5px] font-semibold uppercase tracking-[0.12em] font-mono mb-1">Issues Found</span>
                   {(() => {
                     const count = selectedBaselineReport.results
                       ? Object.values(selectedBaselineReport.results).reduce((acc: number, cat: any) => acc + (cat?.issuesCount || 0), 0)
@@ -3013,18 +3011,18 @@ export default function SandboxHome({
                         <span className={`font-bold text-sm block ${count > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                           {count} {count === 1 ? 'Issue' : 'Issues'}
                         </span>
-                        <span className="text-zinc-500 font-medium text-[10px]">across 12 categories</span>
+                        <span className="text-white/40 font-medium text-[10px]">across 12 categories</span>
                       </>
                     )
                   })()}
                 </div>
 
                 <div className="app-panel p-4">
-                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1">Snapshot Date</span>
-                  <span className="text-zinc-200 font-bold text-sm block">
+                  <span className="text-white/40 block text-[10.5px] font-semibold uppercase tracking-[0.12em] font-mono mb-1">Snapshot Date</span>
+                  <span className="text-white font-bold text-sm block">
                     {new Date(selectedBaselineReport.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
-                  <span className="text-zinc-500 font-medium text-[10px] block">
+                  <span className="text-white/40 font-medium text-[10px] block">
                     {new Date(selectedBaselineReport.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -3044,7 +3042,7 @@ export default function SandboxHome({
                       let badgeColor = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
                       if (status === 'fail') badgeColor = 'border-red-500/20 bg-red-500/5 text-red-400';
                       else if (status === 'warn') badgeColor = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
-                      else if (status === 'skip') badgeColor = 'border-zinc-700 bg-zinc-900 text-zinc-500';
+                      else if (status === 'skip') badgeColor = 'border-white/[0.12] bg-white/[0.03] text-white/40';
 
                       // Human-readable category name
                       const humanName = catName
@@ -3069,19 +3067,19 @@ export default function SandboxHome({
                             <span className={`text-[11px] font-bold shrink-0 ${
                               status === 'pass' ? 'text-emerald-400' :
                               status === 'fail' ? 'text-red-400' :
-                              status === 'warn' ? 'text-amber-400' : 'text-zinc-600'
+                              status === 'warn' ? 'text-amber-400' : 'text-white/30'
                             }`}>{statusIcon}</span>
-                            <span className="font-medium text-[11px] text-zinc-300 group-hover/cat-btn:text-white transition-colors truncate">
+                            <span className="font-medium text-[11px] text-white/75 group-hover/cat-btn:text-white transition-colors truncate">
                               {humanName}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {res.issuesCount > 0 && (
-                              <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded">
+                              <span className="text-[10.5px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded">
                                 {res.issuesCount}
                               </span>
                             )}
-                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${badgeColor}`}>
+                            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${badgeColor}`}>
                               {status}
                             </span>
                           </div>
@@ -3117,7 +3115,7 @@ export default function SandboxHome({
                           if (l.startsWith('#') || l.includes('===') || l.includes('---')) {
                             return { color: 'text-cyan-400 font-semibold', icon: '' }
                           }
-                          return { color: 'text-zinc-300', icon: '' }
+                          return { color: 'text-white/75', icon: '' }
                         }
 
                         const statusBadge = status === 'pass'
@@ -3126,21 +3124,21 @@ export default function SandboxHome({
                           ? 'border-red-500/30 bg-red-500/10 text-red-400'
                           : status === 'warn'
                           ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                          : 'border-zinc-700 bg-zinc-900 text-zinc-400'
+                          : 'border-white/[0.12] bg-white/[0.03] text-white/55'
 
                         return (
                           <div className="flex flex-col gap-3 h-full">
                             {/* Category header row */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2.5">
-                                <span className="font-black uppercase tracking-widest text-zinc-200 text-xs">
+                                <span className="font-medium uppercase tracking-[0.12em] font-mono text-white text-xs">
                                   {selectedBaselineCategoryLog.replace(/([A-Z])/g, ' $1').trim()}
                                 </span>
-                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${statusBadge}`}>
+                                <span className={`text-[10.5px] font-medium uppercase px-2 py-0.5 rounded border ${statusBadge}`}>
                                   {status.toUpperCase()}
                                 </span>
                                 {issueCount > 0 && (
-                                  <span className="text-[9px] font-bold text-zinc-500">
+                                  <span className="text-[10.5px] font-bold text-white/40">
                                     {issueCount} issue{issueCount !== 1 ? 's' : ''}
                                   </span>
                                 )}
@@ -3157,7 +3155,7 @@ export default function SandboxHome({
                             </div>
 
                             {/* Structured log viewer */}
-                            <div className="flex-1 w-full bg-[#040406]/98 rounded-2xl border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] overflow-auto custom-scrollbar">
+                            <div className="flex-1 w-full bg-[#040406]/98 rounded-2xl border border-white/[0.08] shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] overflow-auto custom-scrollbar">
                               {rawOutput ? (
                                 <div className="p-4 space-y-0.5">
                                   {logLines.map((line: string, idx: number) => {
@@ -3166,8 +3164,8 @@ export default function SandboxHome({
                                     const isHeader = line.includes('===') || line.includes('---') || line.trim().startsWith('#')
                                     if (isHeader) {
                                       return (
-                                        <div key={idx} className="py-1.5 mt-2 mb-1 border-b border-zinc-800/60 first:mt-0">
-                                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 select-text">
+                                        <div key={idx} className="py-1.5 mt-2 mb-1 border-b border-white/[0.08]/60 first:mt-0">
+                                          <span className="text-[10px] font-medium uppercase tracking-[0.12em] font-mono text-white/55 select-text">
                                             {line.replace(/[=\-#]/g, '').trim() || line}
                                           </span>
                                         </div>
@@ -3186,7 +3184,7 @@ export default function SandboxHome({
                                   })}
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-center h-full text-zinc-600 text-xs font-medium">
+                                <div className="flex items-center justify-center h-full text-white/30 text-xs font-medium">
                                   No output available for this category.
                                 </div>
                               )}
@@ -3203,8 +3201,8 @@ export default function SandboxHome({
                               <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                               </svg>
-                              <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Score Available</h4>
-                              <p className="text-zinc-600 text-[10px] max-w-xs leading-relaxed font-semibold">
+                              <h4 className="font-bold text-white/40 text-xs tracking-wide uppercase">No Score Available</h4>
+                              <p className="text-white/30 text-[10px] max-w-xs leading-relaxed font-semibold">
                                 Select a category on the left to view logs, or generate a new baseline snapshot to compute starting quality scores.
                               </p>
                             </div>
@@ -3228,14 +3226,14 @@ export default function SandboxHome({
 
                         return (
                           <div className="flex flex-col gap-3 h-full overflow-y-auto pr-1.5 custom-scrollbar text-left">
-                            <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-1">
-                              <span className="font-black uppercase tracking-widest text-zinc-200 text-xs">
+                            <div className="flex items-center justify-between border-b border-white/[0.08] pb-2 mb-1">
+                              <span className="font-medium uppercase tracking-[0.12em] font-mono text-white text-xs">
                                 Baseline Scorecard Breakdown
                               </span>
                               <div className="text-right">
-                                <span className="text-[10px] text-zinc-400 font-semibold">Score: </span>
-                                <span className="text-sm font-black text-amber-400">{testScore}</span>
-                                <span className="text-[10px] text-zinc-500"> / 100</span>
+                                <span className="text-[10px] text-white/55 font-semibold">Score: </span>
+                                <span className="text-sm font-medium text-amber-400">{testScore}</span>
+                                <span className="text-[10px] text-white/40"> / 100</span>
                               </div>
                             </div>
 
@@ -3249,14 +3247,14 @@ export default function SandboxHome({
                               </div>
                             )}
 
-                            <div className="rounded-xl border border-zinc-900 bg-white/[0.01] overflow-hidden text-[10px]">
+                            <div className="rounded-xl border border-white/[0.08] bg-white/[0.01] overflow-hidden text-[10px]">
                               <table className="w-full">
                                 <thead>
-                                  <tr className="border-b border-zinc-900 bg-white/[0.02]">
-                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider">Category</th>
-                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-16">Status</th>
-                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-12">Weight</th>
-                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-12">Quality</th>
+                                  <tr className="border-b border-white/[0.08] bg-white/[0.02]">
+                                    <th className="text-left px-3 py-1.5 font-medium text-white/40 uppercase tracking-[0.1em] font-mono">Category</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-white/40 uppercase tracking-[0.1em] font-mono w-16">Status</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-white/40 uppercase tracking-[0.1em] font-mono w-12">Weight</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-white/40 uppercase tracking-[0.1em] font-mono w-12">Quality</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -3267,11 +3265,11 @@ export default function SandboxHome({
                                       ? 'text-red-400'
                                       : 'text-amber-400'
                                     return (
-                                      <tr key={i} className="border-b border-zinc-900/60 last:border-0 hover:bg-white/[0.01]">
-                                        <td className="px-3 py-2 font-bold text-zinc-300 capitalize">{c.name.replace(/_/g, ' ')}</td>
+                                      <tr key={i} className="border-b border-white/[0.08]/60 last:border-0 hover:bg-white/[0.01]">
+                                        <td className="px-3 py-2 font-bold text-white/75 capitalize">{c.name.replace(/_/g, ' ')}</td>
                                         <td className={`px-3 py-2 font-mono ${statusColor}`}>{c.status.toUpperCase()}</td>
-                                        <td className="px-3 py-2 text-zinc-400 font-mono">{c.weight}</td>
-                                        <td className="px-3 py-2 text-zinc-400 font-mono">{Math.round(c.quality * 100)}%</td>
+                                        <td className="px-3 py-2 text-white/55 font-mono">{c.weight}</td>
+                                        <td className="px-3 py-2 text-white/55 font-mono">{Math.round(c.quality * 100)}%</td>
                                       </tr>
                                     )
                                   })}
@@ -3281,15 +3279,15 @@ export default function SandboxHome({
 
                             {categoryDeductions.length > 0 && (
                               <div className="space-y-2 mt-2">
-                                <span className="font-bold text-[9px] text-zinc-500 uppercase tracking-widest block">
+                                <span className="font-bold text-[10.5px] text-white/40 uppercase tracking-[0.12em] font-mono block">
                                   Deduction Details
                                 </span>
                                 <div className="space-y-1.5">
                                   {categoryDeductions.map((d, i) => (
-                                    <div key={i} className="flex items-start justify-between p-2 rounded-lg border border-zinc-900 bg-white/[0.01]">
+                                    <div key={i} className="flex items-start justify-between p-2 rounded-lg border border-white/[0.08] bg-white/[0.01]">
                                       <div className="text-[10px]">
-                                        <p className="font-bold text-zinc-300 capitalize">{d.name}</p>
-                                        <p className="text-[9px] text-zinc-500 font-medium mt-0.5">{d.detail}</p>
+                                        <p className="font-bold text-white/75 capitalize">{d.name}</p>
+                                        <p className="text-[10.5px] text-white/40 font-medium mt-0.5">{d.detail}</p>
                                       </div>
                                       <div className="text-right text-[10px] shrink-0 font-bold text-red-400/90 ml-3">
                                         -{d.rawLoss} pts (raw)
@@ -3310,11 +3308,11 @@ export default function SandboxHome({
               {selectedBaselineReport.aiSummary && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 font-mono flex items-center gap-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.12em] font-mono text-violet-400 font-mono flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse"></span>
                       Gemini AI Baseline Diagnostic
                     </span>
-                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                    <span className={`text-[10px] font-medium uppercase px-2 py-0.5 rounded-md border ${
                       selectedBaselineReport.aiSummary.overallHealth === 'healthy'
                         ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                         : selectedBaselineReport.aiSummary.overallHealth === 'critical'
@@ -3326,13 +3324,13 @@ export default function SandboxHome({
                   </div>
 
                   {/* AI Overview Card */}
-                  <div className="bg-gradient-to-br from-violet-500/5 via-[#070709] to-cyan-500/5 border border-violet-500/15 rounded-2xl p-5 space-y-4 relative overflow-hidden">
+                  <div className="bg-gradient-to-br from-violet-500/5 via-[#121111] to-cyan-500/5 border border-violet-500/15 rounded-2xl p-5 space-y-4 relative overflow-hidden">
                     <div className="absolute right-0 top-0 w-40 h-40 bg-violet-500/5 blur-[60px] rounded-full pointer-events-none"></div>
                     
                     {/* Health Badge + Model */}
                     <div className="flex items-center justify-between relative z-10">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black shadow-inner ${
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-medium shadow-inner ${
                           selectedBaselineReport.aiSummary.overallHealth === 'healthy'
                             ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400'
                             : selectedBaselineReport.aiSummary.overallHealth === 'critical'
@@ -3342,8 +3340,8 @@ export default function SandboxHome({
                           {selectedBaselineReport.aiSummary.overallHealth === 'healthy' ? '✓' : selectedBaselineReport.aiSummary.overallHealth === 'critical' ? '!' : '~'}
                         </div>
                         <div>
-                          <div className="text-sm font-black text-zinc-100">Repository Health Assessment</div>
-                          <div className="text-[10px] text-zinc-500 font-semibold">
+                          <div className="text-sm font-medium text-white">Repository Health Assessment</div>
+                          <div className="text-[10px] text-white/40 font-semibold">
                             Model: <span className="text-violet-400 font-mono">{selectedBaselineReport.aiSummary.model || 'gemini'}</span>
                             {selectedBaselineReport.aiSummary.analyzedAt && (
                               <> � {new Date(selectedBaselineReport.aiSummary.analyzedAt).toLocaleString()}</>
@@ -3354,15 +3352,15 @@ export default function SandboxHome({
                     </div>
 
                     {/* AI Summary */}
-                    <div className="bg-[#040406]/80 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed border border-zinc-900/60 relative z-10">
-                      <div className="text-[9px] font-black uppercase tracking-widest text-violet-400 mb-2 font-mono">AI Analysis Summary</div>
+                    <div className="bg-[#040406]/80 rounded-xl p-4 text-xs text-white/75 leading-relaxed border border-white/[0.08]/60 relative z-10">
+                      <div className="text-[10.5px] font-medium uppercase tracking-[0.12em] font-mono text-violet-400 mb-2 font-mono">AI Analysis Summary</div>
                       {selectedBaselineReport.aiSummary.summary}
                     </div>
 
                     {/* Per-Category AI Diagnostics */}
                     {selectedBaselineReport.aiSummary.categoryDiagnostics && selectedBaselineReport.aiSummary.categoryDiagnostics.length > 0 && (
                       <div className="space-y-2.5 relative z-10">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 font-mono">
+                        <div className="text-[10.5px] font-medium uppercase tracking-[0.12em] font-mono text-white/55 font-mono">
                           Category Analysis ({selectedBaselineReport.aiSummary.categoryDiagnostics.length})
                         </div>
                         <div className="space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
@@ -3373,30 +3371,30 @@ export default function SandboxHome({
                               ? 'border-red-500/20 bg-red-500/5'
                               : diag.adjustedStatus === 'warn'
                               ? 'border-amber-500/20 bg-amber-500/5'
-                              : 'border-zinc-800/60 bg-zinc-900/30'
+                              : 'border-white/[0.08]/60 bg-white/[0.03]/30'
                             return (
                               <div key={idx} className={`p-3.5 rounded-xl border ${statusColor} text-[11px]`}>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-black text-zinc-200 uppercase tracking-wider text-[10px]">
+                                  <span className="font-medium text-white uppercase tracking-[0.1em] font-mono text-[10px]">
                                     {diag.category?.replace(/([A-Z])/g, ' $1').trim()}
                                   </span>
                                   <div className="flex items-center gap-2">
                                     {diag.isFalsePositive && (
-                                      <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                                      <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25">
                                         FALSE POSITIVE
                                       </span>
                                     )}
-                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${
+                                    <span className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded border ${
                                       diag.adjustedStatus === 'pass' ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' :
                                       diag.adjustedStatus === 'fail' ? 'bg-red-500/15 border-red-500/25 text-red-400' :
                                       diag.adjustedStatus === 'warn' ? 'bg-amber-500/15 border-amber-500/25 text-amber-400' :
-                                      'bg-zinc-800 border-zinc-700 text-zinc-400'
+                                      'bg-white/[0.06] border-white/[0.12] text-white/55'
                                     }`}>
                                       {diag.adjustedStatus?.toUpperCase() || 'SKIP'}
                                     </span>
                                   </div>
                                 </div>
-                                <div className="text-zinc-300 leading-relaxed">{diag.rootCause}</div>
+                                <div className="text-white/75 leading-relaxed">{diag.rootCause}</div>
                                 {diag.isFalsePositive && diag.falsePositiveReason && (
                                   <div className="mt-1.5 text-amber-400/80 text-[10px] italic bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
                                     ⚠️ {diag.falsePositiveReason}
@@ -3419,10 +3417,10 @@ export default function SandboxHome({
             </div>
 
             {/* Modal Footer buttons */}
-            <div className="border-t border-zinc-900 pt-4 flex gap-3 select-none">
+            <div className="border-t border-white/[0.08] pt-4 flex gap-3 select-none">
               <button
                 onClick={copyAllBaselineLogs}
-                className="flex-1 py-3 rounded-xl border border-[var(--color-border)] hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.04] text-zinc-400 hover:text-zinc-200 text-xs font-medium transition cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl border border-[var(--color-border)] hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.04] text-white/55 hover:text-white text-xs font-medium transition cursor-pointer flex items-center justify-center gap-2"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

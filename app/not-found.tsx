@@ -31,7 +31,7 @@ export default function NotFound() {
   }, [count, router])
 
   return (
-    <div className="h-screen w-full bg-[#0A0A0A] text-white selection:bg-accent selection:text-white flex flex-col overflow-hidden fixed inset-0">
+    <div className="h-screen w-full bg-[#151414] text-white selection:bg-accent selection:text-white flex flex-col overflow-hidden fixed inset-0">
       <header className="w-full px-6 py-4 flex items-center justify-between border-b border-white/[0.06] relative z-20">
         <Link href="/dashboard" className="flex items-center gap-2">
           <span className="font-bold text-base tracking-tight">Forke</span>
@@ -49,7 +49,7 @@ export default function NotFound() {
         
         {/* Massive 404 Text Background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 px-4">
-           <h1 className="text-[30vw] md:text-[45vw] font-sans font-black text-white/[0.03] leading-none tracking-tighter select-none uppercase">
+           <h1 className="text-[30vw] md:text-[45vw] font-sans font-medium text-white/[0.03] leading-none tracking-tighter select-none uppercase">
              404
            </h1>
         </div>

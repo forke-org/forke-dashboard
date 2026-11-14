@@ -21,16 +21,16 @@ import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Join the Movement',
+  title: 'Create your account',
   description: 'Create your Forke account today. Start your journey as a builder, ship real work, and earn rewards in the developer marketplace.',
   alternates: { canonical: '/register' },
   openGraph: buildOpenGraph({
-    title: 'Join the Movement | Forke',
+    title: 'Create your account | Forke',
     description: 'Start your journey as a builder and get paid for your work.',
     url: 'https://www.forke.space/register',
   }),
   twitter: buildTwitter({
-    title: 'Join the Movement | Forke',
+    title: 'Create your account | Forke',
     description: 'Start your journey as a builder and get paid for your work.',
   }),
 }

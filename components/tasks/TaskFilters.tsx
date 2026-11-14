@@ -50,7 +50,7 @@ function CustomSelect({ label, value, options, onChange }: CustomSelectProps) {
 
   return (
     <div ref={containerRef} className="flex-1 relative select-none text-left">
-      <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/40 font-mono mb-2">
+      <h4 className="text-[11px] font-bold uppercase tracking-[0.1em] font-mono text-white/40 font-mono mb-2">
         {label}
       </h4>
 
@@ -60,13 +60,13 @@ function CustomSelect({ label, value, options, onChange }: CustomSelectProps) {
         className={cn(
           "w-full h-10 px-3.5 bg-white/[0.02] border rounded-xl text-[13px] text-white/80 flex items-center justify-between cursor-pointer transition-all outline-none",
           isOpen
-            ? "border-[#ff8a00] shadow-[0_0_12px_rgba(255,138,0,0.25)] text-white"
+            ? "border-[#FF7A00] shadow-[0_0_12px_rgba(255,138,0,0.25)] text-white"
             : "border-white/10 hover:border-white/20"
         )}
       >
         <span className="truncate font-semibold">{selectedOption?.label || value}</span>
         <svg
-          className={cn("w-4 h-4 text-white/40 transition-transform duration-300 shrink-0", isOpen && "rotate-180 text-[#ff8a00]")}
+          className={cn("w-4 h-4 text-white/40 transition-transform duration-300 shrink-0", isOpen && "rotate-180 text-[#FF7A00]")}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -76,7 +76,7 @@ function CustomSelect({ label, value, options, onChange }: CustomSelectProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#0b0b0e] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#1A1919] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="max-h-60 overflow-y-auto divide-y divide-white/[0.03]">
             {options.map((opt) => {
               const isSelected = opt.value === value
@@ -91,13 +91,13 @@ function CustomSelect({ label, value, options, onChange }: CustomSelectProps) {
                   className={cn(
                     "w-full px-4 py-2.5 text-[13px] text-left transition-colors flex items-center justify-between cursor-pointer",
                     isSelected
-                      ? "bg-[#ff8a00]/10 text-[#ff8a00] font-black"
+                      ? "bg-[#FF7A00]/10 text-[#FF7A00] font-medium"
                       : "text-white/70 hover:bg-white/[0.04] hover:text-white"
                   )}
                 >
                   <span>{opt.label}</span>
                   {isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] shadow-[0_0_6px_#ff8a00]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00] shadow-[0_0_6px_#ff8a00]" />
                   )}
                 </button>
               )
@@ -179,7 +179,7 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search missions..."
-            className="block w-full pl-10 pr-4 h-10 bg-white/[0.02] border border-white/10 rounded-xl text-[13px] text-white/80 placeholder-white/30 focus:outline-none focus:border-[#ff8a00] focus:shadow-[0_0_12px_rgba(255,138,0,0.15)] transition-all font-semibold"
+            className="block w-full pl-10 pr-4 h-10 bg-white/[0.02] border border-white/10 rounded-xl text-[13px] text-white/80 placeholder-white/30 focus:outline-none focus:border-[#FF7A00] focus:shadow-[0_0_12px_rgba(255,138,0,0.15)] transition-all font-semibold"
           />
         </div>
 
@@ -219,7 +219,7 @@ export default function TaskFilters({ isOwner = false }: { isOwner?: boolean }) 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search missions by title, description..."
-          className="block w-full pl-10 pr-4 h-10 bg-white/[0.02] border border-white/10 rounded-xl text-[13px] text-white/80 placeholder-white/30 focus:outline-none focus:border-[#ff8a00] focus:shadow-[0_0_12px_rgba(255,138,0,0.15)] transition-all font-semibold"
+          className="block w-full pl-10 pr-4 h-10 bg-white/[0.02] border border-white/10 rounded-xl text-[13px] text-white/80 placeholder-white/30 focus:outline-none focus:border-[#FF7A00] focus:shadow-[0_0_12px_rgba(255,138,0,0.15)] transition-all font-semibold"
         />
       </div>
 

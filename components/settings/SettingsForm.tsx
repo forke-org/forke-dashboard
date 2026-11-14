@@ -386,7 +386,7 @@ export default function SettingsForm({
                     <button
                       type="button"
                       onClick={handleConnectGithub}
-                      className="h-7 px-3.5 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 text-xs font-black text-[#0a0a0a] transition-all cursor-pointer select-none"
+                      className="h-7 px-3.5 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-xs font-medium text-[#151414] transition-all cursor-pointer select-none"
                     >
                       Connect
                     </button>
@@ -455,7 +455,7 @@ export default function SettingsForm({
                 type="button"
                 onClick={handleSetupPassword}
                 disabled={passSubmitting || !newPassword || !confirmPassword}
-                className="h-8 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 text-xs font-black text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
+                className="h-8 px-4 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-xs font-medium text-[#151414] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
               >
                 {passSubmitting ? 'Saving...' : 'Set Password'}
               </button>
@@ -541,7 +541,7 @@ export default function SettingsForm({
                 type="button"
                 onClick={handleChangePassword}
                 disabled={passSubmitting || !oldPassword || !newPassword || !confirmPassword}
-                className="h-8 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 text-xs font-black text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
+                className="h-8 px-4 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-xs font-medium text-[#151414] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
               >
                 {passSubmitting ? 'Saving...' : 'Change Password'}
               </button>
@@ -576,7 +576,7 @@ export default function SettingsForm({
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-          <div className="bg-[#0b0b0e] border border-red-500/20 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-[#1A1919] border border-red-500/20 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 text-red-400">
               <AlertTriangle className="w-6 h-6 shrink-0" />
               <h3 className="text-base font-bold text-white">Confirm Account Deletion</h3>

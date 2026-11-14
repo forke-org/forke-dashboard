@@ -126,7 +126,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                    <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                      Active Quest
                    </span>
-                   <h1 className="text-xl md:text-2xl font-medium text-white leading-tight tracking-tight pt-2">
+                   <h1 className="text-[28px] md:text-[34px] font-medium text-white leading-[1.1] tracking-[-0.035em] pt-2">
                      {task.title}
                    </h1>
                  </div>
@@ -206,7 +206,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                   Mission Briefing
                 </span>
-                <h1 className="text-xl md:text-2xl font-medium text-white leading-tight tracking-tight pt-2">
+                <h1 className="text-[28px] md:text-[34px] font-medium text-white leading-[1.1] tracking-[-0.035em] pt-2">
                   {task.title}
                 </h1>
               </div>

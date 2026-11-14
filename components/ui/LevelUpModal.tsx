@@ -66,17 +66,17 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
           <div className="absolute w-32 h-32 rounded-full border-2 border-accent/20 animate-[ping_3s_infinite]" />
           <div className="absolute w-28 h-28 rounded-full border-2 border-accent/30 animate-[spin_10s_linear_infinite]" />
           <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/40 relative z-10 scale-125">
-            <span className="font-mono font-black text-white text-3xl">
+            <span className="font-mono font-medium text-white text-3xl">
               {newLevel}
             </span>
           </div>
         </div>
 
         <div className="space-y-2 mb-8">
-          <p className="text-[10px] font-mono font-bold text-accent uppercase tracking-[0.3em]">
+          <p className="text-[10px] font-mono font-bold text-accent uppercase tracking-[0.12em]">
             rank up
           </p>
-          <h2 className="font-serif text-4xl text-[var(--color-text-primary)] tracking-tight">
+          <h2 className=" text-4xl text-[var(--color-text-primary)] tracking-tight">
             Level {newLevel}
           </h2>
           <p className="text-lg font-medium text-amber-900/80 italic">
@@ -89,7 +89,7 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
 
         <button
           onClick={handleClose}
-          className="w-full bg-accent text-white rounded-2xl py-4 font-bold text-sm tracking-widest uppercase hover:bg-accent/90 active:scale-95 transition-all shadow-lg shadow-accent/20"
+          className="w-full bg-accent text-white rounded-2xl py-4 font-bold text-sm tracking-[0.12em] font-mono uppercase hover:bg-accent/90 active:scale-95 transition-all shadow-lg shadow-accent/20"
         >
           LET&apos;S GO →
         </button>

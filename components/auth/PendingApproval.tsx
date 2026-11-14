@@ -18,7 +18,7 @@ import Image from 'next/image'
 
 export default function PendingApproval({ userEmail }: { userEmail?: string | null }) {
   return (
-    <div className="h-screen w-full bg-[#0A0A0A] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+    <div className="h-screen w-full bg-[#151414] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
       {/* Ambient Orbs */}
       <div className="absolute top-1/4 -right-20 w-64 h-64 bg-accent/10 blur-[100px] rounded-full" />
       <div className="absolute bottom-1/4 -left-20 w-48 h-48 bg-accent/5 blur-[80px] rounded-full" />
@@ -44,7 +44,7 @@ export default function PendingApproval({ userEmail }: { userEmail?: string | nu
         </div>
         
         <div className="space-y-4">
-          <h2 className="text-4xl font-medium text-white tracking-[-0.03em]">Application <span className="font-serif italic font-normal text-accent">Under Review</span></h2>
+          <h2 className="text-4xl font-medium text-white tracking-[-0.03em]">Application <span className=" font-normal text-accent">Under Review</span></h2>
           <div className="space-y-6 text-white/50 leading-relaxed max-w-[400px] mx-auto text-sm">
             <p>
               Thank you for your interest in joining the Forke network. Our team is currently reviewing your professional credentials to maintain our platform's quality standards.
@@ -52,14 +52,14 @@ export default function PendingApproval({ userEmail }: { userEmail?: string | nu
             
             <div className="grid grid-cols-1 gap-3">
               <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-2">
-                <p className="text-white/80 font-bold flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
+                <p className="text-white/80 font-bold flex items-center justify-center gap-2 text-xs uppercase tracking-[0.12em] font-mono">
                   <Zap className="w-3 h-3 text-accent" /> Review Timeline
                 </p>
                 <p className="text-[12px]">Your profile will be vetted within <span className="text-white font-bold">24-48 hours</span>.</p>
               </div>
               
               <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-                <p className="text-white/80 font-bold flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
+                <p className="text-white/80 font-bold flex items-center justify-center gap-2 text-xs uppercase tracking-[0.12em] font-mono">
                   <Mail className="w-3 h-3 text-accent" /> Notification
                 </p>
                 <p className="text-[12px]">An email will be sent to <span className="text-white font-bold">{userEmail || 'your inbox'}</span> once approved.</p>
@@ -72,11 +72,11 @@ export default function PendingApproval({ userEmail }: { userEmail?: string | nu
           <Button 
             onClick={() => { window.location.href = '/api/auth/logout' }}
             variant="outline" 
-            className="rounded-full px-8 py-3 border-white/10 text-white/40 hover:text-white transition-all uppercase tracking-widest text-[10px] font-black flex items-center gap-2"
+            className="rounded-full px-8 py-3 border-white/10 text-white/40 hover:text-white transition-all uppercase tracking-[0.12em] font-mono text-[10px] font-medium flex items-center gap-2"
           >
             <LogOut className="w-3 h-3" /> Sign Out
           </Button>
-          <p className="text-[9px] text-white/10 font-bold uppercase tracking-[0.2em]">Restricted Access Unit // Forke Nexus</p>
+          <p className="text-[10.5px] text-white/10 font-bold uppercase tracking-[0.12em]">Restricted Access Unit // Forke Nexus</p>
         </div>
       </div>
     </div>

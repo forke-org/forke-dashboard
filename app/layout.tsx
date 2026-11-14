@@ -9,7 +9,7 @@
  */
 
 import type { Metadata, Viewport } from 'next'
-import { geistSans, instrumentSerif, jetbrainsMono } from '@/app/fonts'
+import { geistMono, geistSans, instrumentSerif, jetbrainsMono } from '@/app/fonts'
 import './globals.css'
 
 export const viewport: Viewport = {
@@ -90,10 +90,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="antialiased bg-[#0A0A0A]">
+      <body className="antialiased bg-[#151414]">
         <ScrollToTopOnLoad />
         <CookieConsentProvider>
           <NextAuthProvider>
