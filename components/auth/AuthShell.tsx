@@ -1,96 +1,102 @@
-"use client";
-import { useEffect, useRef } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { Inter, Instrument_Serif } from "next/font/google";
-import s from "./auth.module.css";
+'use client'
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-ui" });
-const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif" });
+/**
+ * Split auth layout shared by sign in, sign up, role choice and the access gate:
+ * the form on the left, the ASCII Forky scene on the right (same as the admin login).
+ */
+import { useEffect, useRef, type ReactNode } from 'react'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { mountAsciiUser } from '@/lib/ascii-user'
+import { cn } from '@/lib/utils/cn'
 
-export const GoogleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
-    <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z" />
-    <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z" />
-    <path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.8-6.1z" />
-    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.8l-7.8 6.1C6.5 42.6 14.6 48 24 48z" />
-  </svg>
-);
-export const GitHubIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-    <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z" />
-  </svg>
-);
-
-const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" } as const;
-export const MailIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" {...stroke} aria-hidden><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></svg>
-);
-export const LockIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" {...stroke} aria-hidden><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
-);
-export const UserIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" {...stroke} aria-hidden><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20c.8-3.4 3.6-5.2 7-5.2s6.2 1.8 7 5.2" /></svg>
-);
-
-export default function AuthShell({ children, wide = false, compact = false }: { children: React.ReactNode; wide?: boolean; compact?: boolean }) {
-  const page = useRef<HTMLElement>(null);
-  const card = useRef<HTMLElement>(null);
-
-  // The big light drifts on its own (it never follows the cursor); CSS variables only, no React re-renders.
-  useEffect(() => {
-    const el = page.current, c = card.current;
-    if (!el || !c) return;
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let x = window.innerWidth / 2, y = window.innerHeight * 0.4, raf = 0;
-
-    const frame = (t: number) => {
-      const w = window.innerWidth, h = window.innerHeight;
-      // on narrow screens the card covers most of the page, so let the light roam further to stay visible
-      const narrow = w < 600;
-      const tx = w * (0.5 + (calm ? 0 : narrow ? 0.34 : 0.3) * Math.sin(t / 3100));
-      const ty = h * (0.45 + (calm ? 0 : narrow ? 0.36 : 0.2) * Math.sin(t / 2300 + 1));
-      const k = calm ? 1 : 0.04;
-      x += (tx - x) * k; y += (ty - y) * k;
-      const r = c.getBoundingClientRect();
-      el.style.setProperty("--mx", x.toFixed(1) + "px");
-      el.style.setProperty("--my", y.toFixed(1) + "px");
-      c.style.setProperty("--cx", (x - r.left).toFixed(1) + "px");
-      c.style.setProperty("--cy", (y - r.top).toFixed(1) + "px");
-      raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  return (
-    <main ref={page} className={`${s.page} ${inter.variable} ${serif.variable}`}>
-      <div className={s.bg} aria-hidden>
-        <div className={s.horizon} />
-        <div className={s.dots} />
-        <div className={s.dotsLit} />
-        <div className={s.light} />
-        <div className={s.grain} />
-        <div className={s.vignette} />
-      </div>
-
-      <section ref={card} className={`${s.card} ${wide ? s.wide : ""} ${compact ? s.compact : ""}`}>
-        <Link href="/" className={s.logoLink} aria-label="Forke home">
-          <Image src="/forke-logo.png" alt="" width={44} height={44} className={s.logo} priority />
-        </Link>
-        {children}
-      </section>
-
-      <footer className={s.footer}>
-        <p>The developer marketplace, reimagined.</p>
-        <nav>
-          <Link href="/">Home</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/privacy">Privacy</Link>
-          <span>© 2026 Forke</span>
-        </nav>
-      </footer>
-
-    </main>
-  );
+function AsciiScene() {
+  const canvas = useRef<HTMLCanvasElement>(null)
+  useEffect(() => (canvas.current ? mountAsciiUser(canvas.current) : undefined), [])
+  return <canvas ref={canvas} aria-hidden className="absolute inset-0 block h-full w-full" />
 }
+
+export default function AuthShell({
+  children,
+  wide = false,
+  caption,
+}: {
+  children: ReactNode
+  /** wider form column (role choice, owner details) */
+  wide?: boolean
+  /** small line over the bottom of the ASCII panel */
+  caption?: ReactNode
+}) {
+  return (
+    <div className="grid min-h-[100svh] bg-[#151414] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="relative flex min-w-0 flex-col px-5 py-5 sm:px-10 sm:py-6">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-[19px] font-semibold tracking-[-0.04em] text-white">
+            forke<span className="text-accent">*</span>
+          </Link>
+          <Link href="/" className="group flex items-center gap-1.5 text-[13px] text-white/50 transition-colors hover:text-white">
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            <span className="hidden sm:inline">Back to forke.space</span>
+            <span className="sm:hidden">Back</span>
+          </Link>
+        </div>
+        <div className={cn('mx-auto flex w-full flex-1 flex-col justify-center py-10', wide ? 'max-w-[560px]' : 'max-w-[380px]')}>{children}</div>
+        <p className="text-[12px] text-white/30">© 2026 Forke · <Link href="/privacy" className="hover:text-white/60">Privacy</Link> · <Link href="/terms" className="hover:text-white/60">Terms</Link></p>
+      </div>
+      <div className="relative hidden overflow-hidden bg-[radial-gradient(70%_60%_at_50%_48%,#1d1310_0%,#120c0a_55%,#0d0908_100%)] lg:block">
+        <AsciiScene />
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px [background-image:linear-gradient(rgba(240,227,222,0.125)_50%,transparent_50%)] [background-size:1px_32px]" />
+        {caption && <div className="absolute inset-x-10 bottom-10 text-[15px] leading-6 text-white/60">{caption}</div>}
+      </div>
+    </div>
+  )
+}
+
+/* ── small shared pieces ── */
+
+export function Eyebrow({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-white/45">
+      <span className="h-1.5 w-1.5 rounded-[1.5px] bg-accent" />
+      {children}
+    </div>
+  )
+}
+
+export const fieldClass =
+  'h-11 w-full rounded-[10px] border border-white/[0.14] bg-white/[0.03] px-3.5 text-[14.5px] text-white outline-none transition-colors placeholder:text-white/25 focus:border-accent focus:bg-white/[0.02]'
+
+export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="flex items-center justify-between text-[13px] font-medium text-[#c9c7c5]">
+        {label}
+        {hint}
+      </span>
+      {children}
+    </label>
+  )
+}
+
+export function Divider({ children = 'or' }: { children?: ReactNode }) {
+  return (
+    <div className="my-6 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.1em] text-white/30">
+      <span className="h-px flex-1 bg-white/10" />
+      {children}
+      <span className="h-px flex-1 bg-white/10" />
+    </div>
+  )
+}
+
+export function ErrorNote({ children }: { children: ReactNode }) {
+  return (
+    <div role="alert" className="flex items-start gap-2 rounded-[10px] bg-red-500/[0.08] px-3 py-2.5 text-[13px] text-red-300 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.18)]">
+      {children}
+    </div>
+  )
+}
+
+export const primaryBtn =
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-accent bg-accent px-5 text-[14.5px] font-medium text-[#1a0a00] shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_8px_24px_-8px_rgba(255,122,0,0.6)] transition-colors hover:bg-accent-hover disabled:opacity-60'
+export const ghostBtn =
+  'relative inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-full border border-white/[0.14] bg-white/[0.03] px-5 text-[14.5px] text-white/90 transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:opacity-60'
