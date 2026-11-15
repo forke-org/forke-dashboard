@@ -58,14 +58,38 @@ function Empty({ children }: { children: ReactNode }) {
   return <p className={cn('rounded-2xl border border-dashed px-5 py-10 text-center text-[14px] text-white/40', line)}>{children}</p>
 }
 
-type Tab = 'overview' | 'shipped' | 'reviews' | 'achievements'
+export type ProfileTab = 'overview' | 'shipped' | 'reviews' | 'achievements'
+type Tab = ProfileTab
 
-/** The public profile as visitors see it (layout B), fed with real data. Used as the live preview in the dashboard. */
 /** On the live page: where the main button goes, and its label. Without it (the dashboard preview) the buttons are static. */
 export type ProfileActions = { primaryHref: string; primaryLabel: string; own: boolean }
 
-export default function ProfileView({ p, card, cardStyle, actions }: { p: DevProfile; card: Omit<CardData, 'quote'>; cardStyle: CardStyle; actions?: ProfileActions }) {
-  const [tab, setTab] = useState<Tab>('overview')
+/**
+ * The public profile as visitors see it (layout B), fed with real data. Used on forke.space/username, as the live
+ * preview in the dashboard, and in the landing page tour. Layout follows the component's own width (container
+ * queries), so a fixed-width frame shows the desktop layout on any screen.
+ * `tab`/`onTabChange` let a parent drive the tabs; `cardSlot` replaces the 3D card (the tour uses a light 2D one).
+ */
+export default function ProfileView({
+  p,
+  card,
+  cardStyle,
+  actions,
+  tab: tabProp,
+  onTabChange,
+  cardSlot,
+}: {
+  p: DevProfile
+  card: Omit<CardData, 'quote'>
+  cardStyle: CardStyle
+  actions?: ProfileActions
+  tab?: Tab
+  onTabChange?: (t: Tab) => void
+  cardSlot?: ReactNode
+}) {
+  const [ownTab, setOwnTab] = useState<Tab>('overview')
+  const tab = tabProp ?? ownTab
+  const setTab = (t: Tab) => (onTabChange ? onTabChange(t) : setOwnTab(t))
   const [copied, setCopied] = useState(false)
   async function share() {
     const url = window.location.href
@@ -96,22 +120,23 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
   ]
 
   return (
-    <div className="grid gap-8 px-1 py-2 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
+    <div className="@container">
+    <div className="grid gap-8 px-1 py-2 @min-[960px]:grid-cols-[300px_minmax(0,1fr)] @min-[960px]:gap-12">
       {/* sidebar */}
-      <aside className={cn("min-w-0 lg:sticky lg:self-start", actions ? "lg:top-20" : "lg:top-0")}>
-        <div className="relative">
-          <CardLive data={card} style={cardStyle} height={400} />
+      <aside className={cn("min-w-0 @min-[960px]:sticky @min-[960px]:self-start", actions ? "@min-[960px]:top-20" : "@min-[960px]:top-0")}>
+        <div className="relative" data-tour="card">
+          {cardSlot ?? <CardLive data={card} style={cardStyle} height={400} />}
           <p className="text-center font-mono text-[11px] text-white/30">drag it · tap to flip</p>
         </div>
-        <div className="text-center lg:text-left">
-          <h1 className="mt-4 text-[32px] font-medium leading-tight tracking-[-0.03em] text-white lg:text-[30px]">{p.name}</h1>
+        <div className="text-center @min-[960px]:text-left" data-tour="identity">
+          <h1 className="mt-4 text-[32px] font-medium leading-tight tracking-[-0.03em] text-white @min-[960px]:text-[30px]">{p.name}</h1>
           <p className={`${mono} text-[14px] text-white/45`}>
             @{p.username} · Level {p.level} {p.levelTitle}
           </p>
-          {p.headline && <p className="mx-auto mt-3 max-w-[340px] text-[15px] leading-6 text-white/70 lg:mx-0">{p.headline}</p>}
+          {p.headline && <p className="mx-auto mt-3 max-w-[340px] text-[15px] leading-6 text-white/70 @min-[960px]:mx-0">{p.headline}</p>}
         </div>
 
-        <div className="mt-5 flex flex-wrap justify-center gap-2.5 lg:justify-start">
+        <div className="mt-5 flex flex-wrap justify-center gap-2.5 @min-[960px]:justify-start">
           {actions ? (
             <>
               <a href={actions.primaryHref} className="inline-flex h-10 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-[14px] font-medium text-[#1a0a00] transition-colors hover:bg-accent-hover">
@@ -143,7 +168,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
           )}
         </div>
 
-        <div className="mt-5 grid grid-cols-3 rounded-2xl border border-white/[0.08] lg:hidden">
+        <div className="mt-5 grid grid-cols-3 rounded-2xl border border-white/[0.08] @min-[960px]:hidden">
           {[
             ['Shipped', String(p.shipped)],
             ['Rating', p.avgRating ? p.avgRating.toFixed(1) : '–'],
@@ -156,7 +181,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
           ))}
         </div>
 
-        <ul className={`${mono} mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[12.5px] text-white/50 lg:mt-6 lg:block lg:space-y-2`}>
+        <ul className={`${mono} mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[12.5px] text-white/50 @min-[960px]:mt-6 @min-[960px]:block @min-[960px]:space-y-2`}>
           {p.location && (
             <li className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5" /> {p.location}
@@ -182,7 +207,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
           )}
         </ul>
         {p.stack.length > 0 && (
-          <div className={cn('mt-6 hidden border-t pt-5 lg:block', line)}>
+          <div className={cn('mt-6 hidden border-t pt-5 @min-[960px]:block', line)}>
             <p className="text-[13px] text-white/40">Stack</p>
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {p.stack.map((s) => (
@@ -195,7 +220,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
 
       {/* main */}
       <div className="min-w-0">
-        <nav className={cn('flex gap-6 overflow-x-auto border-b text-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden', line)}>
+        <nav data-tour="tabs" className={cn('flex gap-6 overflow-x-auto border-b text-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden', line)}>
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -212,18 +237,18 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
 
         {tab === 'overview' && (
           <>
-            <div className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08]">
-              <div className={`${mono} flex items-center justify-between gap-3 border-b border-white/[0.08] bg-white/[0.02] px-4 py-3 text-[12px] text-white/50 sm:px-5 sm:text-[12.5px]`}>
+            <div data-tour="readme" className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08]">
+              <div className={`${mono} flex items-center justify-between gap-3 border-b border-white/[0.08] bg-white/[0.02] px-4 py-3 text-[12px] text-white/50 @min-[600px]:px-5 @min-[600px]:text-[12.5px]`}>
                 <span className="truncate">{p.username} / README.md</span>
                 <span className="flex shrink-0 items-center gap-1.5 text-accent-text">
                   <BadgeCheck className="h-3.5 w-3.5" /> verified
                 </span>
               </div>
-              <div className="space-y-4 px-4 py-5 text-[15px] leading-7 text-white/65 sm:px-6 sm:py-6 sm:text-[15.5px]">
+              <div className="space-y-4 px-4 py-5 text-[15px] leading-7 text-white/65 @min-[600px]:px-6 @min-[600px]:py-6 @min-[600px]:text-[15.5px]">
                 <p className="text-[22px] font-medium tracking-[-0.02em] text-white">Hi, I&rsquo;m {first}.</p>
                 {p.bio ? <p className="whitespace-pre-line">{p.bio}</p> : <p className="text-white/35">No bio yet. Add a few lines about what you build.</p>}
                 {p.stack.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 lg:hidden">
+                  <div className="flex flex-wrap gap-1.5 @min-[960px]:hidden">
                     {p.stack.map((s) => (
                       <Tag key={s}>{s}</Tag>
                     ))}
@@ -238,7 +263,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
                 <Empty>Your first merged task shows up here.</Empty>
               </div>
             ) : (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div data-tour="pinned" className="mt-3 grid gap-3 @min-[600px]:grid-cols-2">
                 {p.work.slice(0, 4).map((w) => (
                   <div key={w.id} className="flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
                     <p className={`${mono} flex items-center gap-1.5 truncate text-[12.5px] text-accent-text`}>
@@ -259,11 +284,11 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
               </div>
             )}
 
-            <div className="mt-10">
+            <div className="mt-10" data-tour="heatmap">
               <p className="text-[15px] text-white/70">
                 {active} active {active === 1 ? 'day' : 'days'} in the last year
               </p>
-              <div className="mt-3 rounded-2xl border border-white/[0.08] p-4 sm:p-5">
+              <div className="mt-3 rounded-2xl border border-white/[0.08] p-4 @min-[600px]:p-5">
                 <div className="overflow-x-auto [direction:rtl] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="min-w-[640px] [direction:ltr]">
                     <Heatmap days={p.heatmap} />
@@ -299,6 +324,7 @@ export default function ProfileView({ p, card, cardStyle, actions }: { p: DevPro
         {tab === 'achievements' && <AchievementsTab list={p.achievements} />}
       </div>
     </div>
+    </div>
   )
 }
 
@@ -317,8 +343,8 @@ function ShippedTab({ work, total }: { work: ShippedWork[]; total: number }) {
       </div>
     )
   return (
-    <div className="mt-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="mt-6" data-tour="shipped">
+      <div className="flex flex-col gap-3 @min-[600px]:flex-row @min-[600px]:items-center">
         <label className="flex h-10 flex-1 items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-4 text-[14px] text-white/80 focus-within:border-white/30">
           <Search className="h-4 w-4 text-white/40" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search shipped work" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-white/35" />
@@ -355,8 +381,8 @@ function ShippedTab({ work, total }: { work: ShippedWork[]; total: number }) {
           <p className="py-16 text-center text-[14px] text-white/40">Nothing matches that yet.</p>
         ) : (
           list.map((w) => (
-            <div key={w.id} className={cn('grid gap-3 border-b border-dashed py-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-4', line)}>
-              <span className="hidden h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-accent/10 text-accent sm:flex">
+            <div key={w.id} className={cn('grid gap-3 border-b border-dashed py-5 @min-[600px]:grid-cols-[auto_minmax(0,1fr)_auto] @min-[600px]:items-center @min-[600px]:gap-4', line)}>
+              <span className="hidden h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-accent/10 text-accent @min-[600px]:flex">
                 <GitMerge className="h-4 w-4" />
               </span>
               <div className="min-w-0">
@@ -372,7 +398,7 @@ function ShippedTab({ work, total }: { work: ShippedWork[]; total: number }) {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-1.5">
+              <div className="flex items-center gap-4 @min-[600px]:flex-col @min-[600px]:items-end @min-[600px]:gap-1.5">
                 <span className={`${mono} text-[15px] text-accent-text`}>+{w.xp} XP</span>
                 {w.rating !== null && <Stars n={w.rating} />}
               </div>
@@ -400,7 +426,7 @@ function ReviewsTab({ work }: { work: ShippedWork[] }) {
   const list = work.filter((r) => (r.rating ?? 0) >= min)
   return (
     <div className="mt-6">
-      <div className="grid gap-6 rounded-2xl border border-white/[0.08] p-5 sm:grid-cols-[180px_minmax(0,1fr)] sm:p-6">
+      <div data-tour="reviews" className="grid gap-6 rounded-2xl border border-white/[0.08] p-5 @min-[600px]:grid-cols-[180px_minmax(0,1fr)] @min-[600px]:p-6">
         <div>
           <p className="text-[48px] font-medium leading-none tracking-[-0.04em] text-white">{avg.toFixed(1)}</p>
           <p className="mt-2 flex gap-0.5">
@@ -425,7 +451,7 @@ function ReviewsTab({ work }: { work: ShippedWork[] }) {
           {min > 0 && <p className="pt-1 text-[12px] text-accent-text">Showing {min}★ and up · tap again to clear</p>}
         </div>
       </div>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-6 grid gap-3 @min-[600px]:grid-cols-2">
         {list.map((r) => (
           <figure key={r.id} className="flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5">
             <div className="flex items-center justify-between">
@@ -449,7 +475,7 @@ function AchievementsTab({ list }: { list: DevProfile['achievements'] }) {
   const groups = Array.from(new Set(list.map((a) => a.group)))
   const done = list.filter((a) => a.have >= a.need).length
   return (
-    <div className="mt-6">
+    <div className="mt-6" data-tour="achievements">
       <div className="flex items-end justify-between gap-4">
         <p className="text-[15px] text-white/70">
           <span className="text-[28px] font-medium tracking-[-0.03em] text-white">{done}</span> of {list.length} unlocked
@@ -461,7 +487,7 @@ function AchievementsTab({ list }: { list: DevProfile['achievements'] }) {
       {groups.map((g) => (
         <div key={g} className="mt-8">
           <p className={`${mono} text-[12px] uppercase tracking-[0.14em] text-white/35`}>{g}</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-3 grid gap-3 @min-[600px]:grid-cols-2 @min-[1100px]:grid-cols-3">
             {list
               .filter((a) => a.group === g)
               .map((a) => {

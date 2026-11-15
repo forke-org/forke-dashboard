@@ -44,6 +44,10 @@ export interface LanyardProps {
   breeze?: number;
   interactive?: boolean;
   intro?: boolean;
+  /** drive the flip from outside (e.g. a scripted tour); toggling it flips the card like a tap does */
+  flipped?: boolean;
+  /** render resolution override, for when the card is shown scaled up by a CSS transform */
+  pixelRatio?: number;
   className?: string;
   style?: CSSProperties;
 }
@@ -70,6 +74,8 @@ interface Settings {
   breeze: number;
   interactive: boolean;
   intro: boolean;
+  flipped?: boolean;
+  pixelRatio?: number;
 }
 
 interface Images {
@@ -881,6 +887,8 @@ const Lanyard = ({
   breeze = 0.5,
   interactive = true,
   intro = true,
+  flipped,
+  pixelRatio,
   className = '',
   style
 }: LanyardProps) => {
@@ -909,7 +917,9 @@ const Lanyard = ({
     elasticity,
     breeze,
     interactive,
-    intro
+    intro,
+    flipped,
+    pixelRatio
   };
 
   useEffect(() => {
@@ -1423,10 +1433,13 @@ const Lanyard = ({
     canvas.addEventListener('lostpointercapture', onPointerUp);
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
 
+    let ratio = 0;
+    const wantedRatio = () => settingsRef.current?.pixelRatio ?? Math.min(window.devicePixelRatio || 1, 2);
     const resize = () => {
       view.width = Math.max(1, container.clientWidth);
       view.height = Math.max(1, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      ratio = wantedRatio();
+      renderer.setPixelRatio(ratio);
       renderer.setSize(view.width, view.height, false);
       apply();
       render();
@@ -1444,7 +1457,18 @@ const Lanyard = ({
     };
     document.addEventListener('visibilitychange', onVisibility);
 
-    applyRef.current = apply;
+    // props changed: re-apply, follow a controlled flip, and re-size if the render resolution changed
+    let shownFlipped = !!settingsRef.current?.flipped;
+    applyRef.current = () => {
+      if (wantedRatio() !== ratio) resize();
+      else apply();
+      const want = settingsRef.current?.flipped;
+      if (want !== undefined && want !== shownFlipped) {
+        shownFlipped = want;
+        flip(sim.body.position.clone());
+        start();
+      }
+    };
     resize();
 
     return () => {

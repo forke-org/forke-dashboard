@@ -7,7 +7,23 @@ import { WAYS, paintBack, paintFoilMask, paintFront, paintStrap, type CardData }
 import { twoLines, type CardStyle } from './style'
 
 /** The live 3D ID card for one person and one style. Drag it, tap it to flip. */
-export default function CardLive({ data, style, height = 520 }: { data: Omit<CardData, 'quote'>; style: CardStyle; height?: number }) {
+export default function CardLive({
+  data,
+  style,
+  height = 520,
+  flipped,
+  pixelRatio,
+  interactive = true,
+}: {
+  data: Omit<CardData, 'quote'>
+  style: CardStyle
+  height?: number
+  /** controlled flip (scripted tours); leave unset to let visitors tap to flip */
+  flipped?: boolean
+  /** render resolution override when the card is shown scaled up */
+  pixelRatio?: number
+  interactive?: boolean
+}) {
   const [img, setImg] = useState<{ front: string; back: string; strap: string; foil: string } | null>(null)
   const way = WAYS[style.color]
   const key = JSON.stringify([data, style])
@@ -48,6 +64,9 @@ export default function CardLive({ data, style, height = 520 }: { data: Omit<Car
           strapLength={0.32}
           breeze={0.25}
           metal="silver"
+          flipped={flipped}
+          pixelRatio={pixelRatio}
+          interactive={interactive}
         />
       )}
     </div>
