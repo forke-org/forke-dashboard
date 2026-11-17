@@ -9,8 +9,8 @@
  */
 
 /**
- * POST /api/owner/task    — Create or update task metadata for a sandbox repo
- * GET  /api/owner/task    — Fetch task metadata for a sandbox repo
+ * POST /api/owner/task   : Create or update task metadata for a sandbox repo
+ * GET  /api/owner/task   : Fetch task metadata for a sandbox repo
  */
 
 import { NextRequest, NextResponse } from 'next/server'

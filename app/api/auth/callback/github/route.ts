@@ -77,7 +77,7 @@ async function handleSandboxCallback(request: NextRequest, state: string) {
     const githubUsername = userData.login
     const githubId = userData.id
 
-    // 3. Save to DB — non-blocking, never fails the login
+    // 3. Save to DB: non-blocking, never fails the login
     try {
       const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
       await upsertSandboxUser({ githubId, username: githubUsername, token: accessToken, role })

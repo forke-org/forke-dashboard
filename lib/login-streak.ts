@@ -23,7 +23,7 @@ export async function processLoginStreak(userId: string) {
 
   const now = new Date()
 
-  // Already logged in today — do nothing
+  // Already logged in today, do nothing
   if (user.lastLoginAt && isAlreadyLoggedInToday(user.lastLoginAt, now)) return
 
   let newStreak = 1

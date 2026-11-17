@@ -84,7 +84,7 @@ export async function GET(request: Request) {
     const githubUsername = userData.login
     const githubId = userData.id
 
-    // 3. Save to database — non-blocking, never fail login because of DB issues
+    // 3. Save to database: non-blocking, never fail login because of DB issues
     try {
       const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
 
@@ -92,7 +92,7 @@ export async function GET(request: Request) {
         await upsertSandboxUser({ githubId, username: githubUsername, token: accessToken, role })
       }
     } catch (dbErr) {
-      // DB save failed — log but continue. User can still use the sandbox.
+      // DB save failed: log but continue. User can still use the sandbox.
       console.warn('[Sandbox OAuth] DB save skipped (DB unavailable):', dbErr)
     }
 

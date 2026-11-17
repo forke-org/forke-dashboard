@@ -151,21 +151,21 @@ function MetricsStrip({ review }: { review: AIReviewData }) {
     {
       label: 'Tests',
       icon: '⚡',
-      value: testCounts?.passed != null ? `${testCounts.passed}` : (unitTests?.status === 'pass' ? 'Pass' : unitTests?.status === 'fail' ? 'Fail' : '—'),
+      value: testCounts?.passed != null ? `${testCounts.passed}` : (unitTests?.status === 'pass' ? 'Pass' : unitTests?.status === 'fail' ? 'Fail' : '-'),
       sub: testCounts ? `passing${testCounts.skipped ? ` · ${testCounts.skipped} skipped` : ''}${testCounts.failed ? ` · ${testCounts.failed} failed` : ''}` : unitTests?.status,
       color: unitTests?.status === 'pass' ? 'text-emerald-400' : unitTests?.status === 'fail' ? 'text-red-400' : 'text-[var(--color-text-muted)]',
     },
     {
       label: 'Lint',
       icon: '◎',
-      value: lintIssues != null ? String(lintIssues) : (lint?.status === 'pass' ? '0' : '—'),
+      value: lintIssues != null ? String(lintIssues) : (lint?.status === 'pass' ? '0' : '-'),
       sub: lintIssues === 0 ? 'no issues' : lintIssues != null ? `warning${lintIssues !== 1 ? 's' : ''}` : lint?.status,
       color: (lintIssues === 0 || lint?.status === 'pass') ? 'text-emerald-400' : lintIssues != null ? 'text-amber-400' : 'text-[var(--color-text-muted)]',
     },
     {
       label: 'Types',
       icon: '{}',
-      value: typeErrors != null ? (typeErrors === 0 ? 'Clean' : `${typeErrors} err`) : (types?.status === 'pass' ? 'Clean' : types?.status === 'skip' ? 'N/A' : '—'),
+      value: typeErrors != null ? (typeErrors === 0 ? 'Clean' : `${typeErrors} err`) : (types?.status === 'pass' ? 'Clean' : types?.status === 'skip' ? 'N/A' : '-'),
       sub: typeErrors === 0 ? '0 type errors' : typeErrors != null ? `${typeErrors} error${typeErrors !== 1 ? 's' : ''}` : types?.status,
       color: (typeErrors === 0 || types?.status === 'pass') ? 'text-emerald-400' : typeErrors != null ? 'text-red-400' : 'text-[var(--color-text-muted)]',
     },
@@ -388,7 +388,7 @@ function FindingsTable({ review }: { review: AIReviewData }) {
                   {row.detail}
                 </td>
                 <td className="px-3 py-2.5 font-mono text-[var(--color-text-muted)] text-[10px] whitespace-normal break-all">
-                  {row.location || '—'}
+                  {row.location || '-'}
                 </td>
               </tr>
             ))}
@@ -471,7 +471,7 @@ function FilesChanged({ review }: { review: AIReviewData }) {
   )
 }
 
-// ─── Action Buttons — replaced by informational guidance; only keep GitHub link ──
+// ─── Action Buttons: replaced by informational guidance; only keep GitHub link ──
 function ActionButtons({ review, prUrl }: {
   review: AIReviewData
   prUrl?: string
@@ -714,7 +714,7 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
       {/* Files changed */}
       <FilesChanged review={review} />
 
-      {/* Action buttons — GitHub link only */}
+      {/* Action buttons: GitHub link only */}
       {prUrl && <ActionButtons review={review} prUrl={prUrl} />}
     </div>
   )

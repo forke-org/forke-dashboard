@@ -215,7 +215,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
                   {/* Unread dot */}
                   <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', !notif.isRead ? 'bg-accent' : 'bg-transparent')} />
 
-                  {/* Content — flex-1 so it takes remaining space */}
+                  {/* Content: flex-1 so it takes remaining space */}
                   <div className="flex-1 min-w-0 text-left">
                     {notif.link ? (
                       <Link
@@ -235,7 +235,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
                     <p className="text-[10px] text-white/25 mt-1 font-mono">{timeAgo(notif.createdAt)}</p>
                   </div>
 
-                  {/* Action buttons — always in-flow, opacity toggles on hover */}
+                  {/* Action buttons: always in-flow, opacity toggles on hover */}
                   <div className={cn(
                     'flex items-center gap-1 shrink-0 transition-opacity duration-150',
                     hoveredId === notif.id ? 'opacity-100' : 'opacity-0'

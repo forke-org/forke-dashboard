@@ -5,7 +5,7 @@
 # ⚡ Forke Dashboard Application
 
 <p align="center">
-  <i>The core productivity engine for Forke — where developers discover micro-tasks, submit solutions, earn XP, and founders manage escrow-backed sprints.</i>
+  <i>The core productivity engine for Forke: where developers discover micro-tasks, submit solutions, earn XP, and founders manage escrow-backed sprints.</i>
 </p>
 
 <p align="center">
@@ -141,6 +141,6 @@ forke-dashboard/
 ## 📄 License
 
 This repository is **source-available, not open-source**. The code is public for
-transparency and reference, but **all rights are reserved** — you may read and fork
+transparency and reference, but **all rights are reserved**: you may read and fork
 it on GitHub, but you may **not** use, deploy, copy, or commercialize it without
 prior written permission. See [LICENSE](./LICENSE) for the full terms.

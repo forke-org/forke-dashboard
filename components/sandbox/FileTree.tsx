@@ -58,7 +58,7 @@ function buildTree(items: TreeItem[]): TreeNode[] {
       if (parent) {
         parent.children.push(node)
       } else {
-        // Parent dir not in list (truncated tree) — attach to root
+        // Parent dir not in list (truncated tree): attach to root
         root.push(node)
       }
     }
@@ -325,7 +325,7 @@ export default function FileTree({ username, repo, checkedPaths, onChange, onLoa
             {totalFiles - allowedCount} blocked
           </span>
           {truncated && (
-            <span className="text-[11px] text-amber-400/70">⚠ Large repo — tree may be partial</span>
+            <span className="text-[11px] text-amber-400/70">⚠ Large repo: tree may be partial</span>
           )}
         </div>
         <div className="flex items-center gap-1.5">

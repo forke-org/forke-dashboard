@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Could not retrieve GitHub username' }, { status: 400 })
     }
 
-    // Save to database (non-blocking — sandbox still works if DB is down)
+    // Save to database (non-blocking: sandbox still works if DB is down)
     try {
       const { upsertSandboxUser } = await import('@/lib/sandbox-auth')
 

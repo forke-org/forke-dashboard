@@ -13,7 +13,7 @@ import type { Metadata } from 'next'
 /**
  * Site-wide Open Graph defaults.
  *
- * Next.js does NOT deep-merge a page's `openGraph` into the root layout's — a
+ * Next.js does NOT deep-merge a page's `openGraph` into the root layout's: a
  * child block REPLACES the parent entirely. So any page that sets its own
  * openGraph (for a custom title/description) silently drops the inherited
  * `images` and `siteName`, leaving its social card with no image. These helpers
@@ -25,7 +25,7 @@ export const DEFAULT_OG_IMAGE = {
   url: '/forke-assets/og-image.jpg',
   width: 1200,
   height: 630,
-  alt: 'Forke — The Developer Marketplace',
+  alt: 'Forke: The Developer Marketplace',
 } as const
 
 export const SITE_NAME = 'Forke'

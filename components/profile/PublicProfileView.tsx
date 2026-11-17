@@ -20,7 +20,7 @@ import {
 import { toast } from '@/components/shared/Toast'
 import CopyProfileButton from '@/components/shared/CopyProfileButton'
 
-// three.js can't render on the server — load the lanyard client-only.
+// three.js can't render on the server, load the lanyard client-only.
 // The fallback is dark (not white) so a reload never flashes a white panel.
 const Lanyard = dynamic(() => import('./Lanyard'), {
   ssr: false,
@@ -117,7 +117,7 @@ export default function PublicProfileView({
 
   // Versioned share URL: appends ?v=<hash of name/avatar/headline/bio/xp> so the
   // shared link is a *new* URL to scrapers (WhatsApp/LinkedIn etc.) whenever the
-  // profile changes — they re-fetch the OG preview instead of serving a stale
+  // profile changes: they re-fetch the OG preview instead of serving a stale
   // cached one keyed on the bare URL. Hash matches the og:image versioning.
   const shareVersion = djb2(`${data.name}|${data.avatarUrl || ''}|${data.headline || ''}|${data.bio || ''}|${data.xp}`)
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.forke.space'
@@ -197,7 +197,7 @@ export default function PublicProfileView({
             </div>
           </div>
           <MiniStat value={String(data.stats.shipped)} label="Shipped" />
-          <MiniStat value={data.stats.avgRating ? `${data.stats.avgRating.toFixed(1)}★` : '—'} label="Rating" />
+          <MiniStat value={data.stats.avgRating ? `${data.stats.avgRating.toFixed(1)}★` : '-'} label="Rating" />
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[12px] text-white/45 font-mono">
@@ -403,7 +403,7 @@ function getDaysForMonth(
       
       out.push({ date: dateStr, count: xp })
     } else {
-      // Real year with no data for this date — show 0
+      // Real year with no data for this date, show 0
       out.push({ date: dateStr, count: 0 })
     }
   }

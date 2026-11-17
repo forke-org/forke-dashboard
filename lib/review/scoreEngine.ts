@@ -15,7 +15,7 @@
  * Key design principles:
  *  - NO fixed point allocations per category (no "build = 20 pts")
  *  - Relative weights: a build failure hurts proportionally more than a format failure
- *  - Score emerges from what actually ran — skipped categories don't penalise
+ *  - Score emerges from what actually ran, skipped categories don't penalise
  *  - Build failure is a hard gate (score capped, verdict can never be 'pass')
  *  - AI only contributes requirement_match (0-1 float), not the score number
  *  - Final score = test execution quality (70%) + requirement fulfillment (30%)
@@ -61,7 +61,7 @@ export interface AIResolvedRisk {
 export interface AIReviewResult {
   verdict: Verdict
   score: number
-  requirement_match: number // 0.0 to 1.0 — the ONLY number the AI contributes
+  requirement_match: number // 0.0 to 1.0: the ONLY number the AI contributes
   summary: string
   strengths: string[]
   issues: AIIssue[]
@@ -80,7 +80,7 @@ export interface ScoredReview extends AIReviewResult {
 // ─── Relative Weight Model ────────────────────────────────────────────────────
 
 /**
- * Relative importance weights — NOT fixed point allocations.
+ * Relative importance weights, NOT fixed point allocations.
  *
  * These are multipliers expressing how much a failure in each category hurts
  * relative to other categories. The actual score emerges proportionally from
@@ -248,8 +248,8 @@ export function computeTestScore(
  * final_score = round(testScore × 0.7 + requirement_match × 100 × 0.3)
  *
  * Why 70/30?
- *   70% = "Did the code actually work?" — answered by real test execution
- *   30% = "Did it solve the right problem?" — answered by AI reading task + diff
+ *   70% = "Did the code actually work?": answered by real test execution
+ *   30% = "Did it solve the right problem?": answered by AI reading task + diff
  *   These are two genuinely different dimensions that can't measure each other.
  */
 export function calculateFinalScore(
@@ -270,7 +270,7 @@ export function calculateFinalScore(
 
   let finalVerdict = determineVerdict(finalScore, unauthorizedFiles, rawResult.risks || [])
 
-  // Build failure must never produce a 'pass' verdict — override if needed
+  // Build failure must never produce a 'pass' verdict: override if needed
   if (testScoreResult?.buildFailed && finalVerdict === 'pass') {
     finalVerdict = 'needs_changes'
   }

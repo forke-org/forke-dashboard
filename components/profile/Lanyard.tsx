@@ -142,7 +142,7 @@ const FACE_W = 380 // px (card art is rendered as real DOM at this width)
 const FACE_H = 536 // px
 // drei <Html transform> renders px much smaller than 1 world unit, so the raw
 // place.w/FACE_W ratio comes out ~40× too small. This fudge sizes the DOM card
-// to fill the model card — bump it up/down if the card looks too big/small.
+// to fill the model card, bump it up/down if the card looks too big/small.
 const FACE_FUDGE = 48
 const FACE_OFFSET = 0.04 // how far each DOM face sits off the body (avoids occlusion clipping)
 
@@ -226,7 +226,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
 
     // The x/z sway is fully physics-driven, so it swings in on load and damps to
     // rest like a real badge. Only the y-facing is steered: toward 0° (front) by
-    // default, or 180° (back) when the flip button is toggled — a one-shot,
+    // default, or 180° (back) when the flip button is toggled, a one-shot,
     // ease-to-target turn that then holds still.
     const r = cardRef.current.rotation()
     quat.set(r.x, r.y, r.z, r.w)
@@ -361,7 +361,7 @@ function CardFront({ card }: { card: LanyardCard }) {
       </div>
       <div className="h-px bg-white/20" />
 
-      {/* Tall tilted capsule portrait — slanted right like the indicators */}
+      {/* Tall tilted capsule portrait, slanted right like the indicators */}
       <div className="relative flex-1">
         <div
           className="absolute left-1/2 top-1/2 w-[72%] h-[94%]"
@@ -428,7 +428,7 @@ function CardFront({ card }: { card: LanyardCard }) {
 }
 
 // Back face: same black card + dots/URL header, then just the white Forky mark,
-// the @handle and the "Developer Network" tagline centered — no oval, no footer.
+// the @handle and the "Developer Network" tagline centered: no oval, no footer.
 function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
   const profileUrl = qrUrl || (typeof window !== 'undefined'
     ? `${window.location.origin}/${card.username || 'forke'}`

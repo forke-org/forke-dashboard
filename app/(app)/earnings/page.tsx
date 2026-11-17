@@ -53,7 +53,7 @@ export default async function EarningsPage() {
         }
       }
     } else {
-      // For owners — show total spent and active escrow
+      // For owners: show total spent and active escrow
       const allTasks = await db
         .select({
           id: tasks.id,

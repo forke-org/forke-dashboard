@@ -26,7 +26,7 @@ async function verifyWebhookSignature(
   const secret = process.env.GITHUB_WEBHOOK_SECRET
   if (!secret || secret === 'your_webhook_secret_here') {
     // Fail closed: without a secret anyone could forge PR events.
-    console.error('[Webhook] GITHUB_WEBHOOK_SECRET not configured — rejecting webhook')
+    console.error('[Webhook] GITHUB_WEBHOOK_SECRET not configured: rejecting webhook')
     return false
   }
   if (!signatureHeader) return false
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     .limit(1)
 
   if (sandboxRecords.length === 0) {
-    console.log(`[Webhook] No sandbox record found for ${repoFullName} — ignoring`)
+    console.log(`[Webhook] No sandbox record found for ${repoFullName}: ignoring`)
     return NextResponse.json({ message: 'Sandbox repo not found in DB' }, { status: 200 })
   }
 
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
   // Check if task metadata is configured
   if (!sandboxRecord.taskTitle || !sandboxRecord.taskDescription) {
-    console.log(`[Webhook] No task metadata for ${repoFullName} — AI review skipped`)
+    console.log(`[Webhook] No task metadata for ${repoFullName}: AI review skipped`)
     return NextResponse.json({ message: 'No task metadata configured for this sandbox' }, { status: 200 })
   }
 

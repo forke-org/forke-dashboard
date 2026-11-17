@@ -34,7 +34,7 @@ export interface MirrorParams {
   restrictedPaths?: string
   acceptanceCriteria?: string
   sandboxRepoId?: string
-  taskId?: string // The tasks table ID — when set, mirror updates task status on completion
+  taskId?: string // The tasks table ID, when set, mirror updates task status on completion
 }
 
 /**

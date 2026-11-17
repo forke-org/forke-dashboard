@@ -37,7 +37,7 @@ export default async function DevelopersPage() {
   let unreadCounts: Record<string, number> = {}
 
   // Fetch all users with role 'developer', and (if owner) the owner-scoped
-  // claimed-tasks + unread-message-count queries — all independent, so they
+  // claimed-tasks + unread-message-count queries, all independent, so they
   // run concurrently instead of one round-trip at a time.
   const [developersList, ownerClaimedTasksResult, unreadMsgs] = await Promise.all([
     db

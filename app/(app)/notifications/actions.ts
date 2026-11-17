@@ -35,7 +35,7 @@ export async function ensureNotificationsTable() {
       );
     `)
   } catch {
-    // Table may already exist — safe to ignore
+    // Table may already exist, safe to ignore
   }
 }
 

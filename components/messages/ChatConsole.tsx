@@ -331,7 +331,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
             {/* Input field */}
             <form onSubmit={handleSend} className="p-3 border-t border-[var(--color-border)] flex items-center gap-2 shrink-0 relative">
               
-              {/* Hidden photo input — images only */}
+              {/* Hidden photo input: images only */}
               <input
                 type="file"
                 ref={photoInputRef}
@@ -344,7 +344,7 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages, 
                 className="hidden"
               />
 
-              {/* Hidden file input — documents */}
+              {/* Hidden file input: documents */}
               <input
                 type="file"
                 ref={fileInputRef}

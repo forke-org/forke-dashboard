@@ -9,7 +9,7 @@
  */
 
 /**
- * Deterministic Review Runner — Layer 1
+ * Deterministic Review Runner: Layer 1
  * Runs the 12-category deterministic test pipeline against a cloned repo.
  * Detects tech stack, maps commands, executes in isolation, and reports results.
  *
@@ -178,7 +178,7 @@ export async function runReviewPipeline(
     const cmd = commands[category]
 
     if (!cmd) {
-      onLog?.('CLEANUP', `Skipping category "${category}" — not configured for this stack.`)
+      onLog?.('CLEANUP', `Skipping category "${category}", not configured for this stack.`)
       results[category] = {
         status: 'skip',
         durationMs: Date.now() - catStartTime,
@@ -495,7 +495,7 @@ function getCommandsForStack(
     const hasComposer = exists('composer.json')
     buildCmd = hasComposer
       ? 'which composer >/dev/null 2>&1 && composer install --no-interaction || (curl -sS https://getcomposer.org/installer | php && php composer.phar install --no-interaction)'
-      : 'echo "Plain PHP project — no build required."'
+      : 'echo "Plain PHP project: no build required."'
     lintCmd = hasComposer
       ? 'vendor/bin/phpcs || find . -type f -name "*.php" -not -path "*/vendor/*" -exec php -l {} \\;'
       : 'find . -type f -name "*.php" -not -path "*/vendor/*" -exec php -l {} \\;'
@@ -504,7 +504,7 @@ function getCommandsForStack(
     formatCmd = hasComposer ? 'vendor/bin/php-cs-fixer fix --dry-run' : null
     sastCmd = hasComposer ? 'vendor/bin/phpstan analyse' : null
   } else if (stack.language === 'HTML/CSS/JS') {
-    buildCmd = 'echo "Static site — no build step required."'
+    buildCmd = 'echo "Static site: no build step required."'
     lintCmd = 'npx -y htmlhint "**/*.html"'
     formatCmd = 'npx -y prettier --check "**/*.{html,css,js}" --ignore-path .gitignore'
     codeQualityCmd = 'npx -y jscpd . --ignore "**/node_modules/**"'

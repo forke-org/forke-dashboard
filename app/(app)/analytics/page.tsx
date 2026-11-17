@@ -221,7 +221,7 @@ export default async function AnalyticsPage() {
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-transparent/80">
                 <AlertTriangle className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <p className="text-[13px] text-[var(--color-text-muted)]">
-                  No data yet — {isOwner ? 'post your first task' : 'claim your first task'}
+                  No data yet: {isOwner ? 'post your first task' : 'claim your first task'}
                 </p>
               </div>
             )}

@@ -115,12 +115,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (!token || !ownerId) {
-      // Task was created but we can't start the mirror — mark it so the owner knows
+      // Task was created but we can't start the mirror: mark it so the owner knows
       console.error(`[Publish] Task ${taskId} created but no token/ownerId for mirror. Token: ${!!token}, OwnerId: ${ownerId}`)
       return NextResponse.json({
         success: true,
         taskId,
-        warning: 'Task created but mirror pipeline could not start — GitHub token expired. Please re-authenticate.',
+        warning: 'Task created but mirror pipeline could not start, GitHub token expired. Please re-authenticate.',
       })
     }
 
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       logs: ['[INIT] Background mirror pipeline queued for task.'],
     })
 
-    // Fire and forget — the mirror pipeline will update the task status to 'open'
+    // Fire and forget: the mirror pipeline will update the task status to 'open'
     runMirrorJob({
       jobId,
       token,

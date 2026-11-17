@@ -65,7 +65,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
         <p className="text-[13px] text-[var(--color-text-muted)] max-w-sm mx-auto mb-4 leading-relaxed">
           {isOwner
             ? 'Post a new task to attract talented developers to your project.'
-            : 'New tasks are posted every day — check back soon or try clearing your filters.'}
+            : 'New tasks are posted every day, check back soon or try clearing your filters.'}
         </p>
         <button
           onClick={() => router.push(isOwner ? '/post-task' : '/tasks')}

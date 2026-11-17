@@ -15,7 +15,7 @@ import { isWaitlistEnabled } from '@/lib/db/settings'
 import { hasSiteAccess } from '@/lib/site-access'
 import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
-// While the waitlist lock is on, sign-up is closed — this route 404s. EXCEPT for
+// While the waitlist lock is on, sign-up is closed: this route 404s. EXCEPT for
 // visitors who unlocked the site via /checkout (site_access cookie), so the bypass
 // password actually grants access to register. Once the lock is lifted, it's open to all.
 export const dynamic = 'force-dynamic'

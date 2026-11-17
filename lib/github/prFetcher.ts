@@ -11,7 +11,7 @@
 /**
  * GitHub PR Data Fetcher
  * Fetches PR metadata, changed files, and git diff from GitHub REST API.
- * Uses native fetch — no Octokit dependency needed.
+ * Uses native fetch: no Octokit dependency needed.
  */
 
 export interface PRFileSummary {

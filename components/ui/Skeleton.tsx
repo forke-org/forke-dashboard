@@ -395,7 +395,7 @@ export function SupportSkeleton() {
   )
 }
 
-// I. Admin Panel Skeleton — full-panel loading state for admin console panels.
+// I. Admin Panel Skeleton: full-panel loading state for admin console panels.
 export function PanelSkeleton() {
   return (
     <div className="flex-grow flex flex-col min-h-[400px] bg-[#121111] p-6 space-y-6">

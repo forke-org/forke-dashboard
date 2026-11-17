@@ -17,7 +17,7 @@ import { resolveAvatarUrl } from '@/lib/utils/avatar'
 import { headers } from 'next/headers'
 
 export const runtime = 'nodejs'
-// Always render from live DB data — never serve a stale statically-cached image
+// Always render from live DB data, never serve a stale statically-cached image
 // (so avatar/name/headline edits show up immediately).
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -64,7 +64,7 @@ function getFontData(): Promise<ArrayBuffer | null> {
   return fontPromise
 }
 
-// Geist Sans — matches the live profile card / dashboard. Satori needs the raw
+// Geist Sans: matches the live profile card / dashboard. Satori needs the raw
 // font file, so we fetch the static TTFs (CSS variables aren't available here).
 const geistUrls: Record<number, string> = {
   300: 'https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-300-normal.ttf',
@@ -563,7 +563,7 @@ export default async function Image({
                 }}
               >
                 <span style={{ fontSize: '32px', fontWeight: '900', color: 'white', fontFamily: 'monospace', lineHeight: '1' }}>
-                  {avgRating ? `${avgRating.toFixed(1)}★` : '—'}
+                  {avgRating ? `${avgRating.toFixed(1)}★` : '-'}
                 </span>
                 <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '6px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>
                   Avg Rating

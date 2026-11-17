@@ -104,7 +104,7 @@ export async function registerDeveloperWithCredentials(formData: any) {
   }
 
   try {
-    // Independent existence checks — fetch concurrently, but keep the same
+    // Independent existence checks: fetch concurrently, but keep the same
     // "email conflict reported before username conflict" priority as before.
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       db.query.users.findFirst({ where: eq(users.email, email) }),

@@ -104,7 +104,7 @@ export default async function ProfilePage() {
   const dbUser = await db.query.users.findFirst({ where: eq(users.id, sessionUser.id) })
   if (!dbUser) redirect('/signin')
 
-  // No username yet — send them to settings to finish setting up their handle.
+  // No username yet: send them to settings to finish setting up their handle.
   if (!dbUser.username) {
     redirect('/settings')
   }

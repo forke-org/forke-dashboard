@@ -762,7 +762,7 @@ export default function SandboxHome({
     }
     setSavingTask(true)
     try {
-      // Single unified publish call — creates task (status='processing') and
+      // Single unified publish call, creates task (status='processing') and
       // fires the mirror pipeline in the background. No need for a separate
       // /api/owner/task save call since we don't have a sandbox repo yet.
       const response = await fetch('/api/owner/task/publish', {
@@ -1384,7 +1384,7 @@ export default function SandboxHome({
                       </>
                     )}
 
-                    {/* Import progress removed — mirroring now happens after task submission */}
+                    {/* Import progress removed: mirroring now happens after task submission */}
                   </>
                 ) : (
                   <>
@@ -2365,21 +2365,21 @@ export default function SandboxHome({
                               </a>
                             )}
 
-                            {/* Owner guidance — informational, no action buttons */}
+                            {/* Owner guidance: informational, no action buttons */}
                             <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.015] p-4 space-y-2.5">
                               <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.1em] font-mono">What to do next</p>
                               <div className="space-y-2 text-[12px] text-[var(--color-text-muted)] leading-relaxed">
                                 <div className="flex items-start gap-2">
                                   <span className="text-emerald-400 shrink-0 mt-0.5 font-bold">↑</span>
-                                  <span><span className="text-white font-medium">Approve &amp; Merge</span> — if the code looks good, merge the PR directly on GitHub.</span>
+                                  <span><span className="text-white font-medium">Approve &amp; Merge</span>: if the code looks good, merge the PR directly on GitHub.</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-amber-400 shrink-0 mt-0.5 font-bold">↺</span>
-                                  <span><span className="text-white font-medium">Request Changes</span> — leave a review comment on GitHub asking the developer to address the issues above.</span>
+                                  <span><span className="text-white font-medium">Request Changes</span>: leave a review comment on GitHub asking the developer to address the issues above.</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-red-400 shrink-0 mt-0.5 font-bold">✕</span>
-                                  <span><span className="text-white font-medium">Reject</span> — close the PR on GitHub if the submission does not meet requirements.</span>
+                                  <span><span className="text-white font-medium">Reject</span>: close the PR on GitHub if the submission does not meet requirements.</span>
                                 </div>
                               </div>
                             </div>

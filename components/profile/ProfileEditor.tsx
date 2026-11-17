@@ -313,7 +313,7 @@ export function AvatarPickerModal({
             </>
           )}
 
-          {/* Upload option — always available */}
+          {/* Upload option: always available */}
           <button
             onClick={() => { onUpload(); onClose() }}
             className="flex items-center gap-3.5 w-full p-3.5 rounded-xl border border-dashed border-white/10 bg-white/[0.01] hover:border-[#FF7A00]/40 hover:bg-white/[0.04] transition-all cursor-pointer group"

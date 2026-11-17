@@ -415,7 +415,7 @@ export async function runFullPRPipeline(params: PipelineParams) {
       })
     }
 
-    // Run the scoring algorithms — deterministic test score + AI requirement_match
+    // Run the scoring algorithms, deterministic test score + AI requirement_match
     const { finalScore, finalVerdict } = calculateFinalScore(aiResult, unauthorizedFiles, testScoreResult)
 
     // Compute composite risk score (Layer 4)

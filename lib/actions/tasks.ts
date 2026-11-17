@@ -173,7 +173,7 @@ export async function claimTask(taskId: string) {
   }
 
   // These three reads are all independent of each other (none depend on
-  // another's result) — fetch concurrently instead of one at a time.
+  // another's result): fetch concurrently instead of one at a time.
   const [devProfile, taskResult, developer] = await Promise.all([
     db.query.developers.findFirst({ where: eq(developers.userId, user.id) }),
     getTaskById(taskId),
@@ -255,7 +255,7 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
     return { error: 'Invalid URL. Must start with https://' }
   }
 
-  // Independent of each other — fetch concurrently.
+  // Independent of each other, fetch concurrently.
   const [taskResult, devUsers] = await Promise.all([
     getTaskById(taskId),
     db.select({ name: users.name }).from(users).where(eq(users.id, user.id)).limit(1),

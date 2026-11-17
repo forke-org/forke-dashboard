@@ -41,7 +41,7 @@ export default async function SettingsPage() {
   }
 
   // Full user record, owner details, and connected accounts are all
-  // independent of each other (each keys only off sessionUser.id) — fetch
+  // independent of each other (each keys only off sessionUser.id): fetch
   // concurrently, each still catching its own error exactly as before.
   let dbUserError = false
   const [dbUser, ownerDetails, connectedAccounts] = await Promise.all([

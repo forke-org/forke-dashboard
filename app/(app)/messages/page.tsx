@@ -30,7 +30,7 @@ export default async function MessagesPage({
   const queryUserId = params.userId
 
   // Registered contacts and the optionally-requested target user are
-  // independent queries — fetch concurrently.
+  // independent queries: fetch concurrently.
   const [contacts, targetUserRes] = await Promise.all([
     db
       .select({

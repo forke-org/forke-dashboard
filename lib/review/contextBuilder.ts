@@ -33,7 +33,7 @@ export interface PRData {
   changedFiles: string[]
   gitDiff: string
   repoStructure?: string
-  /** Pre-computed deterministic test score — AI does NOT change these numbers */
+  /** Pre-computed deterministic test score: AI does NOT change these numbers */
   testScoreResult?: TestScoreResult
 }
 
@@ -154,11 +154,11 @@ Check these previous issues and risks against the current git diff to see which 
       : ''
 
     const buildAlert = buildFailed
-      ? '\n⚠️  BUILD FAILURE DETECTED — execution score is capped. Code does not compile.\n'
+      ? '\n⚠️  BUILD FAILURE DETECTED: execution score is capped. Code does not compile.\n'
       : ''
 
     testScoreSection = `
-=== DETERMINISTIC EXECUTION SCORE (computed by Forke engine — do NOT modify these numbers) ===
+=== DETERMINISTIC EXECUTION SCORE (computed by Forke engine: do NOT modify these numbers) ===
 ${buildAlert}
 Execution Quality Score: ${testScore} / 100 (raw: ${rawScore}/100 before penalties)
 Score formula: (sum of weight×quality for ran categories) / (sum of weights) × 100
@@ -172,7 +172,7 @@ ${penaltyText}
 The remaining 30% of the FINAL SCORE comes from your REQUIREMENT FULFILLMENT assessment.
 Output "requirement_match" as a float 0.0–1.0 based on how well the developer met the task.
 Final score = round(${testScore} × 0.7 + requirement_match × 100 × 0.3)
-DO NOT output a score field — only output requirement_match and the narrative fields.
+DO NOT output a score field, only output requirement_match and the narrative fields.
 `
   }
 
@@ -213,5 +213,5 @@ Please analyze the above PR. Output only requirement_match (0.0-1.0), summary, s
  */
 export function truncateDiff(diff: string, maxChars = 50000): string {
   if (diff.length <= maxChars) return diff
-  return diff.slice(0, maxChars) + '\n\n[... DIFF TRUNCATED — too large for single review pass ...]'
+  return diff.slice(0, maxChars) + '\n\n[... DIFF TRUNCATED: too large for single review pass ...]'
 }

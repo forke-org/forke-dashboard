@@ -149,7 +149,7 @@ export default function OnboardingPage() {
           </h1>
           <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5 text-center max-w-xs">
             {step === 1 
-              ? "You're almost there — just a few more details to set up your workspace."
+              ? "You're almost there: just a few more details to set up your workspace."
               : 'Add a password to log in directly via username/password in the future.'}
           </p>
         </div>

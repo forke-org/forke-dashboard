@@ -23,7 +23,7 @@ import { auth } from '@/auth'
 export async function inviteDeveloperToMirror(taskId: string, developerUserId: string) {
   developerUserId = await requireSelf(developerUserId)
   // Developer lookup only depends on developerUserId, not on the task/repo/
-  // owner chain below — kick it off now so it resolves in parallel with that
+  // owner chain below: kick it off now so it resolves in parallel with that
   // chain instead of only starting once the chain finishes.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
@@ -100,7 +100,7 @@ export async function inviteDeveloperToMirror(taskId: string, developerUserId: s
  */
 export async function checkInvitationStatus(taskId: string, developerUserId: string) {
   developerUserId = await requireSelf(developerUserId)
-  // Independent of the task/repo chain below — kick off in parallel.
+  // Independent of the task/repo chain below, kick off in parallel.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
   })
@@ -136,7 +136,7 @@ export async function checkInvitationStatus(taskId: string, developerUserId: str
  */
 export async function createWorkspaceBranchAndCodespace(taskId: string, developerUserId: string) {
   developerUserId = await requireSelf(developerUserId)
-  // Independent of the task/repo chain below — kick off in parallel.
+  // Independent of the task/repo chain below, kick off in parallel.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
   })
@@ -246,7 +246,7 @@ export async function createWorkspaceBranchAndCodespace(taskId: string, develope
  */
 export async function cleanupWorkspace(taskId: string, developerUserId: string) {
   developerUserId = await requireSelf(developerUserId)
-  // Independent of the task/repo chain below — kick off in parallel.
+  // Independent of the task/repo chain below, kick off in parallel.
   const devResultPromise = db.query.developers.findFirst({
     where: eq(developers.userId, developerUserId),
   })

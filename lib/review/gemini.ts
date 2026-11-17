@@ -179,7 +179,7 @@ export function parseAIResponse(rawText: string): AIReviewResult {
 
 /**
  * Normalizes and validates the parsed JSON to ensure all required fields exist.
- * The AI no longer generates a score — only requirement_match (0-1 float).
+ * The AI no longer generates a score, only requirement_match (0-1 float).
  * Score is computed deterministically by computeTestScore() in scoreEngine.ts.
  */
 function normalizeAIResult(raw: Record<string, unknown>): AIReviewResult {
