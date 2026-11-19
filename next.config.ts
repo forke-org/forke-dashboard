@@ -20,6 +20,13 @@ const r2Host = (() => {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  async redirects() {
+    // Every /status on Forke's domains goes to the one public status page.
+    return [
+      { source: '/status', destination: 'https://status.forke.space/?tab=dashboard', permanent: false },
+      { source: '/status/:path*', destination: 'https://status.forke.space/?tab=dashboard', permanent: false },
+    ]
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
