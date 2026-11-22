@@ -1,6 +1,16 @@
 'use client'
 
 /**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
+/**
  * Forky line-drawing loader (shared with forke-admin and Forke Mail).
  * Draws the mascot, traces it back, writes the wordmark, and loops.
  * When `exiting` turns true it traces whatever is on screen backwards, then calls onExited.

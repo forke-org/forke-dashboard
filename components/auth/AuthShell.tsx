@@ -1,6 +1,16 @@
 'use client'
 
 /**
+ * @fileoverview Forke Platform
+ * @copyright (c) 2026 Forke Inc. (https://www.forke.space/)
+ *
+ * Source-Available License (Non-Commercial / Fair Source).
+ * This source code is open for inspection, learning, and personal development.
+ * Commercial use, hosting, or resale as a paid service without an explicit
+ * commercial license from Forke Inc. is strictly prohibited.
+ */
+
+/**
  * Split auth layout shared by sign in, sign up, role choice and the access gate:
  * the form on the left, the ASCII Forky scene on the right (same as the admin login).
  */
