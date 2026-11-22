@@ -20,6 +20,7 @@
  *         frontendStack?, backendStack?, selectedScope? }
  */
 
+import { trackUserEvent } from '@/lib/mail'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
       .returning({ id: tasks.id })
 
     const taskId = inserted[0]?.id
+    if (taskId) await trackUserEvent(user.id, 'task.published')
     if (!taskId) {
       return NextResponse.json({ error: 'Failed to create task record' }, { status: 500 })
     }

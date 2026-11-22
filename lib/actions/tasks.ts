@@ -10,6 +10,7 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
+import { trackUserEvent } from '@/lib/mail'
 import { tasks, users, submissions, revisionRequests, escrow, developers } from '@/lib/db/schema'
 import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
@@ -136,6 +137,8 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
       clientId: user.id,
       status: 'open',
     })
+
+    await trackUserEvent(user.id, 'task.published')
 
     // Notify owner: task successfully posted
     await createNotification({

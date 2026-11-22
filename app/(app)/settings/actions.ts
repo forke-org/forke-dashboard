@@ -166,8 +166,8 @@ export async function scheduleAccountDeletionAction(userId: string) {
     await db.update(users).set({ deletionScheduledAt: new Date() }).where(eq(users.id, userId))
     
     if (dbUser?.email) {
-      const { sendAccountDeletionScheduledEmail } = await import('@/lib/email')
-      await sendAccountDeletionScheduledEmail(dbUser.email)
+      const { trackForkeMailEvent } = await import('@/lib/mail')
+      await trackForkeMailEvent(dbUser.email, 'account.deletion_scheduled')
     }
     
     return { success: true }

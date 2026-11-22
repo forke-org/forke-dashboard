@@ -8,6 +8,7 @@
  * commercial license from Forke Inc. is strictly prohibited.
  */
 
+import { trackForkeMailEvent } from '@/lib/mail'
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
@@ -99,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (dbUser.deletionScheduledAt) {
             await db.update(users).set({ deletionScheduledAt: null }).where(eq(users.id, dbUser.id))
+            if (dbUser.email) await trackForkeMailEvent(dbUser.email, 'account.deletion_cancelled')
             console.log(`[AUTH] Cancelled scheduled account deletion for user: ${dbUser.id}`)
             return '/dashboard?toast=deletion_cancelled'
           }
