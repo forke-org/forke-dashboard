@@ -12,7 +12,7 @@
 
 import { useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
-import { BadgeCheck, Calendar, Check, Pencil, GitMerge, Globe, GraduationCap, Lock, MapPin, Pin, Search, Share2, Sparkles, Star, Trophy } from 'lucide-react'
+import { BadgeCheck, Calendar, Check, Pencil, GitMerge, Globe, GraduationCap, Lock, MapPin, Pin, Search, Send, Share2, Star, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import Heatmap from './Heatmap'
 import { githubHandle, type DevProfile, type ShippedWork } from './types'
@@ -140,7 +140,7 @@ export default function ProfileView({
           {actions ? (
             <>
               <a href={actions.primaryHref} className="inline-flex h-10 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-[14px] font-medium text-[#1a0a00] transition-colors hover:bg-accent-hover">
-                {actions.own ? <Pencil className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {actions.primaryLabel}
+                {actions.own ? <Pencil className="h-4 w-4" /> : <Send className="h-4 w-4" />} {actions.primaryLabel}
               </a>
               <button type="button" onClick={share} className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 text-[14px] text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white">
                 {copied ? <Check className="h-4 w-4 text-accent" /> : <Share2 className="h-4 w-4" />} {copied ? 'Link copied' : 'Share'}
@@ -149,7 +149,7 @@ export default function ProfileView({
           ) : (
             <>
               <span className="inline-flex h-10 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-[14px] font-medium text-[#1a0a00]">
-                <Sparkles className="h-4 w-4" /> Invite to a task
+                <Send className="h-4 w-4" /> Invite to a task
               </span>
               <span className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 text-[14px] text-white/85">
                 <Share2 className="h-4 w-4" /> Share

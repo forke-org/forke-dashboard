@@ -13,7 +13,7 @@
 import React, { useState, useActionState, useEffect } from 'react'
 import { submitWork } from '@/lib/actions/tasks'
 import { Button } from '@/components/ui/Button'
-import { CheckCircle2, XCircle, GitPullRequest, Link as LinkIcon, Send, Sparkles } from 'lucide-react'
+import { CheckCircle2, XCircle, GitPullRequest, Link as LinkIcon, Send } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 import { toast } from '@/components/shared/Toast'
@@ -51,7 +51,7 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
       <div className="p-5 bg-emerald-500/[0.07] border border-emerald-500/20 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500 select-none text-left">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="w-11 h-11 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-            <Sparkles className="w-5 h-5" />
+            <CheckCircle2 className="w-5 h-5" />
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-medium text-white">Work submitted</h3>

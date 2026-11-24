@@ -11,7 +11,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { auth } from '@/auth'
-import { Plus, Sparkles } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import { getUnreadCount } from '@/app/(app)/notifications/actions'
 
@@ -75,7 +75,7 @@ export default async function TopBar({ title, breadcrumbs }: TopBarProps) {
             href={cta.href}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent bg-accent px-3.5 text-[13px] font-medium text-[#1a0a00] shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_8px_24px_-8px_rgba(255,122,0,0.55)] transition-colors hover:bg-accent-hover"
           >
-            {user.role === 'owner' ? <Plus className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+            {user.role === 'owner' ? <Plus className="h-4 w-4" /> : <Search className="h-4 w-4" />}
             <span className="hidden sm:inline">{cta.label}</span>
           </Link>
         </div>

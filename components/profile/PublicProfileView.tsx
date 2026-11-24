@@ -15,7 +15,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   MapPin, Calendar, Flame, Link2, Globe,
-  Star, ExternalLink, Trophy, Award, Zap, Crown, Target, Sparkles, Pencil, Share2, X, GraduationCap
+  Star, ExternalLink, Trophy, Award, Zap, Crown, Target, Moon, Activity, Pencil, Share2, X, GraduationCap
 } from 'lucide-react'
 import { toast } from '@/components/shared/Toast'
 import CopyProfileButton from '@/components/shared/CopyProfileButton'
@@ -97,7 +97,7 @@ function djb2(str: string): string {
 
 const ACH_ICON = {
   first: Zap, streak: Flame, boss: Target, legend: Crown,
-  loot: Trophy, untouchable: Award, sprint: Zap, night: Sparkles,
+  loot: Trophy, untouchable: Award, sprint: Zap, night: Moon,
 } as const
 
 const tile = 'rounded-2xl border border-white/[0.06] bg-[#1A1919]/60 backdrop-blur-xl'
@@ -258,7 +258,7 @@ export default function PublicProfileView({
       )}
 
       {/* Heatmap */}
-      <Section icon={<Sparkles className="w-4 h-4 text-[#FF7A00]" />} title="XP Activity">
+      <Section icon={<Activity className="w-4 h-4 text-[#FF7A00]" />} title="XP Activity">
         <Heatmap data={data.heatmap} username={data.username} joinedAt={data.joinedAt} />
       </Section>
 
