@@ -195,12 +195,12 @@ function RegisterContentInner() {
   const password = (name: string, label: string, shown: boolean, toggle: () => void, auto: string) => (
     <Field label={label}>
       <span className="relative">
-        <input required name={name} type={shown ? 'text' : 'password'} autoComplete={auto} placeholder="••••••••" className={`${fieldClass} pr-11`} />
+        <input required name={name} type={shown ? 'text' : 'password'} autoComplete={auto} placeholder="••••••••" className={`${fieldClass} pr-10`} />
         <button
           type="button"
           onClick={toggle}
           aria-label={shown ? 'Hide password' : 'Show password'}
-          className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-white/45 hover:bg-white/[0.06] hover:text-white"
+          className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-[5px] text-[#8e8e93] transition-colors hover:bg-white/[0.06] hover:text-[#f4f4f5]"
         >
           {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -233,15 +233,15 @@ function RegisterContentInner() {
   // ── after an owner application is sent ──
   if (isSubmitted) {
     return (
-      <AuthShell caption="We read every application ourselves.">
+      <AuthShell>
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent">
           <CheckCircle2 className="h-6 w-6" />
         </span>
-        <h1 className="mt-6 text-[30px] font-medium leading-tight tracking-[-0.035em] text-white">Application received.</h1>
+        <h1 className="mt-6 text-[30px] font-medium leading-tight tracking-[-0.035em] text-[#f4f4f5]">Application received.</h1>
         <p className="mt-3 text-[15px] leading-7 text-white/55">
           Thanks for applying to post tasks on Forke. We check every company so developers only see real work. Expect an email from us within 24 to 48 hours.
         </p>
-        <div className="mt-6 flex items-center gap-2 rounded-[12px] border border-white/10 bg-white/[0.03] px-4 py-3 text-[13.5px] text-white/65">
+        <div className="mt-6 flex items-center gap-2 rounded-[8px] border border-white/10 bg-white/[0.03] px-4 py-3 text-[13.5px] text-white/65">
           <Mail className="h-4 w-4 text-accent" /> Watch {formData.contactEmail || 'your inbox'} for the decision.
         </div>
         <Link href="/" className={`${ghostBtn} mt-8`}>Back to forke.space</Link>
@@ -276,17 +276,17 @@ function RegisterContentInner() {
       },
     ]
     return (
-      <AuthShell wide caption={<>Two sides of the same merge.</>}>
+      <AuthShell wide>
         <Eyebrow>Create your account</Eyebrow>
-        <h1 className="text-[32px] font-medium leading-tight tracking-[-0.035em] text-white">How will you use Forke?</h1>
-        <p className="mt-2 text-[14.5px] text-white/50">Pick one. You can&rsquo;t switch roles on the same account later.</p>
+        <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-[#f4f4f5]">How will you use Forke?</h1>
+        <p className="mt-2 text-sm text-[#8e8e93]">Pick one. You can&rsquo;t switch roles on the same account later.</p>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           {roles.map((r) => (
             <button
               key={r.key}
               type="button"
               onClick={() => pickRole(r.key)}
-              className="group flex flex-col rounded-[18px] border border-white/[0.1] bg-white/[0.02] p-5 text-left transition-colors hover:border-accent/60 hover:bg-accent/[0.04]"
+              className="group flex flex-col rounded-[8px] border border-white/[0.1] bg-white/[0.02] p-5 text-left transition-colors hover:border-accent/60 hover:bg-accent/[0.04]"
             >
               {r.chip}
               <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">{r.eyebrow}</p>
@@ -304,12 +304,8 @@ function RegisterContentInner() {
             </button>
           ))}
         </div>
-        <p className="mt-8 text-[14px] text-white/50">
-          Already have an account?{' '}
-          <Link href="/signin" className="text-white underline decoration-white/20 underline-offset-4 hover:decoration-accent">
-            Sign in
-          </Link>
-        </p>
+        <div className="mt-6 flex items-center gap-3 text-xs text-[#5f5c5a]"><span className="h-px flex-1 bg-[rgba(240,227,222,0.09)]" />Already have an account?<span className="h-px flex-1 bg-[rgba(240,227,222,0.09)]" /></div>
+        <Link href="/signin" className={`${ghostBtn} mt-4`}>Sign in</Link>
       </AuthShell>
     )
   }
@@ -332,15 +328,15 @@ function RegisterContentInner() {
       </div>
     )
     return (
-      <AuthShell wide caption="Your tasks only go live once you are approved.">
+      <AuthShell wide>
         {backToRoles}
         <Eyebrow>Repo owner application</Eyebrow>
-        <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-white">Tell us about your team.</h1>
-        <p className="mt-2 text-[14.5px] text-white/50">We review every company so developers only see real work.</p>
+        <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-[#f4f4f5]">Tell us about your team.</h1>
+        <p className="mt-2 text-sm text-[#8e8e93]">We review every company so developers only see real work.</p>
 
         <form onSubmit={handleClientSubmit} noValidate className="mt-8 space-y-8">
           {/* 1 · identity */}
-          <section className="rounded-[16px] border border-white/[0.1] p-4 sm:p-5">
+          <section className="rounded-[8px] border border-white/[0.1] p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 text-[14.5px] font-medium text-white">
@@ -430,7 +426,7 @@ function RegisterContentInner() {
           {consent}
           {error && <ErrorNote>{error}</ErrorNote>}
           <button type="submit" disabled={!isGoogleAuthenticated || isAlreadyDeveloper || isSubmitting} className={primaryBtn}>
-            {isSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> : 'Submit application'}
+            {isSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> : <>Submit application<ArrowRight className="h-4 w-4" /></>}
           </button>
           {!isGoogleAuthenticated && <p className="-mt-4 text-center text-[12.5px] text-white/35">Verify with Google first to submit.</p>}
         </form>
@@ -440,11 +436,11 @@ function RegisterContentInner() {
 
   // ── step 2b: developer sign up ──
   return (
-    <AuthShell caption={<>&ldquo;Ship real work. Get paid the day it merges.&rdquo;</>}>
+    <AuthShell>
       {backToRoles}
       <Eyebrow>Developer account</Eyebrow>
-      <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-white">Create your account</h1>
-      <p className="mt-2 text-[14.5px] text-white/50">Takes a minute. Your first task is waiting.</p>
+      <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-[#f4f4f5]">Create your account</h1>
+      <p className="mt-2 text-sm text-[#8e8e93]">Takes a minute. Your first task is waiting.</p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
         {social('google', 'Google', RiGoogleFill)}
@@ -481,16 +477,12 @@ function RegisterContentInner() {
         {consent}
         {error && <ErrorNote>{error}</ErrorNote>}
         <button type="submit" disabled={isSubmitting} className={`${primaryBtn} mt-1`}>
-          {isSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> : 'Create account'}
+          {isSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> : <>Create account<ArrowRight className="h-4 w-4" /></>}
         </button>
       </form>
 
-      <p className="mt-8 text-[14px] text-white/50">
-        Already have an account?{' '}
-        <Link href="/signin" className="text-white underline decoration-white/20 underline-offset-4 hover:decoration-accent">
-          Sign in
-        </Link>
-      </p>
+      <div className="mt-6 flex items-center gap-3 text-xs text-[#5f5c5a]"><span className="h-px flex-1 bg-[rgba(240,227,222,0.09)]" />Already have an account?<span className="h-px flex-1 bg-[rgba(240,227,222,0.09)]" /></div>
+      <Link href="/signin" className={`${ghostBtn} mt-4`}>Sign in</Link>
     </AuthShell>
   )
 }
