@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react'
 import { signInWithGoogle, signInWithGitHub } from '@/lib/auth-actions'
-import { Eye, EyeOff } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { RiGithubFill, RiGoogleFill } from '@remixicon/react'
 import AuthShell, { Divider, ErrorNote, Eyebrow, Field, fieldClass, ghostBtn, primaryBtn } from './AuthShell'
 import Link from 'next/link'
@@ -93,10 +93,10 @@ function SignInContentInner() {
   )
 
   return (
-    <AuthShell caption={<>&ldquo;Ship real work. Get paid the day it merges.&rdquo;</>}>
+    <AuthShell>
       <Eyebrow>Welcome back</Eyebrow>
-      <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-white">Sign in to Forke</h1>
-      <p className="mt-2 text-[14.5px] text-white/50">Pick up where you left off.</p>
+      <h1 className="text-[30px] font-medium leading-tight tracking-[-0.035em] text-[#f4f4f5]">Sign in to Forke</h1>
+      <p className="mt-2 text-sm text-[#8e8e93]">Pick up where you left off.</p>
 
       <div className="mt-8 flex flex-col gap-3">
         {social('google', 'Google', RiGoogleFill)}
@@ -111,12 +111,12 @@ function SignInContentInner() {
         </Field>
         <Field label="Password" hint={<button type="button" className="text-[12.5px] font-normal text-white/45 hover:text-white">Forgot?</button>}>
           <span className="relative">
-            <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="••••••••" className={`${fieldClass} pr-11`} />
+            <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="••••••••" className={`${fieldClass} pr-10`} />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-white/45 hover:bg-white/[0.06] hover:text-white"
+              className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-[5px] text-[#8e8e93] transition-colors hover:bg-white/[0.06] hover:text-[#f4f4f5]"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -124,16 +124,12 @@ function SignInContentInner() {
         </Field>
         {error && <ErrorNote>{error}</ErrorNote>}
         <button type="submit" disabled={isSubmitting} className={`${primaryBtn} mt-1`}>
-          {isSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> : 'Sign in'}
+          {isSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> : <>Sign in<ArrowRight className="h-4 w-4" /></>}
         </button>
       </form>
 
-      <p className="mt-8 text-[14px] text-white/50">
-        New to Forke?{' '}
-        <Link href="/register" className="text-white underline decoration-white/20 underline-offset-4 hover:decoration-accent">
-          Create an account
-        </Link>
-      </p>
+      <div className="mt-6 flex items-center gap-3 text-xs text-[#5f5c5a]"><span className="h-px flex-1 bg-[rgba(240,227,222,0.09)]" />New to Forke?<span className="h-px flex-1 bg-[rgba(240,227,222,0.09)]" /></div>
+      <Link href="/register" className={`${ghostBtn} mt-4`}>Create an account</Link>
     </AuthShell>
   )
 }
