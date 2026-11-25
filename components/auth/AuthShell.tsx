@@ -37,8 +37,9 @@ export default function AuthShell({
   wide?: boolean
 }) {
   return (
-    <div className="grid min-h-[100svh] bg-[#151414] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="relative flex min-w-0 flex-col px-6 py-6 sm:px-10">
+    <div className="grid min-h-[100svh] overflow-x-hidden bg-[#151414] lg:h-[100svh] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:overflow-hidden">
+      {/* only the form side scrolls on wide screens; the globe stays put */}
+      <div className="relative flex min-h-0 min-w-0 flex-col overflow-x-hidden px-6 py-6 sm:px-10 lg:overflow-y-auto">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-[18px] font-semibold tracking-[-0.04em] text-[#f4f4f5]">
             forke<span className="text-accent">*</span>
